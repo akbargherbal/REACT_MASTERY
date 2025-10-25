@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>05_Component_Lifecycle_and_Effects</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">01_Foundations</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-5-component-lifecycle-and-effects">Chapter 5: Component Lifecycle and Effects</h1>
+<h2 id="understanding-component-lifecycle">Understanding Component Lifecycle</h2>
+<h2 id="learning-objective">Learning Objective</h2>
+<p>Explain the three main lifecycle phases of a React component: mounting, updating, and unmounting.</p>
+<h2 id="why-this-matters">Why This Matters</h2>
+<p>A React component isn't static; it has a "life." It's born, it lives and can change, and eventually, it dies. Understanding these phases is crucial because you'll often need to perform actions at specific moments in a component's life, like fetching data when it's born or cleaning up a timer before it dies. This mental model is the foundation for understanding how and when to use side effects.</p>
+<h2 id="discovery-phase-a-components-life-in-logs">Discovery Phase: A Component's "Life" in Logs</h2>
+<p>Let's observe a component's life through <code>console.log</code>. The body of a function component runs every time it renders.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">LifecycleLogger</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Component is rendering...&quot;</span><span class="p">);</span><span class="w"> </span><span class="c1">// This will run on every render</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCount</span><span class="p">(</span><span class="nx">count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span><span class="nx">Increment</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:</p>
+<ol>
+<li><strong>Load the component</strong>: The console shows "Component is rendering...".</li>
+<li><strong>Click "Increment"</strong>: The console shows "Component is rendering..." again.</li>
+<li><strong>Click again</strong>: The console shows "Component is rendering..." yet again.</li>
+</ol>
+<p>The component function re-runs on its initial render and every time its state changes. But what if we wanted to run a piece of code <em>only once</em>, when the component first appears? Or when it's removed? Running it directly in the function body isn't the right tool for the job. We need a way to hook into specific moments in its lifecycle.</p>
+<h2 id="deep-dive-the-three-phases-of-a-components-life">Deep Dive: The Three Phases of a Component's Life</h2>
+<h3 id="1-mounting-birth">1. Mounting (Birth)</h3>
+<p>This is the phase where the component is being created and inserted into the DOM for the first time.</p>
+<ul>
+<li>React calls your component function.</li>
+<li>It calculates the JSX to be rendered.</li>
+<li>React commits the changes to the DOM, and your component appears on the screen.</li>
+</ul>
+<p>This phase happens only <strong>once</strong> in a component's life. It's the perfect time to do one-time setup tasks, like fetching initial data from an API.</p>
+<h3 id="2-updating-living">2. Updating (Living)</h3>
+<p>An update occurs whenever a component re-renders. A re-render can be triggered by two things:</p>
+<ol>
+<li>A change in the component's own <strong>state</strong>.</li>
+<li>A change in the <strong>props</strong> it receives from its parent.</li>
+</ol>
+<p>During an update:</p>
+<ul>
+<li>React calls your component function again with the new props and state.</li>
+<li>It calculates the new JSX.</li>
+<li>React compares the new JSX with the previous version (this is called "diffing").</li>
+<li>It efficiently updates only the changed parts of the DOM.</li>
+</ul>
+<p>This phase can happen many times.</p>
+<h3 id="3-unmounting-death">3. Unmounting (Death)</h3>
+<p>This is the phase where the component is being removed from the DOM. This might happen because of conditional rendering (e.g., <code>isLoggedIn &amp;&amp; &lt;Profile /&gt;</code>), or because you navigated to a different page.</p>
+<p>This phase also happens only <strong>once</strong>. It's the perfect time to perform cleanup tasks, like invalidating timers, canceling network requests, or removing event listeners to prevent memory leaks.</p>
+<h3 id="from-classes-to-hooks">From Classes to Hooks</h3>
+<p>In older, class-based React, you had explicit lifecycle methods for these phases: <code>componentDidMount()</code>, <code>componentDidUpdate()</code>, and <code>componentWillUnmount()</code>. In modern React, we use a single, powerful hook that can handle all these phases: <code>useEffect</code>.</p>
+<h2 id="introduction-to-useeffect">Introduction to useEffect</h2>
+<h2 id="learning-objective_1">Learning Objective</h2>
+<p>Use <code>useEffect</code> to run code (a "side effect") after a component renders.</p>
+<h2 id="why-this-matters_1">Why This Matters</h2>
+<p>React's main job is to render UI. Anything else your component does—fetching data, setting up timers, manually changing the DOM, logging to the console—is called a <strong>side effect</strong>. The <code>useEffect</code> hook is your primary tool for managing these side effects. It provides a way to run code that interacts with the "outside world" without disrupting the rendering process.</p>
+<h2 id="discovery-phase-the-document-title-problem">Discovery Phase: The Document Title Problem</h2>
+<p>Let's say we want to update the browser tab's title to reflect the current count in a counter component. A naive attempt might be to do it directly in the component body.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">TitleChanger</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// This is a side effect. It modifies something outside the component (the browser tab title).</span>
+<span class="w">  </span><span class="nb">document</span><span class="p">.</span><span class="nx">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`Count is </span><span class="si">${</span><span class="nx">count</span><span class="si">}</span><span class="sb">`</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Check</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">browser</span><span class="w"> </span><span class="nx">tab</span><span class="w"> </span><span class="nx">title</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCount</span><span class="p">(</span><span class="nx">count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span><span class="nx">Increment</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This actually works, but it's not the "React way." Performing side effects directly during render is discouraged. In more complex cases, it can lead to inconsistencies, and in future versions of React, render functions may be run more than once before committing to the DOM.</p>
+<p>The correct way is to declare that your component has a side effect using the <code>useEffect</code> hook.</p>
+<h2 id="deep-dive-the-useeffect-hook">Deep Dive: The <code>useEffect</code> Hook</h2>
+<p>The <code>useEffect</code> hook takes two arguments: a setup function and an optional array of dependencies. For now, let's focus on the function.</p>
+<p><code>useEffect</code> tells React: "After you're done rendering this component and updating the DOM, run this function for me."</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">TitleChanger</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// 1. The function passed to useEffect is the &quot;effect&quot;.</span>
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// This code now runs _after_ the render, not during it.</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Effect is running!&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="nb">document</span><span class="p">.</span><span class="nx">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`Count is </span><span class="si">${</span><span class="nx">count</span><span class="si">}</span><span class="sb">`</span><span class="p">;</span>
+<span class="w">  </span><span class="p">});</span><span class="w"> </span><span class="c1">// 2. We&#39;ll discuss this empty array later. For now, it&#39;s omitted.</span>
+
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Component is rendering...&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Check</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">browser</span><span class="w"> </span><span class="nx">tab</span><span class="w"> </span><span class="nx">title</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCount</span><span class="p">(</span><span class="nx">count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span><span class="nx">Increment</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:</p>
+<ol>
+<li><strong>Initial Render</strong>: The console shows "Component is rendering...", then "Effect is running!". The title becomes "Count is 0".</li>
+<li><strong>Click Increment</strong>: The console shows "Component is rendering...", then "Effect is running!". The title becomes "Count is 1".</li>
+</ol>
+<p><strong>The flow is always</strong>:</p>
+<ol>
+<li>React renders your component.</li>
+<li>The browser screen is painted with the changes.</li>
+<li><code>useEffect</code> runs.</li>
+</ol>
+<p>By default, if you don't provide the second argument (the dependency array), the effect function will run <strong>after every single render</strong>. This is often not what you want, which leads us to the next section.</p>
+<h2 id="effect-dependencies">Effect Dependencies</h2>
+<h2 id="learning-objective_2">Learning Objective</h2>
+<p>Control when an effect re-runs by providing a dependency array.</p>
+<h2 id="why-this-matters_2">Why This Matters</h2>
+<p>Running an effect after every render can be inefficient or just plain wrong. Imagine an effect that fetches data from an API. You don't want to re-fetch that data every time a minor piece of state (like a checkbox) changes. The dependency array is the most important part of <code>useEffect</code>; it's how you tell React, "Only re-run this effect if these specific values have changed."</p>
+<h2 id="discovery-phase-the-over-eager-effect">Discovery Phase: The Over-Eager Effect</h2>
+<p>Let's build a component with two pieces of state. We want one effect to run only when one of the state variables changes.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">DependencyDemo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">text</span><span class="p">,</span><span class="w"> </span><span class="nx">setText</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// With no dependency array, this runs on every render.</span>
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span>
+<span class="w">      </span><span class="sb">`Effect is running because something re-rendered. Count is </span><span class="si">${</span><span class="nx">count</span><span class="si">}</span><span class="sb">.`</span><span class="p">,</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCount</span><span class="p">((</span><span class="nx">c</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">c</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span><span class="nx">Increment</span><span class="w"> </span><span class="nx">Count</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">hr</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">text</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setText</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Text</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">text</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:</p>
+<ul>
+<li>Click "Increment Count": The effect runs.</li>
+<li>Type in the input box: The effect runs again.</li>
+</ul>
+<p>The effect is running even when <code>count</code> hasn't changed. This is inefficient. We need to tell the effect to <em>depend on</em> <code>count</code>.</p>
+<h2 id="deep-dive-the-dependency-array">Deep Dive: The Dependency Array</h2>
+<p>The second argument to <code>useEffect</code> is the dependency array. It controls when the effect is re-executed.</p>
+<h3 id="pattern-1-empty-array-run-once-on-mount">Pattern 1: Empty Array <code>[]</code> - Run Once on Mount</h3>
+<p>If you provide an empty array, you are telling React that your effect has no dependencies on any props or state. Therefore, it should only run <strong>once</strong>, after the initial render (the "mount" phase).</p>
+<div class="codehilite"><pre><span></span><code><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// This code runs only once, after the component first mounts.</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Component has mounted!&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// This is the perfect place for initial data fetching.</span>
+<span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// Empty array = no dependencies</span>
+</code></pre></div>
+
+<h3 id="pattern-2-array-with-values-a-b-run-when-dependencies-change">Pattern 2: Array with Values <code>[a, b]</code> - Run When Dependencies Change</h3>
+<p>If you provide an array of values, React will re-run the effect only if one of those values has changed since the last render. React compares each value using <code>Object.is</code> comparison.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">DependencyDemo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">text</span><span class="p">,</span><span class="w"> </span><span class="nx">setText</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// This effect now _depends on_ `count`.</span>
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Effect is running because COUNT changed. New count: </span><span class="si">${</span><span class="nx">count</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">    </span><span class="nb">document</span><span class="p">.</span><span class="nx">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`Count is </span><span class="si">${</span><span class="nx">count</span><span class="si">}</span><span class="sb">`</span><span class="p">;</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">]);</span><span class="w"> </span><span class="c1">// Dependency array</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCount</span><span class="p">((</span><span class="nx">c</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">c</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span><span class="nx">Increment</span><span class="w"> </span><span class="nx">Count</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">hr</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">text</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setText</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>New Interactive Behavior</strong>:</p>
+<ul>
+<li>Click "Increment Count": The effect runs, and the log appears.</li>
+<li>Type in the input box: The component re-renders, but the effect <strong>does not</strong> run, because <code>count</code> hasn't changed.</li>
+</ul>
+<h3 id="common-confusion-the-exhaustive-deps-lint-rule">Common Confusion: The "Exhaustive Deps" Lint Rule</h3>
+<p>You will often see a lint warning: <code>React Hook useEffect has a missing dependency: 'someVariable'. Either include it or remove the dependency array.</code></p>
+<p><strong>You might think</strong>: This is an annoying warning I can ignore.</p>
+<p><strong>Actually</strong>: This is one of the most helpful linter rules in React. It's protecting you from a bug called a <strong>stale closure</strong>. If your effect <em>uses</em> a prop or state variable but doesn't <em>list it</em> as a dependency, the effect will "see" the initial value of that variable forever and will never get the updated value on subsequent runs.</p>
+<p><strong>How to remember</strong>: <strong>If you use a variable from your component inside your effect, you must include it in the dependency array.</strong> The linter is almost always right.</p>
+<h2 id="cleanup-functions">Cleanup Functions</h2>
+<h2 id="learning-objective_3">Learning Objective</h2>
+<p>Return a cleanup function from <code>useEffect</code> to clean up resources before the component unmounts or the effect re-runs.</p>
+<h2 id="why-this-matters_3">Why This Matters</h2>
+<p>Many side effects need to be "undone." If you set up a timer (<code>setInterval</code>), you need to clear it. If you subscribe to a data source, you need to unsubscribe. If you add a global event listener, you need to remove it. Failing to do so creates <strong>memory leaks</strong> and can cause your application to crash or behave unpredictably. The cleanup function is React's built-in, guaranteed way to handle this.</p>
+<h2 id="discovery-phase-the-leaky-timer">Discovery Phase: The Leaky Timer</h2>
+<p>Let's create a component that starts a timer when it mounts. We'll also add a button to unmount it conditionally.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">LeakyTimer</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">time</span><span class="p">,</span><span class="w"> </span><span class="nx">setTime</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Starting timer...&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">timerId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">setInterval</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// This will keep running even after the component is gone!</span>
+<span class="w">      </span><span class="nx">setTime</span><span class="p">((</span><span class="nx">t</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">t</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Tick&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="mf">1000</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// Runs once on mount</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Time</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">time</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">showTimer</span><span class="p">,</span><span class="w"> </span><span class="nx">setShowTimer</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setShowTimer</span><span class="p">(</span><span class="o">!</span><span class="nx">showTimer</span><span class="p">)}&gt;</span><span class="nx">Toggle</span><span class="w"> </span><span class="nx">Timer</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">showTimer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">LeakyTimer</span><span class="w"> </span><span class="p">/&gt;}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:</p>
+<ol>
+<li>The timer starts, and the count goes up. The console logs "Tick" every second.</li>
+<li>Click "Toggle Timer". The <code>LeakyTimer</code> component disappears from the screen.</li>
+<li><strong>Observe the console</strong>: It continues to log "Tick" every second! You'll also see a React warning: <code>Can't perform a React state update on an unmounted component.</code></li>
+</ol>
+<p>The <code>setInterval</code> is still running in the background, trying to update the state of a component that no longer exists. This is a classic memory leak.</p>
+<h2 id="deep-dive-the-cleanup-function">Deep Dive: The Cleanup Function</h2>
+<p>To fix this, you can return a function from your effect's setup function. React will execute this cleanup function at the appropriate time.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">CleanTimer</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">time</span><span class="p">,</span><span class="w"> </span><span class="nx">setTime</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Starting timer...&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">timerId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">setInterval</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">setTime</span><span class="p">((</span><span class="nx">t</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">t</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="mf">1000</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 1. Return a cleanup function from the effect.</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// 2. This function will be called when the component unmounts.</span>
+<span class="w">      </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Clearing timer...&quot;</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">clearInterval</span><span class="p">(</span><span class="nx">timerId</span><span class="p">);</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Time</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">time</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, when you toggle the timer off, you'll see "Clearing timer..." in the console, and the "Tick" logs will stop. The leak is fixed.</p>
+<h3 id="when-does-cleanup-run">When does cleanup run?</h3>
+<p>The cleanup function runs in two scenarios:</p>
+<ol>
+<li><strong>Before the component unmounts</strong>: This is what we saw in the timer example.</li>
+<li><strong>Before the effect re-runs</strong>: If your effect has dependencies and re-runs, the cleanup function from the <em>previous</em> render will run <em>before</em> the setup function for the <em>next</em> render.</li>
+</ol>
+<p>This second point is crucial for effects that subscribe to data.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">UserStatus</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Assume ChatAPI is an external library</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Subscribing to user </span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">ChatAPI</span><span class="p">.</span><span class="nx">subscribeToUserStatus</span><span class="p">(</span><span class="nx">userId</span><span class="p">,</span><span class="w"> </span><span class="nx">handleStatusChange</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// This cleanup runs when `userId` changes, BEFORE the next effect runs.</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Unsubscribing from user </span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">ChatAPI</span><span class="p">.</span><span class="nx">unsubscribeFromUserStatus</span><span class="p">(</span><span class="nx">userId</span><span class="p">,</span><span class="w"> </span><span class="nx">handleStatusChange</span><span class="p">);</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span><span class="w"> </span><span class="c1">// Effect depends on userId</span>
+
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>If <code>userId</code> changes from <code>1</code> to <code>2</code>, the flow is:</p>
+<ol>
+<li>Cleanup for <code>userId: 1</code> runs ("Unsubscribing from user 1").</li>
+<li>Setup for <code>userId: 2</code> runs ("Subscribing to user 2").</li>
+</ol>
+<p>This ensures you're never subscribed to two users at once.</p>
+<h2 id="data-fetching-with-useeffect">Data Fetching with useEffect</h2>
+<h2 id="learning-objective_4">Learning Objective</h2>
+<p>Combine <code>useState</code> and <code>useEffect</code> to fetch data from an API, handle loading and error states, and display the result.</p>
+<h2 id="why-this-matters_4">Why This Matters</h2>
+<p>This is arguably the most common use case for <code>useEffect</code>. Nearly every real-world application needs to fetch data from a server. Mastering this pattern is a fundamental skill for any React developer.</p>
+<h2 id="discovery-phase-the-data-fetching-state-machine">Discovery Phase: The Data Fetching State Machine</h2>
+<p>When fetching data, your component can be in several states:</p>
+<ol>
+<li><code>idle</code>: Before the fetch has started.</li>
+<li><code>loading</code>: The request has been sent, and we're waiting for a response.</li>
+<li><code>success</code>: We received the data successfully.</li>
+<li><code>error</code>: The request failed.</li>
+</ol>
+<p>We'll model this with state before we even write the effect.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">status</span><span class="p">,</span><span class="w"> </span><span class="nx">setStatus</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;idle&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="nx">setError</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Now we need an effect to actually fetch the data...</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;loading&quot;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;idle&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;error&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="ne">Error</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">error</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h2 id="deep-dive-the-complete-data-fetching-pattern">Deep Dive: The Complete Data Fetching Pattern</h2>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">status</span><span class="p">,</span><span class="w"> </span><span class="nx">setStatus</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;idle&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="nx">setError</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// We only want to fetch when the component mounts, or when userId changes.</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">userId</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Create an AbortController to handle cleanup.</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">controller</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">AbortController</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// It&#39;s a best practice to define the async function inside the effect.</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">fetchUserData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">setStatus</span><span class="p">(</span><span class="s2">&quot;loading&quot;</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">setUser</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">setError</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">      </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span>
+<span class="w">          </span><span class="sb">`https://jsonplaceholder.typicode.com/users/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">,</span>
+<span class="w">          </span><span class="p">{</span><span class="w"> </span><span class="nx">signal</span><span class="o">:</span><span class="w"> </span><span class="nx">controller</span><span class="p">.</span><span class="nx">signal</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="c1">// Pass the signal to fetch</span>
+<span class="w">        </span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">response</span><span class="p">.</span><span class="nx">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Network response was not ok&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">response</span><span class="p">.</span><span class="nx">json</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">setStatus</span><span class="p">(</span><span class="s2">&quot;success&quot;</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nx">name</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">&quot;AbortError&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nx">setError</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+<span class="w">          </span><span class="nx">setStatus</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="nx">fetchUserData</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// The cleanup function will run if the component unmounts</span>
+<span class="w">    </span><span class="c1">// or if `userId` changes before the fetch is complete.</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">controller</span><span class="p">.</span><span class="nx">abort</span><span class="p">();</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span><span class="w"> </span><span class="c1">// Re-fetch whenever userId changes.</span>
+
+<span class="w">  </span><span class="c1">// ... rendering logic from above ...</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;loading&quot;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;idle&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">{</span><span class="nx">userId</span><span class="p">}...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;error&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="ne">Error</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">error</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span><span class="w"> </span><span class="p">({</span><span class="nx">user</span><span class="p">.</span><span class="nx">username</span><span class="p">})</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="common-confusion-async-effects">Common Confusion: <code>async</code> Effects</h3>
+<p><strong>You might think</strong>: I can just make my effect function <code>async</code>. <code>useEffect(async () =&gt; { ... })</code>.</p>
+<p><strong>Actually</strong>: This is not allowed. The function passed to <code>useEffect</code> can only return <code>undefined</code> or a cleanup function. <code>async</code> functions implicitly return a <code>Promise</code>. React would see this <code>Promise</code> and think it's a cleanup function, which would cause an error.</p>
+<p><strong>How to remember</strong>: The pattern is always to <strong>define an <code>async</code> function inside your effect, and then call it immediately.</strong></p>
+<p>The <code>AbortController</code> is an advanced but important pattern. It prevents a race condition where a component unmounts, but a slow network request finishes later and tries to set state, causing a memory leak warning.</p>
+<h2 id="ref-cleanup-functions">🆕 Ref Cleanup Functions</h2>
+<h2 id="learning-objective_5">Learning Objective</h2>
+<p>Use the new <code>ref</code> cleanup function feature in React 19 to manage resources tied directly to a DOM node.</p>
+<h2 id="why-this-matters_5">Why This Matters</h2>
+<p>This new feature in React 19 provides a more direct and often safer way to manage side effects that are specifically tied to a DOM element. Instead of coordinating a <code>ref</code> and an <code>useEffect</code>, you can co-locate the setup and cleanup logic right where you define the <code>ref</code>. This makes the code more readable and less prone to bugs.</p>
+<h2 id="discovery-phase-the-old-way-with-useeffect">Discovery Phase: The Old Way with <code>useEffect</code></h2>
+<p>Imagine you want to use a third-party JavaScript library (like a video player or a map) that needs to be initialized on a specific <code>&lt;div&gt;</code>. The traditional way to do this involves <code>useRef</code> to get the DOM node and <code>useEffect</code> to run the initialization logic.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// The pre-React 19 way</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useRef</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createMapWidget</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./map-widget-library&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Fictional library</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">OldMapComponent</span><span class="p">({</span><span class="w"> </span><span class="nx">location</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">mapContainerRef</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Ensure the DOM node exists before initializing</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">mapContainerRef</span><span class="p">.</span><span class="nx">current</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kd">const</span><span class="w"> </span><span class="nx">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createMapWidget</span><span class="p">(</span><span class="nx">mapContainerRef</span><span class="p">.</span><span class="nx">current</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">map</span><span class="p">.</span><span class="nx">panTo</span><span class="p">(</span><span class="nx">location</span><span class="p">);</span>
+
+<span class="w">      </span><span class="c1">// We need a cleanup function to destroy the map instance</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">map</span><span class="p">.</span><span class="nx">destroy</span><span class="p">();</span>
+<span class="w">      </span><span class="p">};</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">location</span><span class="p">]);</span><span class="w"> </span><span class="c1">// This has a subtle bug: it re-creates the map on every location change.</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">mapContainerRef</span><span class="p">}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">400</span><span class="p">,</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="mf">300</span><span class="w"> </span><span class="p">}}</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This works, but the logic is split. The <code>ref</code> is defined in one place, and the effect that uses it is in another. It's also easy to write bugs, like re-initializing the entire map every time the location changes, instead of just updating it.</p>
+<h2 id="deep-dive-the-ref-cleanup-function">Deep Dive: The Ref Cleanup Function</h2>
+<p>React 19 allows the function you pass to a <code>ref</code> prop to return a cleanup function. This function will be called when the element is removed from the DOM.</p>
+<p><strong>The logic is</strong>: The <code>ref</code> callback runs when the element is mounted. The function it returns runs when the element is unmounted.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// The modern React 19 way</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createMapWidget</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./map-widget-library&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">NewMapComponent</span><span class="p">({</span><span class="w"> </span><span class="nx">location</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// We don&#39;t even need `useRef` or `useEffect` for this pattern!</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">setupMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">domNode</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// The setup logic runs when the `div` is mounted and `domNode` is available.</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">domNode</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kd">const</span><span class="w"> </span><span class="nx">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createMapWidget</span><span class="p">(</span><span class="nx">domNode</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">map</span><span class="p">.</span><span class="nx">panTo</span><span class="p">(</span><span class="nx">location</span><span class="p">);</span><span class="w"> </span><span class="c1">// We&#39;d need a separate effect to handle location updates.</span>
+
+<span class="w">      </span><span class="c1">// Return the cleanup function. It will be called when the `div` is unmounted.</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">map</span><span class="p">.</span><span class="nx">destroy</span><span class="p">();</span>
+<span class="w">      </span><span class="p">};</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">setupMap</span><span class="p">}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">400</span><span class="p">,</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="mf">300</span><span class="w"> </span><span class="p">}}</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is much cleaner for one-time setup and cleanup. The logic for managing the lifecycle of the map widget is now self-contained within the <code>setupMap</code> function, which is directly tied to the DOM element it controls.</p>
+<h3 id="production-perspective">Production Perspective</h3>
+<p>When should you use this new pattern?</p>
+<ul>
+<li><strong>Ideal for</strong>: Integrating non-React libraries that need to attach to a DOM node (e.g., D3 charts, mapping libraries, video players). It's perfect for setup that should happen exactly once when the element is created and cleanup that should happen exactly once when it's destroyed.</li>
+<li><strong>Stick with <code>useEffect</code> for</strong>: Effects that need to react to changes in props or state over time (like our data fetching example that re-runs when <code>userId</code> changes). While you could combine a <code>ref</code> cleanup with <code>useEffect</code>, for pure data-driven effects, <code>useEffect</code> remains the primary tool.</li>
+</ul>
+<h2 id="common-effect-patterns">Common Effect Patterns</h2>
+<h2 id="learning-objective_6">Learning Objective</h2>
+<p>Recognize and implement common <code>useEffect</code> patterns beyond data fetching, such as subscriptions and syncing with browser APIs.</p>
+<h2 id="why-this-matters_6">Why This Matters</h2>
+<p><code>useEffect</code> is a general-purpose tool for synchronizing your component with the outside world. Seeing it applied to a variety of problems will build your intuition and equip you to handle any side effect you might encounter.</p>
+<h2 id="deep-dive-three-more-patterns">Deep Dive: Three More Patterns</h2>
+<h3 id="pattern-1-subscribing-to-an-external-store">Pattern 1: Subscribing to an External Store</h3>
+<p>Many applications have a central "store" or service that components can subscribe to for updates. <code>useEffect</code> is the perfect place to manage the subscription lifecycle.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">chatService</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./chat-service&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Fictional service</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">ChatRoom</span><span class="p">({</span><span class="w"> </span><span class="nx">roomId</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">messages</span><span class="p">,</span><span class="w"> </span><span class="nx">setMessages</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">([]);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Setup: Subscribe when the component mounts or roomId changes.</span>
+<span class="w">    </span><span class="nx">chatService</span><span class="p">.</span><span class="nx">subscribe</span><span class="p">(</span><span class="nx">roomId</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">newMessages</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">setMessages</span><span class="p">(</span><span class="nx">newMessages</span><span class="p">);</span>
+<span class="w">    </span><span class="p">});</span>
+
+<span class="w">    </span><span class="c1">// Cleanup: Unsubscribe when the component unmounts or roomId changes.</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">chatService</span><span class="p">.</span><span class="nx">unsubscribe</span><span class="p">(</span><span class="nx">roomId</span><span class="p">);</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">roomId</span><span class="p">]);</span><span class="w"> </span><span class="c1">// The effect depends on the roomId.</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">messages</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">msg</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">msg</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;{</span><span class="nx">msg</span><span class="p">.</span><span class="nx">text</span><span class="p">}&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">))}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="pattern-2-syncing-with-localstorage">Pattern 2: Syncing with <code>localStorage</code></h3>
+<p>You can use <code>useEffect</code> to persist a component's state to the browser's <code>localStorage</code> and retrieve it on the initial mount.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">PersistentCounter</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// 1. Lazy initialize state from localStorage.</span>
+<span class="w">  </span><span class="c1">// The function passed to useState only runs once on the initial render.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">savedCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">localStorage</span><span class="p">.</span><span class="nx">getItem</span><span class="p">(</span><span class="s2">&quot;my-counter&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">savedCount</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="kc">null</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nb">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">savedCount</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="c1">// 2. This effect runs whenever `count` changes, saving it to localStorage.</span>
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">localStorage</span><span class="p">.</span><span class="nx">setItem</span><span class="p">(</span><span class="s2">&quot;my-counter&quot;</span><span class="p">,</span><span class="w"> </span><span class="nb">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">count</span><span class="p">));</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCount</span><span class="p">(</span><span class="nx">count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="pattern-3-responding-to-browser-events">Pattern 3: Responding to Browser Events</h3>
+<p>Sometimes you need to listen to global events on the <code>window</code> or <code>document</code> object.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">MousePositionTracker</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">position</span><span class="p">,</span><span class="w"> </span><span class="nx">setPosition</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">({</span><span class="w"> </span><span class="nx">x</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleMouseMove</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">setPosition</span><span class="p">({</span><span class="w"> </span><span class="nx">x</span><span class="o">:</span><span class="w"> </span><span class="nx">e</span><span class="p">.</span><span class="nx">clientX</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="o">:</span><span class="w"> </span><span class="nx">e</span><span class="p">.</span><span class="nx">clientY</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// Setup: Add the event listener on mount.</span>
+<span class="w">    </span><span class="nb">window</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s2">&quot;mousemove&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">handleMouseMove</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Cleanup: Remove the event listener on unmount.</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nb">window</span><span class="p">.</span><span class="nx">removeEventListener</span><span class="p">(</span><span class="s2">&quot;mousemove&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">handleMouseMove</span><span class="p">);</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// Empty array means this setup/cleanup only happens once.</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="nx">Mouse</span><span class="w"> </span><span class="nx">position</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">position</span><span class="p">.</span><span class="nx">x</span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="nx">position</span><span class="p">.</span><span class="nx">y</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>In all these patterns, the core idea is the same: the setup function connects our component to an external system, and the cleanup function disconnects it. The dependency array ensures the connection is refreshed only when necessary.</p>
+<h2 id="uselayouteffect-vs-useeffect">useLayoutEffect vs useEffect</h2>
+<h2 id="learning-objective_7">Learning Objective</h2>
+<p>Differentiate between <code>useEffect</code> and <code>useLayoutEffect</code> and know when to use the latter to prevent visual flickering.</p>
+<h2 id="why-this-matters_7">Why This Matters</h2>
+<p>This is an advanced topic, but understanding it demonstrates a deep knowledge of React's rendering process. 99% of the time, <code>useEffect</code> is the correct choice. But for that rare 1% of cases where you need to measure the DOM and then synchronously change it, <code>useLayoutEffect</code> is the tool that prevents a jarring user experience.</p>
+<h2 id="discovery-phase-the-flickering-tooltip">Discovery Phase: The Flickering Tooltip</h2>
+<p>Imagine we're building a tooltip that needs to position itself above a button. We can't know the tooltip's height until <em>after</em> it has been rendered. A common approach is to render it, then use an effect to measure it and adjust its position.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useRef</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">Tooltip</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">tooltipHeight</span><span class="p">,</span><span class="w"> </span><span class="nx">setTooltipHeight</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// This effect runs AFTER the browser has painted.</span>
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">ref</span><span class="p">.</span><span class="nx">current</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// This causes a re-render, which can cause a flicker.</span>
+<span class="w">      </span><span class="nx">setTooltipHeight</span><span class="p">(</span><span class="nx">ref</span><span class="p">.</span><span class="nx">current</span><span class="p">.</span><span class="nx">offsetHeight</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">topPosition</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="p">(</span><span class="nx">tooltipHeight</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">5</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">ref</span><span class="p">}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">position</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;absolute&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">top</span><span class="o">:</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">topPosition</span><span class="si">}</span><span class="sb">px`</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="nx">My</span><span class="w"> </span><span class="nx">Tooltip</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>The flicker problem</strong>:</p>
+<ol>
+<li><strong>Render 1</strong>: The component renders with <code>tooltipHeight = 0</code>. The tooltip appears in the wrong position (likely overlapping the button).</li>
+<li><strong>Browser Paint</strong>: The user sees the incorrectly positioned tooltip for a split second.</li>
+<li><strong><code>useEffect</code> runs</strong>: It measures the height and calls <code>setTooltipHeight</code>.</li>
+<li><strong>Render 2</strong>: The component re-renders with the correct height, and the tooltip "jumps" into the correct position.</li>
+</ol>
+<p>This jump is the flicker.</p>
+<h2 id="deep-dive-useeffect-vs-uselayouteffect">Deep Dive: <code>useEffect</code> vs. <code>useLayoutEffect</code></h2>
+<p>The only difference between them is <strong>timing</strong>.</p>
+<ul>
+<li>
+<p><strong><code>useEffect</code></strong>: Runs <strong>asynchronously</strong> after render and after the browser has painted the screen. It does <strong>not</strong> block the browser from painting. This is good for performance.</p>
+</li>
+<li>
+<p><strong><code>useLayoutEffect</code></strong>: Runs <strong>synchronously</strong> after React has performed all DOM mutations but <strong>before</strong> the browser has painted the screen. It <strong>does</strong> block painting.</p>
+</li>
+</ul>
+<p>Let's fix our tooltip.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useRef</span><span class="p">,</span><span class="w"> </span><span class="nx">useLayoutEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">Tooltip</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// We can even do the measurement and positioning directly inside the effect.</span>
+
+<span class="w">  </span><span class="nx">useLayoutEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">ref</span><span class="p">.</span><span class="nx">current</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">offsetHeight</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">ref</span><span class="p">.</span><span class="nx">current</span><span class="p">;</span>
+<span class="w">      </span><span class="c1">// Directly mutate the style. This is a valid use case inside useLayoutEffect.</span>
+<span class="w">      </span><span class="nx">ref</span><span class="p">.</span><span class="nx">current</span><span class="p">.</span><span class="nx">style</span><span class="p">.</span><span class="nx">top</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`-</span><span class="si">${</span><span class="nx">offsetHeight</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">5</span><span class="si">}</span><span class="sb">px`</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// Runs once, before the user sees the first paint.</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">ref</span><span class="p">}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">position</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;absolute&quot;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="nx">My</span><span class="w"> </span><span class="nx">Tooltip</span><span class="w"> </span><span class="p">(</span><span class="nx">No</span><span class="w"> </span><span class="nx">Flicker</span><span class="o">!</span><span class="p">)</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>The synchronous flow</strong>:</p>
+<ol>
+<li><strong>Render 1</strong>: The component renders the tooltip at its initial position.</li>
+<li><strong><code>useLayoutEffect</code> runs</strong>: It measures the height and immediately updates the <code>top</code> style of the DOM node.</li>
+<li><strong>Browser Paint</strong>: The browser paints the screen. The user only ever sees the correctly positioned tooltip. The flicker is gone.</li>
+</ol>
+<h3 id="production-perspective_1">Production Perspective</h3>
+<p><strong>Rule of thumb</strong>: Always start with <code>useEffect</code>. If you notice a visual flicker caused by an effect that measures the DOM, try switching to <code>useLayoutEffect</code>. Because it's synchronous and blocks painting, it should be used sparingly. Overusing it can make your application feel sluggish.</p>
+<h2 id="avoiding-common-pitfalls">Avoiding Common Pitfalls</h2>
+<h2 id="learning-objective_8">Learning Objective</h2>
+<p>Identify and fix common <code>useEffect</code> pitfalls like infinite loops and stale closures.</p>
+<h2 id="why-this-matters_8">Why This Matters</h2>
+<p><code>useEffect</code> is incredibly powerful, but its flexibility can also lead to some of the most common and frustrating bugs in React. Learning to recognize these anti-patterns will save you hours of debugging and help you write more robust and predictable components.</p>
+<h2 id="deep-dive-two-notorious-pitfalls">Deep Dive: Two Notorious Pitfalls</h2>
+<h3 id="pitfall-1-the-infinite-loop">Pitfall 1: The Infinite Loop</h3>
+<p>This happens when an effect updates a state variable that is also in its own dependency array, causing it to run again, and again, and again.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">InfiniteFetcher</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">data</span><span class="p">,</span><span class="w"> </span><span class="nx">setData</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">options</span><span class="p">,</span><span class="w"> </span><span class="nx">setOptions</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">({</span><span class="w"> </span><span class="nx">enabled</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// This effect depends on `options`, which is an object.</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Fetching data...&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// fetch(&#39;/api/data&#39;, options).then(res =&gt; res.json()).then(setData);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">options</span><span class="p">]);</span><span class="w"> </span><span class="c1">// 🛑 THE PROBLEM IS HERE</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleClick</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// This creates a NEW options object every time, even if the content is the same.</span>
+<span class="w">    </span><span class="nx">setOptions</span><span class="p">({</span><span class="w"> </span><span class="nx">enabled</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleClick</span><span class="p">}&gt;</span><span class="nx">Refetch</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>The Bug</strong>: In JavaScript, <code>{}</code> is not equal to <code>{}</code>. Every time the component renders, a new <code>options</code> object is created. The <code>useEffect</code> sees that the <code>options</code> object from the last render is not the same as the <code>options</code> object from the current render (they have different references), so it runs the effect again. If the effect itself sets state in a way that causes a re-render, you get an infinite loop.</p>
+<p><strong>The Fixes</strong>:</p>
+<ol>
+<li><strong>Depend on primitives</strong>: If possible, depend on primitive values inside the object, not the object itself. <code>useEffect(..., [options.enabled])</code>.</li>
+<li><strong>Memoize the object</strong>: Use the <code>useMemo</code> hook (covered in Chapter 6) to ensure the <code>options</code> object only gets re-created when its contents actually change.</li>
+</ol>
+<h3 id="pitfall-2-the-stale-closure">Pitfall 2: The Stale Closure</h3>
+<p>This happens when an effect "closes over" a state variable from the initial render but doesn't list it as a dependency. The effect's callback will forever see the old value of that variable.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">StaleCounter</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">intervalId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">setInterval</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// This callback &quot;closes over&quot; the `count` from the initial render, which is 0.</span>
+<span class="w">      </span><span class="c1">// It will always see `count` as 0.</span>
+<span class="w">      </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Ticking... count is </span><span class="si">${</span><span class="nx">count</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">      </span><span class="c1">// So this is effectively `setCount(0 + 1)` every time.</span>
+<span class="w">      </span><span class="nx">setCount</span><span class="p">(</span><span class="nx">count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="mf">1000</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">clearInterval</span><span class="p">(</span><span class="nx">intervalId</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// 🛑 We didn&#39;t list `count` as a dependency.</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>The Bug</strong>: The counter will go from 0 to 1, and then get stuck at 1 forever. The <code>setInterval</code> callback is a closure that captured the <code>count</code> variable when it was <code>0</code>. It never gets the updated value.</p>
+<p><strong>The Fixes</strong>:</p>
+<ol>
+<li><strong>The Linter's Suggestion</strong>: Add <code>count</code> to the dependency array. This works, but it means the interval will be cleared and re-created every single second, which is inefficient.</li>
+<li><strong>The Best Fix</strong>: Use the functional update form of the state setter. It receives the latest state, so you don't need to depend on it.</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1">// The Corrected Version</span>
+<span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">intervalId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">setInterval</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Ticking...&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// The updater function always gets the current state.</span>
+<span class="w">    </span><span class="nx">setCount</span><span class="p">((</span><span class="nx">currentCount</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">currentCount</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="mf">1000</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">clearInterval</span><span class="p">(</span><span class="nx">intervalId</span><span class="p">);</span>
+<span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// Now we don&#39;t need `count` in the dependency array.</span>
+</code></pre></div>
+
+<h2 id="module-synthesis">Module Synthesis 📋</h2>
+<h2 id="module-5-synthesis">Module 5 Synthesis</h2>
+<p>In this module, we explored the lifecycle of a React component and learned how to manage side effects using the powerful <code>useEffect</code> hook. We started by understanding the three core phases of a component's life: <strong>mounting</strong>, <strong>updating</strong>, and <strong>unmounting</strong>. This provided the "why" for needing a tool to run code at specific moments.</p>
+<p>We introduced <strong><code>useEffect</code></strong> as the primary hook for synchronizing our components with the outside world. We saw how the <strong>dependency array</strong> is the key to controlling its behavior: an empty array <code>[]</code> for running once on mount, and an array with values <code>[dep]</code> for re-running only when those values change.</p>
+<p>We learned the critical importance of the <strong>cleanup function</strong>, which allows us to prevent memory leaks by "undoing" our effects, whether that's clearing a timer, unsubscribing from a service, or removing an event listener. We then applied these concepts to the most common use case: building a robust <strong>data fetching</strong> component that handles loading and error states.</p>
+<p>We also looked at the new React 19 feature of <strong><code>ref</code> cleanup functions</strong>, a more direct way to manage effects tied to a specific DOM node. Finally, we armed ourselves against common bugs by identifying and fixing pitfalls like infinite loops and stale closures.</p>
+<h2 id="looking-ahead-to-chapter-6">Looking Ahead to Chapter 6</h2>
+<p>Our components are now fully capable of managing their own state and interacting with external systems. But what happens when state logic becomes very complex? Or when we want to read data in a more declarative way without the boilerplate of <code>useEffect</code>?</p>
+<p>In the next chapter, <strong>Advanced Hooks and the New <code>use</code> API</strong>, we will level up our skills. We'll introduce <code>useReducer</code> for managing complex state transitions, <code>useContext</code> for sharing state without prop drilling, and the revolutionary new <code>use</code> hook in React 19 for reading promises and context, which will dramatically simplify our data fetching and conditional logic.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-10-25 16:27:47 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

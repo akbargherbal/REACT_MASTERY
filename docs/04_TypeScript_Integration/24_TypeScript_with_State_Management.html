@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>24_TypeScript_with_State_Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">04_TypeScript_Integration</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-24-typescript-with-state-management">Chapter 24: TypeScript with State Management</h1>
+<h2 id="typing-redux-with-typescript">Typing Redux with TypeScript</h2>
+<h2 id="learning-objective">Learning Objective</h2>
+<p>Understand the basic setup for using Redux with TypeScript, focusing on defining a typed <code>RootState</code> and <code>AppDispatch</code> to enable type-safe state selection and action dispatching.</p>
+<h2 id="why-this-matters">Why This Matters</h2>
+<p>Redux provides a powerful and predictable state container, but in its original JavaScript form, it's easy to dispatch misspelled actions or select data that doesn't exist, leading to runtime errors. TypeScript transforms Redux from a flexible container into a robust, type-safe state machine, catching these errors at compile time. This section covers the foundational types that make this safety possible.</p>
+<h2 id="discovery-phase">Discovery Phase</h2>
+<p>Let's imagine a classic Redux setup for a counter. In plain JavaScript, you might have a reducer like this:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Plain JavaScript Redux (conceptual)</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">initialState</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="p">};</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">counterReducer</span><span class="p">(</span><span class="nx">state</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">initialState</span><span class="p">,</span><span class="w"> </span><span class="nx">action</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">type</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;counter/increment&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">state</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>The problems here are numerous:</p>
+<ul>
+<li>What if you dispatch <code>{ type: 'counter/incremennt' }</code>? Redux won't complain; your state simply won't update.</li>
+<li>What if another developer tries to access <code>state.count</code> instead of <code>state.value</code>? This will result in <code>undefined</code> at runtime.</li>
+</ul>
+<p>TypeScript solves this by creating two central types that represent the "shape" of your entire Redux store.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: store.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createStore</span><span class="p">,</span><span class="w"> </span><span class="nx">combineReducers</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;redux&#39;</span><span class="p">;</span>
+
+<span class="c1">// --- Reducer 1: Counter ---</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">counterInitialState</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="p">};</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">counterReducer</span><span class="p">(</span><span class="nx">state</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">counterInitialState</span><span class="p">,</span><span class="w"> </span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="nx">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">type</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;counter/increment&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">state</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// --- Root Reducer ---</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">rootReducer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">combineReducers</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">counter</span><span class="o">:</span><span class="w"> </span><span class="nx">counterReducer</span><span class="p">,</span>
+<span class="w">  </span><span class="c1">// ... other reducers would go here</span>
+<span class="p">});</span>
+
+<span class="c1">// --- Store ---</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createStore</span><span class="p">(</span><span class="nx">rootReducer</span><span class="p">);</span>
+
+<span class="c1">// Step 1: Infer the `RootState` type from the store itself.</span>
+<span class="c1">// This type represents the entire shape of your Redux state tree.</span>
+<span class="k">export</span><span class="w"> </span><span class="nx">type</span><span class="w"> </span><span class="nx">RootState</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">ReturnType</span><span class="o">&lt;</span><span class="ow">typeof</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">getState</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="c1">// Step 2: Infer the `AppDispatch` type.</span>
+<span class="c1">// This gives us a dispatch type that knows about all possible actions,</span>
+<span class="c1">// especially when using middleware like Thunk.</span>
+<span class="k">export</span><span class="w"> </span><span class="nx">type</span><span class="w"> </span><span class="nx">AppDispatch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">typeof</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">;</span>
+</code></pre></div>
+
+<p>This is the fundamental setup. We've created a Redux store and then, instead of manually writing out the shape of our state, we've asked TypeScript to infer it for us.</p>
+<ul>
+<li><code>ReturnType&lt;typeof store.getState&gt;</code>: This is a TypeScript utility that says, "Look at the <code>store.getState</code> function and figure out what type it returns." The result is <code>{ counter: { value: number } }</code>.</li>
+<li><code>typeof store.dispatch</code>: This infers the type of the <code>dispatch</code> function.</li>
+</ul>
+<p>These two types, <code>RootState</code> and <code>AppDispatch</code>, are the keys to everything else.</p>
+<h2 id="deep-dive">Deep Dive</h2>
+<h3 id="creating-typed-hooks">Creating Typed Hooks</h3>
+<p>With <code>RootState</code> and <code>AppDispatch</code> defined, we can create pre-typed versions of React-Redux's <code>useSelector</code> and <code>useDispatch</code> hooks. This is a standard pattern that you should set up in every Redux + TypeScript project.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: hooks.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">TypedUseSelectorHook</span><span class="p">,</span><span class="w"> </span><span class="nx">useDispatch</span><span class="p">,</span><span class="w"> </span><span class="nx">useSelector</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-redux&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">type</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">RootState</span><span class="p">,</span><span class="w"> </span><span class="nx">AppDispatch</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./store&#39;</span><span class="p">;</span>
+
+<span class="c1">// Create a pre-typed `useDispatch` hook.</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">useAppDispatch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">useDispatch</span><span class="o">&lt;</span><span class="nx">AppDispatch</span><span class="o">&gt;</span><span class="p">();</span>
+
+<span class="c1">// Create a pre-typed `useSelector` hook.</span>
+<span class="c1">// This saves you from typing `(state: RootState)` every time.</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">useAppSelector</span><span class="o">:</span><span class="w"> </span><span class="nx">TypedUseSelectorHook</span><span class="o">&lt;</span><span class="nx">RootState</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useSelector</span><span class="p">;</span>
+</code></pre></div>
+
+<p>Now, let's use these hooks in a component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: Counter.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useAppSelector</span><span class="p">,</span><span class="w"> </span><span class="nx">useAppDispatch</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./hooks&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">Counter</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// `useAppSelector` already knows the shape of the state.</span>
+<span class="w">  </span><span class="c1">// The `state` parameter here is automatically typed as `RootState`.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useAppSelector</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">counter</span><span class="p">.</span><span class="nx">value</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">dispatch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useAppDispatch</span><span class="p">();</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* We can dispatch actions. In this basic setup, the action</span>
+<span class="cm">          object itself isn&#39;t fully typed yet. Redux Toolkit will fix this. */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">({</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;counter/increment&quot;</span><span class="w"> </span><span class="p">})}&gt;</span>
+<span class="w">        </span><span class="nx">Increment</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>By using our custom <code>useAppSelector</code> hook, we get autocompletion when we type <code>state.</code>, and TypeScript will give us an error if we try to access a non-existent property like <code>state.counter.count</code>.</p>
+<h3 id="common-confusion-do-i-have-to-type-every-single-action-and-reducer-by-hand">Common Confusion: "Do I have to type every single action and reducer by hand?"</h3>
+<p><strong>You might think</strong>: "This seems like a lot of manual work to define every possible action object and make the reducer understand it."</p>
+<p><strong>Actually</strong>: Yes, in the "classic" Redux style, it was a major pain point. You had to manually create action type constants, action creator functions, and complex discriminated unions for your action types.</p>
+<p><strong>Why the confusion happens</strong>: This historical baggage is present in many older tutorials and codebases.</p>
+<p><strong>How to remember</strong>: The manual setup shown here is the "old way." It's important to understand the core types (<code>RootState</code>, <code>AppDispatch</code>), but in modern development, <strong>Redux Toolkit</strong> automates all of this for you, as we'll see in the very next section.</p>
+<h2 id="redux-toolkit-type-safety">Redux Toolkit Type Safety</h2>
+<h2 id="learning-objective_1">Learning Objective</h2>
+<p>Use Redux Toolkit's <code>configureStore</code>, <code>createSlice</code>, and typed hooks to create a fully type-safe Redux store with minimal boilerplate.</p>
+<h2 id="why-this-matters_1">Why This Matters</h2>
+<p>Redux Toolkit (RTK) is the official, recommended way to write Redux applications. It was designed from the ground up for a best-in-class TypeScript experience, eliminating almost all of the manual typing that was required with "classic" Redux. Mastering RTK is mastering modern Redux.</p>
+<h2 id="discovery-phase_1">Discovery Phase</h2>
+<p>Let's rebuild our counter example using the power of <code>createSlice</code> from Redux Toolkit.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: features/counter/counterSlice.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createSlice</span><span class="p">,</span><span class="w"> </span><span class="nx">PayloadAction</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@reduxjs/toolkit&#39;</span><span class="p">;</span>
+
+<span class="c1">// Define the shape of this slice&#39;s state.</span>
+<span class="kr">interface</span><span class="w"> </span><span class="nx">CounterState</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="nx">number</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">initialState</span><span class="o">:</span><span class="w"> </span><span class="nx">CounterState</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">counterSlice</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createSlice</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;counter&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">initialState</span><span class="p">,</span>
+<span class="w">  </span><span class="c1">// The `reducers` field lets us define reducers and generate associated actions.</span>
+<span class="w">  </span><span class="nx">reducers</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">increment</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// Redux Toolkit uses Immer internally, so we can &quot;mutate&quot; the state here.</span>
+<span class="w">      </span><span class="nx">state</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mf">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nx">decrement</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">state</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="mf">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="c1">// Use the `PayloadAction` type to declare the contents of `action.payload`.</span>
+<span class="w">    </span><span class="nx">incrementByAmount</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="nx">PayloadAction</span><span class="o">&lt;</span><span class="nx">number</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">state</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">payload</span><span class="p">;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">});</span>
+
+<span class="c1">// `createSlice` automatically generates action creators for each case reducer function.</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">increment</span><span class="p">,</span><span class="w"> </span><span class="nx">decrement</span><span class="p">,</span><span class="w"> </span><span class="nx">incrementByAmount</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">counterSlice</span><span class="p">.</span><span class="nx">actions</span><span class="p">;</span>
+
+<span class="c1">// We export the reducer function to be added to the store.</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">counterSlice</span><span class="p">.</span><span class="nx">reducer</span><span class="p">;</span>
+</code></pre></div>
+
+<p>This one <code>createSlice</code> call does an incredible amount of work for us:</p>
+<ul>
+<li>It defines the reducer logic.</li>
+<li>It generates action creator functions (<code>increment()</code>, <code>decrement()</code>, etc.) that are fully typed.</li>
+<li>It generates the action type strings (<code>'counter/increment'</code>) internally.</li>
+<li>It provides strong types for the <code>state</code> and <code>action</code> within the reducer functions.</li>
+</ul>
+<p>Now, let's set up the store.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: app/store.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">configureStore</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@reduxjs/toolkit&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">counterReducer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../features/counter/counterSlice&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">configureStore</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">reducer</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">counter</span><span class="o">:</span><span class="w"> </span><span class="nx">counterReducer</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">});</span>
+
+<span class="c1">// Infer `RootState` and `AppDispatch` types from the store itself, just like before.</span>
+<span class="c1">// But now, they are much more powerful because they are derived from the slices.</span>
+<span class="k">export</span><span class="w"> </span><span class="nx">type</span><span class="w"> </span><span class="nx">RootState</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">ReturnType</span><span class="o">&lt;</span><span class="ow">typeof</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">getState</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="k">export</span><span class="w"> </span><span class="nx">type</span><span class="w"> </span><span class="nx">AppDispatch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">typeof</span><span class="w"> </span><span class="nx">store</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">;</span>
+</code></pre></div>
+
+<p>The store setup is almost identical, but the inferred types are now much richer. <code>AppDispatch</code> knows about the specific action creators generated by our slice.</p>
+<h2 id="deep-dive_1">Deep Dive</h2>
+<h3 id="using-the-typed-store-in-a-component">Using the Typed Store in a Component</h3>
+<p>With the store and slice defined, using it in a component with our typed hooks is clean and safe.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: features/counter/Counter.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useAppSelector</span><span class="p">,</span><span class="w"> </span><span class="nx">useAppDispatch</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;../../app/hooks&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Using the same typed hooks from 24.1</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">increment</span><span class="p">,</span><span class="w"> </span><span class="nx">decrement</span><span class="p">,</span><span class="w"> </span><span class="nx">incrementByAmount</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./counterSlice&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Counter</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// The `state` is correctly typed as `RootState`.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useAppSelector</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">counter</span><span class="p">.</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">dispatch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useAppDispatch</span><span class="p">();</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">increment</span><span class="p">())}&gt;</span><span class="nx">Increment</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">decrement</span><span class="p">())}&gt;</span><span class="nx">Decrement</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* The `incrementByAmount` action creator requires a number.</span>
+<span class="cm">          Passing a string would be a compile-time error! */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">incrementByAmount</span><span class="p">(</span><span class="mf">5</span><span class="p">))}&gt;</span><span class="nx">Add</span><span class="w"> </span><span class="mf">5</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is the complete, modern pattern. Notice how we import the <code>increment</code> action creator and simply call <code>dispatch(increment())</code>. The action object <code>{ type: 'counter/increment', payload: undefined }</code> is created for us by the action creator, and <code>dispatch</code> knows it's a valid action.</p>
+<h3 id="common-confusion-where-are-my-action-type-constants">Common Confusion: "Where are my action type constants?"</h3>
+<p><strong>You might think</strong>: "I need to define <code>const INCREMENT = 'INCREMENT'</code> and use it in my reducer and components."</p>
+<p><strong>Actually</strong>: Redux Toolkit handles this for you. The <code>createSlice</code> function generates action types like <code>'counter/increment'</code> based on the slice <code>name</code> and the reducer key. You almost never need to reference these string constants directly. You interact with the generated action creators instead.</p>
+<p><strong>Why the confusion happens</strong>: This was a core part of the original Redux "ducks" pattern.</p>
+<p><strong>How to remember</strong>: With RTK, you work with <strong>action creators</strong> (functions), not <strong>action types</strong> (strings).</p>
+<h3 id="production-perspective">Production Perspective</h3>
+<ul>
+<li><strong>The Standard for Redux</strong>: Redux Toolkit is the non-negotiable standard for any new Redux project. Its TypeScript integration, especially for async logic with <code>createAsyncThunk</code>, is a primary reason for its success.</li>
+<li><strong>Code Organization</strong>: The "slice" pattern encourages you to organize your Redux logic by feature. A typical <code>features/users</code> directory might contain <code>usersSlice.ts</code>, <code>UsersList.tsx</code>, and <code>api/usersAPI.ts</code>, keeping all related code co-located.</li>
+<li><strong>Immutability with Immer</strong>: The ability to write "mutating" logic inside reducers is thanks to the Immer library, which is integrated into RTK. It tracks your changes and produces a safe, immutable update behind the scenes. This simplifies reducer logic significantly.</li>
+</ul>
+<h2 id="zustand-with-typescript">Zustand with TypeScript</h2>
+<h2 id="learning-objective_2">Learning Objective</h2>
+<p>Create a type-safe global state store using Zustand, leveraging its first-class TypeScript support to define and consume state and actions with minimal boilerplate.</p>
+<h2 id="why-this-matters_2">Why This Matters</h2>
+<p>Zustand is a popular, lightweight state management library that offers a simpler API than Redux. Its design is "TypeScript-first," meaning you get a fantastic, fully-inferred developer experience out of the box. It's an excellent choice for projects where Redux might be overkill.</p>
+<h2 id="discovery-phase_2">Discovery Phase</h2>
+<p>Let's create a store to manage a list of tasks. With Zustand, this involves defining the shape of our store and then creating it with a single function call.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">create</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;zustand&#39;</span><span class="p">;</span>
+
+<span class="c1">// Step 1: Define the shape of your store, including state and actions.</span>
+<span class="kr">interface</span><span class="w"> </span><span class="nx">TaskStore</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">tasks</span><span class="o">:</span><span class="w"> </span><span class="nx">string</span><span class="p">[];</span>
+<span class="w">  </span><span class="nx">addTask</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">task</span><span class="o">:</span><span class="w"> </span><span class="nx">string</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">clearTasks</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Step 2: Create the store using the `create` function.</span>
+<span class="c1">// We pass our interface as a generic argument.</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">useTaskStore</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">create</span><span class="o">&lt;</span><span class="nx">TaskStore</span><span class="o">&gt;</span><span class="p">((</span><span class="nx">set</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({</span>
+<span class="w">  </span><span class="c1">// Initial state</span>
+<span class="w">  </span><span class="nx">tasks</span><span class="o">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">  </span><span class="c1">// Actions are methods that call `set` to update the state.</span>
+<span class="w">  </span><span class="nx">addTask</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">task</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">set</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({</span>
+<span class="w">      </span><span class="nx">tasks</span><span class="o">:</span><span class="w"> </span><span class="p">[...</span><span class="nx">state</span><span class="p">.</span><span class="nx">tasks</span><span class="p">,</span><span class="w"> </span><span class="nx">task</span><span class="p">],</span>
+<span class="w">    </span><span class="p">}));</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nx">clearTasks</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">set</span><span class="p">({</span><span class="w"> </span><span class="nx">tasks</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">}));</span>
+</code></pre></div>
+
+<p>That's it! We've created a custom hook, <code>useTaskStore</code>, that is fully typed.</p>
+<p>Now, let's use it in a component.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useTaskStore</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./taskStore&#39;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">TaskManager</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Step 3: Call the hook to get access to the store.</span>
+<span class="w">  </span><span class="c1">// We can select specific parts of the state.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">tasks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useTaskStore</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">tasks</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">addTask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useTaskStore</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">addTask</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">clearTasks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useTaskStore</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">clearTasks</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">newTask</span><span class="p">,</span><span class="w"> </span><span class="nx">setNewTask</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">FormEvent</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">e</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="c1">// `addTask` is fully typed and expects a string.</span>
+<span class="w">    </span><span class="nx">addTask</span><span class="p">(</span><span class="nx">newTask</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setNewTask</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">newTask</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setNewTask</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p">&gt;</span><span class="nx">Add</span><span class="w"> </span><span class="nx">Task</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">clearTasks</span><span class="p">}&gt;</span><span class="nx">Clear</span><span class="w"> </span><span class="nx">All</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">tasks</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">task</span><span class="p">,</span><span class="w"> </span><span class="nx">i</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">i</span><span class="p">}&gt;{</span><span class="nx">task</span><span class="p">}&lt;/</span><span class="nt">li</span><span class="p">&gt;)}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>The TypeScript integration is seamless:</p>
+<ul>
+<li>By providing <code>&lt;TaskStore&gt;</code> to <code>create</code>, Zustand ensures the object you return matches that shape.</li>
+<li>The returned hook <code>useTaskStore</code> has a typed signature. When you write a selector like <code>(state) =&gt; state.tasks</code>, the <code>state</code> parameter is automatically typed as <code>TaskStore</code>, giving you autocompletion.</li>
+</ul>
+<h2 id="deep-dive_2">Deep Dive</h2>
+<h3 id="computed-state-and-accessing-other-state">Computed State and Accessing Other State</h3>
+<p>Zustand's <code>create</code> function can also receive a <code>get</code> argument, which allows you to access the current state, useful for creating computed values or actions that depend on other state.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">create</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;zustand&#39;</span><span class="p">;</span>
+
+<span class="kr">interface</span><span class="w"> </span><span class="nx">BetterTaskStore</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">tasks</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="nx">number</span><span class="p">;</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="nx">string</span><span class="p">;</span><span class="w"> </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="kr">boolean</span><span class="w"> </span><span class="p">}[];</span>
+<span class="w">  </span><span class="nx">taskCount</span><span class="o">:</span><span class="w"> </span><span class="nx">number</span><span class="p">;</span><span class="w"> </span><span class="c1">// A computed value</span>
+<span class="w">  </span><span class="nx">addTask</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="nx">string</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">toggleTask</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="nx">number</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">useBetterTaskStore</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">create</span><span class="o">&lt;</span><span class="nx">BetterTaskStore</span><span class="o">&gt;</span><span class="p">((</span><span class="nx">set</span><span class="p">,</span><span class="w"> </span><span class="nx">get</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({</span>
+<span class="w">  </span><span class="nx">tasks</span><span class="o">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">  </span><span class="c1">// This is not a real &quot;computed&quot; property, but an action that updates a value.</span>
+<span class="w">  </span><span class="c1">// A better way is to compute it in the component with a selector.</span>
+<span class="w">  </span><span class="nx">taskCount</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">addTask</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">text</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">newTask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="nb">Date</span><span class="p">.</span><span class="nx">now</span><span class="p">(),</span><span class="w"> </span><span class="nx">text</span><span class="p">,</span><span class="w"> </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="nx">set</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({</span>
+<span class="w">      </span><span class="nx">tasks</span><span class="o">:</span><span class="w"> </span><span class="p">[...</span><span class="nx">state</span><span class="p">.</span><span class="nx">tasks</span><span class="p">,</span><span class="w"> </span><span class="nx">newTask</span><span class="p">],</span>
+<span class="w">      </span><span class="nx">taskCount</span><span class="o">:</span><span class="w"> </span><span class="nx">get</span><span class="p">().</span><span class="nx">tasks</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="c1">// Use `get()` to access current state</span>
+<span class="w">    </span><span class="p">}));</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nx">toggleTask</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">id</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">set</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({</span>
+<span class="w">      </span><span class="nx">tasks</span><span class="o">:</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">tasks</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">task</span><span class="w"> </span><span class="p">=&gt;</span>
+<span class="w">        </span><span class="nx">task</span><span class="p">.</span><span class="nx">id</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">id</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="nx">task</span><span class="p">,</span><span class="w"> </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="o">!</span><span class="nx">task</span><span class="p">.</span><span class="nx">completed</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="nx">task</span>
+<span class="w">      </span><span class="p">),</span>
+<span class="w">    </span><span class="p">}));</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">}));</span>
+</code></pre></div>
+
+<p><strong>Note</strong>: While you <em>can</em> store computed values like <code>taskCount</code> in the state, the more common Zustand pattern is to compute derived data within your component's selector. This is more efficient as it doesn't require extra state updates.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// In the component:</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">taskCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useBetterTaskStore</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">tasks</span><span class="p">.</span><span class="nx">length</span><span class="p">);</span>
+</code></pre></div>
+
+<h3 id="common-confusion-is-set-mutating-the-state">Common Confusion: "Is <code>set</code> mutating the state?"</h3>
+<p><strong>You might think</strong>: "The examples show <code>set({ tasks: ... })</code>, but Redux taught me everything must be immutable."</p>
+<p><strong>Actually</strong>: Zustand's <code>set</code> function performs an immutable update. It merges the object you provide into the existing state, similar to React's <code>setState</code>. For more complex updates, like updating a single item in an array, you still need to use immutable patterns like spreading (<code>...</code>) or <code>map</code>. Zustand does not use Immer by default, but it can be added as middleware.</p>
+<h3 id="production-perspective_1">Production Perspective</h3>
+<ul>
+<li><strong>Simplicity and Boilerplate</strong>: Zustand's main advantage is its minimal boilerplate. You can create a fully-featured store in a few lines of code, making it ideal for rapid development and smaller to medium-sized applications.</li>
+<li><strong>Selectors for Performance</strong>: The selector pattern (<code>useStore(state =&gt; state.field)</code>) is built-in and is key to performance. A component will only re-render if the value returned by its selector function changes.</li>
+<li><strong>Middleware</strong>: Zustand has a middleware ecosystem that allows you to add features like Immer for mutable-style updates (<code>immer(create(...))</code>), persistence to <code>localStorage</code> (<code>persist(...)</code>), and Redux DevTools support (<code>devtools(...)</code>).</li>
+</ul>
+<h2 id="typing-context-api-thoroughly">Typing Context API Thoroughly</h2>
+<h2 id="learning-objective_3">Learning Objective</h2>
+<p>Combine <code>useContext</code> and <code>useReducer</code> to create a scalable, performant, and type-safe state management solution without external libraries.</p>
+<h2 id="why-this-matters_3">Why This Matters</h2>
+<p>For many applications, adding a full state management library like Redux or Zustand is unnecessary. React's built-in hooks are powerful enough to create a robust state management system. The "Context-Reducer" pattern is the gold standard for doing this, providing centralized logic, a typed dispatch function, and clear data flow.</p>
+<h2 id="discovery-phase_3">Discovery Phase</h2>
+<p>Let's take the typed <code>counterReducer</code> from section 23.2 and make its state and dispatch function available to any component in our application tree using Context.</p>
+<p>First, we need to define our context and provider.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: context/CounterContext.tsx</span>
+<span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createContext</span><span class="p">,</span><span class="w"> </span><span class="nx">useReducer</span><span class="p">,</span><span class="w"> </span><span class="nx">useContext</span><span class="p">,</span><span class="w"> </span><span class="nx">ReactNode</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="c1">// Import the state and action types from our reducer definition</span>
+<span class="nx">type</span><span class="w"> </span><span class="nx">CounterState</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">count</span><span class="o">:</span><span class="w"> </span><span class="nx">number</span><span class="w"> </span><span class="p">};</span>
+<span class="nx">type</span><span class="w"> </span><span class="nx">CounterAction</span><span class="w"> </span><span class="o">=</span>
+<span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;increment&#39;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;decrement&#39;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;add_amount&#39;</span><span class="p">;</span><span class="w"> </span><span class="nx">payload</span><span class="o">:</span><span class="w"> </span><span class="nx">number</span><span class="w"> </span><span class="p">};</span>
+
+<span class="c1">// Reducer function (can be in a separate file)</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">counterReducer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="nx">CounterState</span><span class="p">,</span><span class="w"> </span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="nx">CounterAction</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">CounterState</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">type</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="s1">&#39;increment&#39;</span><span class="o">:</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">count</span><span class="o">:</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="s1">&#39;decrement&#39;</span><span class="o">:</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">count</span><span class="o">:</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">count</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">1</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="s1">&#39;add_amount&#39;</span><span class="o">:</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">count</span><span class="o">:</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">payload</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="k">default</span><span class="o">:</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s1">&#39;Unhandled action&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">};</span>
+
+<span class="c1">// Step 1: Define the shape of the context value.</span>
+<span class="nx">type</span><span class="w"> </span><span class="nx">CounterContextType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="nx">CounterState</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">dispatch</span><span class="o">:</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">Dispatch</span><span class="p">&lt;</span><span class="nt">CounterAction</span><span class="p">&gt;;</span>
+<span class="p">};</span>
+
+<span class="c1">// Step 2: Create the context. We&#39;ll start with `undefined` and handle it.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">CounterContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createContext</span><span class="p">&lt;</span><span class="nt">CounterContextType</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">undefined</span><span class="p">&gt;(</span><span class="kc">undefined</span><span class="p">);</span>
+
+<span class="c1">// Step 3: Create the Provider component.</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">CounterProvider</span><span class="p">({</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">children</span><span class="o">:</span><span class="w"> </span><span class="nx">ReactNode</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useReducer</span><span class="p">(</span><span class="nx">counterReducer</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">count</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">CounterContext</span><span class="p">.</span><span class="na">Provider</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">children</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">CounterContext</span><span class="p">.</span><span class="na">Provider</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Step 4: Create the custom hook for consuming the context.</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">useCounter</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useContext</span><span class="p">(</span><span class="nx">CounterContext</span><span class="p">);</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="kc">undefined</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s1">&#39;useCounter must be used within a CounterProvider&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">context</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This setup is the complete pattern:</p>
+<ol>
+<li>We define the shape of our context value, which includes both the <code>state</code> and the <code>dispatch</code> function.</li>
+<li>The <code>CounterProvider</code> initializes the <code>useReducer</code> hook and makes its return values available to all children.</li>
+<li>The <code>useCounter</code> custom hook handles consuming the context and provides a clean, non-nullable API for our components.</li>
+</ol>
+<h2 id="deep-dive_3">Deep Dive</h2>
+<h3 id="using-the-context-reducer-in-components">Using the Context-Reducer in Components</h3>
+<p>Now, any child component of <code>CounterProvider</code> can access the state and dispatch actions without any prop drilling.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: components/Display.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useCounter</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;../context/CounterContext&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Display</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Our custom hook gives us the typed state.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">state</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useCounter</span><span class="p">();</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// FileName: components/Controls.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useCounter</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;../context/CounterContext&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Controls</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Our custom hook gives us the typed dispatch function.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">dispatch</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useCounter</span><span class="p">();</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">({</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;increment&quot;</span><span class="w"> </span><span class="p">})}&gt;</span><span class="nx">Increment</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">({</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;decrement&quot;</span><span class="w"> </span><span class="p">})}&gt;</span><span class="nx">Decrement</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">({</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;add_amount&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">payload</span><span class="o">:</span><span class="w"> </span><span class="mf">5</span><span class="w"> </span><span class="p">})}&gt;</span>
+<span class="w">        </span><span class="nx">Add</span><span class="w"> </span><span class="mf">5</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// FileName: App.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">CounterProvider</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./context/CounterContext&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Display</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./components/Display&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Controls</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./components/Controls&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">CounterProvider</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Display</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Controls</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">CounterProvider</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>The <code>Display</code> and <code>Controls</code> components are completely decoupled from each other. They only know about the <code>useCounter</code> hook, which provides them with the state and dispatch function they need.</p>
+<h3 id="common-confusion-will-my-whole-app-re-render-every-time-the-count-changes">Common Confusion: "Will my whole app re-render every time the count changes?"</h3>
+<p><strong>You might think</strong>: "If <code>Display</code> and <code>Controls</code> both use the same context, won't <code>Controls</code> re-render whenever the count changes, even though it doesn't display the count?"</p>
+<p><strong>Actually</strong>: Yes, it will. By default, any component that calls <code>useContext</code> (or our <code>useCounter</code> hook) will re-render whenever <em>any part</em> of the context value changes. Since our <code>value</code> is <code>{ state, dispatch }</code> and <code>state</code> is a new object on every dispatch, all consumers re-render.</p>
+<p><strong>Why the confusion happens</strong>: This is a key difference from libraries like Redux or Zustand, which have selectors that prevent re-renders if the selected slice of state hasn't changed.</p>
+<p><strong>How to remember</strong>: <code>useContext</code> is not a state manager; it's a dependency injection mechanism. For performance, you can:</p>
+<ol>
+<li>Wrap components that don't need to re-render in <code>React.memo</code>.</li>
+<li>Split your context into multiple, more granular contexts (e.g., <code>CounterStateContext</code> and <code>CounterDispatchContext</code>). Components that only need <code>dispatch</code> (which is stable) would not re-render when the state changes.</li>
+</ol>
+<h3 id="production-perspective_2">Production Perspective</h3>
+<ul>
+<li><strong>The "Sweet Spot"</strong>: This pattern is often the perfect balance for small to medium-sized applications. It provides the structure of a reducer and the convenience of context without the overhead of an external library.</li>
+<li><strong>Scalability</strong>: As your application grows, the performance issue of re-rendering all consumers can become a problem. This is often the point at which teams decide to migrate to a library with a selector-based subscription model like Redux or Zustand.</li>
+</ul>
+<h2 id="type-safe-action-creators">Type-Safe Action Creators</h2>
+<h2 id="learning-objective_4">Learning Objective</h2>
+<p>Create and type standalone action creator functions to decouple components from the specific shape of action objects, particularly for the Context-Reducer pattern.</p>
+<h2 id="why-this-matters_4">Why This Matters</h2>
+<p>When using a reducer (either with <code>useReducer</code> or classic Redux), components often create action objects directly: <code>dispatch({ type: 'add_amount', payload: 5 })</code>. This is brittle. If you ever need to change the shape of that action (e.g., rename <code>payload</code> to <code>amount</code>), you have to find and update every component that dispatches it. Action creators solve this by providing a single, type-safe function for creating each action.</p>
+<h2 id="discovery-phase_4">Discovery Phase</h2>
+<p>Let's take our Context-Reducer pattern from the previous section. A component using it looks like this:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// The &quot;before&quot; state: action objects created inline</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useCounter</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;../context/CounterContext&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">Controls</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">dispatch</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useCounter</span><span class="p">();</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Problem: The component needs to know the exact shape of the action object. */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">({</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;add_amount&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">payload</span><span class="o">:</span><span class="w"> </span><span class="mf">5</span><span class="w"> </span><span class="p">})}&gt;</span>
+<span class="w">        </span><span class="nx">Add</span><span class="w"> </span><span class="mf">5</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, let's create action creator functions to abstract this away.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: context/counterActions.ts</span>
+
+<span class="c1">// Import the union type of all possible actions from our reducer definition.</span>
+<span class="nx">type</span><span class="w"> </span><span class="nx">CounterAction</span><span class="w"> </span><span class="o">=</span>
+<span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;increment&#39;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;decrement&#39;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;add_amount&#39;</span><span class="p">;</span><span class="w"> </span><span class="nx">payload</span><span class="o">:</span><span class="w"> </span><span class="nx">number</span><span class="w"> </span><span class="p">};</span>
+
+<span class="c1">// This action creator takes no arguments.</span>
+<span class="c1">// Its return type is explicitly set to `CounterAction` for safety.</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">increment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">CounterAction</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({</span>
+<span class="w">  </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;increment&#39;</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">decrement</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nx">CounterAction</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({</span>
+<span class="w">  </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;decrement&#39;</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="c1">// This action creator takes an argument.</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">addAmount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">amount</span><span class="o">:</span><span class="w"> </span><span class="nx">number</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">CounterAction</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({</span>
+<span class="w">  </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;add_amount&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">payload</span><span class="o">:</span><span class="w"> </span><span class="nx">amount</span><span class="p">,</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p>By explicitly setting the return type to <code>CounterAction</code>, TypeScript ensures that each function returns a valid action object that our reducer will understand.</p>
+<p>Now, our component becomes much cleaner and more robust.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// The &quot;after&quot; state: using action creators</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useCounter</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;../context/CounterContext&quot;</span><span class="p">;</span>
+<span class="c1">// Import the new action creator functions</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">increment</span><span class="p">,</span><span class="w"> </span><span class="nx">decrement</span><span class="p">,</span><span class="w"> </span><span class="nx">addAmount</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;../context/counterActions&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">ControlsWithCreators</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">dispatch</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useCounter</span><span class="p">();</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">increment</span><span class="p">())}&gt;</span><span class="nx">Increment</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">decrement</span><span class="p">())}&gt;</span><span class="nx">Decrement</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* The component no longer knows or cares about the action object&#39;s shape.</span>
+<span class="cm">          It just calls a function with a typed argument. */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">addAmount</span><span class="p">(</span><span class="mf">5</span><span class="p">))}&gt;</span><span class="nx">Add</span><span class="w"> </span><span class="mf">5</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>If we ever need to change the action shape (e.g., <code>payload</code> to <code>amount</code>), we only have to update the <code>addAmount</code> function in <code>counterActions.ts</code>. All components using it will continue to work without any changes.</p>
+<h2 id="deep-dive_4">Deep Dive</h2>
+<h3 id="legacy-pattern-notice">Legacy Pattern Notice</h3>
+<p><strong>Redux Toolkit</strong>: It's crucial to understand that Redux Toolkit's <code>createSlice</code> <strong>does this for you automatically</strong>. The <code>counterSlice.actions</code> object it generates <em>is</em> a collection of type-safe action creators.</p>
+<p><strong>When is this pattern useful today?</strong>
+This pattern is still highly relevant when you are <strong>not</strong> using Redux Toolkit. It is the standard way to add a layer of abstraction to:</p>
+<ol>
+<li>A state management system built with <code>useReducer</code> and <code>useContext</code>.</li>
+<li>A "classic" Redux codebase that hasn't been migrated to RTK.</li>
+</ol>
+<h3 id="production-perspective_3">Production Perspective</h3>
+<ul>
+<li><strong>Decoupling</strong>: Action creators decouple your components from your state management logic. Components become "dumber"—they just know they need to call a function like <code>addAmount(5)</code> without needing to know what a "payload" or a "type" is.</li>
+<li><strong>Testability</strong>: Action creators are pure functions, making them trivial to test. You can write unit tests to ensure they always produce the correct action object.</li>
+<li><strong>Single Source of Truth</strong>: They provide a single source of truth for how actions are constructed. This prevents bugs from inconsistent or malformed action objects being created in different parts of your application.</li>
+</ul>
+<h2 id="selector-type-patterns">Selector Type Patterns</h2>
+<h2 id="learning-objective_5">Learning Objective</h2>
+<p>Write and type memoized selector functions using the <code>reselect</code> library to derive data from your state, optimize component re-renders, and encapsulate state-shape knowledge.</p>
+<h2 id="why-this-matters_5">Why This Matters</h2>
+<p>Components often need more than just raw state; they need <em>derived data</em>. For example, a list of all completed to-dos, the total price of items in a shopping cart, or a user's full name combined from first and last names. Placing this logic directly in components leads to repetition and performance issues. Selectors solve this by creating reusable, memoized functions for computing derived state.</p>
+<h2 id="discovery-phase_5">Discovery Phase</h2>
+<p>Let's imagine a <code>todos</code> slice in our Redux Toolkit store.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: features/todos/todosSlice.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createSlice</span><span class="p">,</span><span class="w"> </span><span class="nx">PayloadAction</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@reduxjs/toolkit&#39;</span><span class="p">;</span>
+
+<span class="nx">type</span><span class="w"> </span><span class="nx">Todo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="nx">string</span><span class="p">;</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="nx">string</span><span class="p">;</span><span class="w"> </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="kr">boolean</span><span class="w"> </span><span class="p">};</span>
+<span class="kr">interface</span><span class="w"> </span><span class="nx">TodosState</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">items</span><span class="o">:</span><span class="w"> </span><span class="nx">Todo</span><span class="p">[]</span><span class="w"> </span><span class="p">}</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">initialState</span><span class="o">:</span><span class="w"> </span><span class="nx">TodosState</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">items</span><span class="o">:</span><span class="w"> </span><span class="p">[]</span><span class="w"> </span><span class="p">};</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">todosSlice</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createSlice</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;todos&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">initialState</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">reducers</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ...reducers to add/toggle todos... */</span><span class="w"> </span><span class="p">}</span>
+<span class="p">});</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">todosSlice</span><span class="p">.</span><span class="nx">reducer</span><span class="p">;</span>
+</code></pre></div>
+
+<p>Now, a component wants to display only the count of completed to-dos.</p>
+<p><strong>The Naive Approach (inside a component):</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useAppSelector</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;../../app/hooks&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">TodoCounter</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">completedCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useAppSelector</span><span class="p">((</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// This logic is not reusable.</span>
+<span class="w">    </span><span class="c1">// This expensive filter/reduce runs every time ANY Redux state changes.</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">todos</span><span class="p">.</span><span class="nx">items</span><span class="p">.</span><span class="nx">filter</span><span class="p">((</span><span class="nx">todo</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">todo</span><span class="p">.</span><span class="nx">completed</span><span class="p">).</span><span class="nx">length</span><span class="p">;</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Completed</span><span class="w"> </span><span class="nx">Todos</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">completedCount</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This has two major problems: the logic isn't reusable, and it's inefficient.</p>
+<p><strong>The Selector Pattern:</strong>
+We can extract this logic into a dedicated selector function.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: features/todos/todosSelectors.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">RootState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../../app/store&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createSelector</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;reselect&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Or from &#39;@reduxjs/toolkit&#39;</span>
+
+<span class="c1">// 1. Create &quot;input selectors&quot; to get the raw data.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">selectTodos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="nx">RootState</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">todos</span><span class="p">.</span><span class="nx">items</span><span class="p">;</span>
+
+<span class="c1">// 2. Create a &quot;memoized selector&quot; that uses the input selectors.</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">selectCompletedTodoCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createSelector</span><span class="p">(</span>
+<span class="w">  </span><span class="p">[</span><span class="nx">selectTodos</span><span class="p">],</span><span class="w"> </span><span class="c1">// An array of input selectors</span>
+<span class="w">  </span><span class="p">(</span><span class="nx">items</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 3. The &quot;output selector&quot; or &quot;combiner&quot; function.</span>
+<span class="w">    </span><span class="c1">// This function only re-runs if the value from `selectTodos` changes.</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Computing completed count...&#39;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">items</span><span class="p">.</span><span class="nx">filter</span><span class="p">(</span><span class="nx">todo</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">todo</span><span class="p">.</span><span class="nx">completed</span><span class="p">).</span><span class="nx">length</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">);</span>
+</code></pre></div>
+
+<p>TypeScript's inference here is fantastic.</p>
+<ul>
+<li>You only need to type the <code>state</code> in your input selectors (<code>state: RootState</code>).</li>
+<li>The <code>createSelector</code> function infers the types of the parameters for the output selector. Because <code>selectTodos</code> returns <code>Todo[]</code>, the <code>items</code> parameter is automatically typed as <code>Todo[]</code>.</li>
+</ul>
+<p>Now our component is simple and efficient.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: features/todos/TodoCounter.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useAppSelector</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;../../app/hooks&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">selectCompletedTodoCount</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./todosSelectors&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">TodoCounter</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Just use the selector. It&#39;s clean and efficient.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">completedCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useAppSelector</span><span class="p">(</span><span class="nx">selectCompletedTodoCount</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Completed</span><span class="w"> </span><span class="nx">Todos</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">completedCount</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>When the component re-renders due to an unrelated state change, the expensive filtering logic inside <code>selectCompletedTodoCount</code> will <strong>not</strong> run again, because its input (<code>state.todos.items</code>) hasn't changed.</p>
+<h2 id="deep-dive_5">Deep Dive</h2>
+<h3 id="common-confusion-reselect-vs-usememo">Common Confusion: "<code>reselect</code> vs. <code>useMemo</code>"</h3>
+<p><strong>You might think</strong>: "I could just use <code>useMemo</code> inside my component to achieve the same result."</p>
+<p><strong>Actually</strong>: <code>useMemo</code> memoizes a value <em>within a single component instance</em>. <code>reselect</code> creates a selector that is memoized and shared <em>across all components that use it</em>. If you have two <code>TodoCounter</code> components on the page, <code>reselect</code> will only do the calculation once. With <code>useMemo</code>, each component would do its own separate, memoized calculation.</p>
+<p><strong>How to remember</strong>: <code>useMemo</code> is for local component optimization. <code>reselect</code> is for global state derivation and optimization.</p>
+<h3 id="production-perspective_4">Production Perspective</h3>
+<ul>
+<li><strong>Decoupling from State Shape</strong>: Selectors provide a layer of abstraction between your components and the shape of your Redux state. If you decide to restructure your <code>todos</code> slice, you only need to update the selectors; your components can remain unchanged.</li>
+<li><strong>Composability</strong>: Selectors are highly composable. You can create complex selectors that are built from several smaller, simpler ones. This keeps your data derivation logic organized and DRY.</li>
+<li><strong>Included in RTK</strong>: The <code>reselect</code> library is so fundamental to Redux that it's included as a dependency and re-exported from <code>@reduxjs/toolkit</code>, so you don't even need to add it to your <code>package.json</code>.</li>
+</ul>
+<h2 id="middleware-and-type-safety">Middleware and Type Safety</h2>
+<h2 id="learning-objective_6">Learning Objective</h2>
+<p>Understand how to type Redux middleware using the <code>Middleware</code> type from Redux Toolkit to safely intercept actions and interact with the store.</p>
+<h2 id="why-this-matters_6">Why This Matters</h2>
+<p>Middleware is the designated extension point for Redux. It's used for logging, crash reporting, communicating with asynchronous APIs, routing, and more. While you will often use pre-built middleware (like Thunk, which is included in RTK), knowing how to write a simple, type-safe custom middleware is essential for understanding how these extensions work and for building your own when needed.</p>
+<h2 id="discovery-phase_6">Discovery Phase</h2>
+<p>Conceptually, a Redux middleware is a function that sits between your <code>dispatch</code> call and your reducer. It can inspect, modify, delay, or even swallow actions before they reach the reducer. The structure is a series of nested functions: <code>(store) =&gt; (next) =&gt; (action) =&gt; { ... }</code>.</p>
+<p>Let's write a very simple middleware that logs every action to the console.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: app/middleware/logger.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Middleware</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@reduxjs/toolkit&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">RootState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../store&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Import our RootState type</span>
+
+<span class="c1">// Step 1: Use the `Middleware` type from Redux Toolkit.</span>
+<span class="c1">// It&#39;s a generic type: Middleware&lt;DispatchExt, State&gt;.</span>
+<span class="c1">// For a basic middleware, DispatchExt is an empty object `{}`.</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">loggerMiddleware</span><span class="o">:</span><span class="w"> </span><span class="nx">Middleware</span><span class="o">&lt;</span><span class="p">{},</span><span class="w"> </span><span class="nx">RootState</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">storeApi</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span><span class="nx">next</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// TypeScript infers the types of all parameters here.</span>
+<span class="w">  </span><span class="c1">// `storeApi` is { dispatch, getState }</span>
+<span class="w">  </span><span class="c1">// `next` is the next middleware in the chain, or the real dispatch</span>
+<span class="w">  </span><span class="c1">// `action` is the dispatched action object</span>
+
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">group</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">type</span><span class="p">);</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Current state:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">storeApi</span><span class="p">.</span><span class="nx">getState</span><span class="p">());</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Action:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">action</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Step 2: Call `next(action)` to pass the action along.</span>
+<span class="w">  </span><span class="c1">// If you don&#39;t call this, the action never reaches the reducer!</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">next</span><span class="p">(</span><span class="nx">action</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Next state:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">storeApi</span><span class="p">.</span><span class="nx">getState</span><span class="p">());</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">groupEnd</span><span class="p">();</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">result</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>By using the <code>Middleware&lt;{}, RootState&gt;</code> type, we give TypeScript all the information it needs to correctly type the <code>storeApi</code>, <code>next</code>, and <code>action</code> parameters.</p>
+<ul>
+<li><code>storeApi.getState()</code> is correctly typed to return <code>RootState</code>.</li>
+<li><code>action</code> is typed as a generic <code>Action</code>, but when used with RTK's dispatch, it will be correctly narrowed.</li>
+</ul>
+<p>Now, we just need to add it to our store.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: app/store.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">configureStore</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@reduxjs/toolkit&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">counterReducer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;../features/counter/counterSlice&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">loggerMiddleware</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./middleware/logger&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">configureStore</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">reducer</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">counter</span><span class="o">:</span><span class="w"> </span><span class="nx">counterReducer</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="c1">// Step 3: Add the middleware to the store configuration.</span>
+<span class="w">  </span><span class="c1">// `getDefaultMiddleware` returns the standard set (like Thunk).</span>
+<span class="w">  </span><span class="c1">// We use `.concat()` to add our own.</span>
+<span class="w">  </span><span class="nx">middleware</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">getDefaultMiddleware</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span>
+<span class="w">    </span><span class="nx">getDefaultMiddleware</span><span class="p">().</span><span class="nx">concat</span><span class="p">(</span><span class="nx">loggerMiddleware</span><span class="p">),</span>
+<span class="p">});</span>
+
+<span class="c1">// ... RootState and AppDispatch types as before</span>
+</code></pre></div>
+
+<p>Now, every time you dispatch an action in your application, you will see detailed logs in your browser's developer console.</p>
+<h2 id="deep-dive_6">Deep Dive</h2>
+<h3 id="common-confusion-what-is-next">Common Confusion: "What is <code>next</code>?"</h3>
+<p><strong>You might think</strong>: "<code>next</code> is the same as <code>storeApi.dispatch</code>."</p>
+<p><strong>Actually</strong>: <code>next</code> represents the <em>next step in the middleware chain</em>. If you have multiple middlewares (<code>[logger, crashReporter, thunk]</code>), calling <code>next</code> in the <code>logger</code> will pass the action to the <code>crashReporter</code>. Calling <code>next</code> in the <code>crashReporter</code> passes it to <code>thunk</code>. Calling <code>next</code> in the final middleware passes the action to the reducers. If you call <code>storeApi.dispatch</code> from within a middleware, you are starting the <em>entire process over again</em> from the beginning of the chain, which can cause infinite loops.</p>
+<p><strong>How to remember</strong>: Always call <code>next(action)</code> to continue the action's journey. Only call <code>storeApi.dispatch(anotherAction)</code> if you intentionally want to trigger a completely new action from within your middleware.</p>
+<h3 id="production-perspective_5">Production Perspective</h3>
+<ul>
+<li><strong>Use Existing Middleware</strong>: You will rarely write your own middleware from scratch. The vast majority of use cases are covered by standard middleware like Redux Thunk (for simple async logic) or RTK Query (for advanced data fetching and caching).</li>
+<li><strong>Custom Middleware Use Cases</strong>: You might write a custom middleware for very specific cross-cutting concerns, such as:</li>
+<li>Sending analytics events based on certain Redux actions.</li>
+<li>Handling authentication tokens and redirecting on 401 errors from API calls.</li>
+<li>Interacting with a browser API like <code>localStorage</code> to persist parts of your state.</li>
+</ul>
+<h2 id="state-machine-types-with-xstate">State Machine Types with XState</h2>
+<h2 id="learning-objective_7">Learning Objective</h2>
+<p>Briefly introduce XState and how its first-class TypeScript support provides a highly robust way to model complex, explicit component and application state.</p>
+<h2 id="why-this-matters_7">Why This Matters</h2>
+<p>Sometimes, state isn't just data; it's a series of well-defined states with explicit, allowed transitions. Think of a video player (<code>loading</code>, <code>playing</code>, <code>paused</code>, <code>ended</code>) or a complex data fetch (<code>idle</code>, <code>loading</code>, <code>success</code>, <code>failure</code>). While <code>useReducer</code> can model this, a formal state machine library like XState can make it even more robust by guaranteeing that impossible states and transitions can never occur. Its TypeScript integration is a key feature that makes this possible.</p>
+<h2 id="discovery-phase_7">Discovery Phase</h2>
+<p>Let's model a simple promise that can be <code>pending</code>, <code>resolved</code>, or <code>rejected</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: machines/promiseMachine.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createMachine</span><span class="p">,</span><span class="w"> </span><span class="nx">assign</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;xstate&#39;</span><span class="p">;</span>
+
+<span class="c1">// Step 1: Define the machine&#39;s &quot;context&quot; (its extended state/data).</span>
+<span class="kr">interface</span><span class="w"> </span><span class="nx">PromiseContext</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">data</span><span class="o">?:</span><span class="w"> </span><span class="nx">any</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">error</span><span class="o">?:</span><span class="w"> </span><span class="nx">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Step 2: Define the events that can be sent to the machine.</span>
+<span class="nx">type</span><span class="w"> </span><span class="nx">PromiseEvent</span><span class="w"> </span><span class="o">=</span>
+<span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;RESOLVE&#39;</span><span class="p">;</span><span class="w"> </span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="nx">any</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;REJECT&#39;</span><span class="p">;</span><span class="w"> </span><span class="nx">error</span><span class="o">:</span><span class="w"> </span><span class="nx">string</span><span class="w"> </span><span class="p">};</span>
+
+<span class="c1">// Step 3: Create the machine.</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">promiseMachine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createMachine</span><span class="p">({</span>
+<span class="w">  </span><span class="c1">// We provide the types for context and events here.</span>
+<span class="w">  </span><span class="c1">// This enables all of XState&#39;s powerful type inference.</span>
+<span class="w">  </span><span class="nx">tsTypes</span><span class="o">:</span><span class="w"> </span><span class="p">{}</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="k">import</span><span class="p">(</span><span class="s2">&quot;./promiseMachine.typegen&quot;</span><span class="p">).</span><span class="nx">Typegen0</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">schema</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="p">{}</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">PromiseContext</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">events</span><span class="o">:</span><span class="w"> </span><span class="p">{}</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">PromiseEvent</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;promise&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">initial</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;pending&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="kc">undefined</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">error</span><span class="o">:</span><span class="w"> </span><span class="kc">undefined</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nx">states</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">pending</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">on</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">RESOLVE</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;resolved&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">actions</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;assignData&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nx">REJECT</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;rejected&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">actions</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;assignError&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nx">resolved</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;final&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nx">rejected</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;final&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">},</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">actions</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">assignData</span><span class="o">:</span><span class="w"> </span><span class="nx">assign</span><span class="p">({</span><span class="w"> </span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="p">,</span><span class="w"> </span><span class="nx">event</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">event</span><span class="p">.</span><span class="nx">data</span><span class="w"> </span><span class="p">}),</span>
+<span class="w">        </span><span class="nx">assignError</span><span class="o">:</span><span class="w"> </span><span class="nx">assign</span><span class="p">({</span><span class="w"> </span><span class="nx">error</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="p">,</span><span class="w"> </span><span class="nx">event</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">event</span><span class="p">.</span><span class="nx">error</span><span class="w"> </span><span class="p">}),</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p>This defines a formal state machine. The <code>tsTypes</code> and <code>schema</code> properties are key for TypeScript. XState has tools that can automatically generate a <code>.typegen</code> file, which provides perfect type safety for everything you do with the machine.</p>
+<p>Now, let's use it in a component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: components/PromiseComponent.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useMachine</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@xstate/react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">promiseMachine</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;../machines/promiseMachine&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">PromiseComponent</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// `useMachine` is the hook for using an XState machine in React.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">send</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMachine</span><span class="p">(</span><span class="nx">promiseMachine</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Simulate a fetch</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">fetchData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">((</span><span class="nx">resolve</span><span class="p">,</span><span class="w"> </span><span class="nx">reject</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setTimeout</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.5</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">resolve</span><span class="p">(</span><span class="s2">&quot;Success data!&quot;</span><span class="p">);</span>
+<span class="w">          </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">reject</span><span class="p">(</span><span class="s2">&quot;Something went wrong.&quot;</span><span class="p">);</span>
+<span class="w">          </span><span class="p">}</span>
+<span class="w">        </span><span class="p">},</span><span class="w"> </span><span class="mf">1000</span><span class="p">);</span>
+<span class="w">      </span><span class="p">})</span>
+<span class="w">        </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">data</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="c1">// `send` is fully typed. It knows `RESOLVE` needs a `data` property.</span>
+<span class="w">          </span><span class="nx">send</span><span class="p">({</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;RESOLVE&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="p">});</span>
+<span class="w">        </span><span class="p">})</span>
+<span class="w">        </span><span class="p">.</span><span class="k">catch</span><span class="p">((</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="c1">// It also knows `REJECT` needs an `error` property.</span>
+<span class="w">          </span><span class="nx">send</span><span class="p">({</span><span class="w"> </span><span class="nx">type</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;REJECT&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">error</span><span class="w"> </span><span class="p">});</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">    </span><span class="nx">fetchData</span><span class="p">();</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">send</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="c1">// `state.matches` is a type guard!</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">state</span><span class="p">.</span><span class="nx">matches</span><span class="p">(</span><span class="s2">&quot;pending&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="p">...&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">state</span><span class="p">.</span><span class="nx">matches</span><span class="p">(</span><span class="s2">&quot;resolved&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Inside this block, TS knows `state.context.data` is defined.</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Success</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">context</span><span class="p">.</span><span class="nx">data</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">state</span><span class="p">.</span><span class="nx">matches</span><span class="p">(</span><span class="s2">&quot;rejected&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Here, TS knows `state.context.error` is defined.</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="ne">Error</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">context</span><span class="p">.</span><span class="nx">error</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>The type safety here is exceptional:</p>
+<ul>
+<li>The <code>send</code> function will only accept event objects that are valid for the machine's <em>current</em> state.</li>
+<li>The <code>state.matches()</code> function acts as a type guard, narrowing the <code>state</code> object so you can safely access context properties that are only relevant to that specific state.</li>
+</ul>
+<h3 id="common-confusion-isnt-this-massive-overkill-compared-to-usereducer">Common Confusion: "Isn't this massive overkill compared to <code>useReducer</code>?"</h3>
+<p><strong>You might think</strong>: "This is so much boilerplate for a simple fetch!"</p>
+<p><strong>Actually</strong>: For a simple fetch, it probably is. But for complex, multi-step processes, it's invaluable. <code>useReducer</code> can tell you the current state, but it can't easily tell you what the <em>possible next states</em> are. XState can. It prevents you from even trying to dispatch an invalid event.</p>
+<p><strong>How to remember</strong>: Use <code>useReducer</code> when you care about managing state transitions. Use XState when you care about managing a <strong>stateful system</strong> with explicitly defined states, events, and transitions, and you want to mathematically guarantee that no impossible states can ever occur.</p>
+<h3 id="production-perspective_6">Production Perspective</h3>
+<ul>
+<li><strong>Complex UI Logic</strong>: XState is a go-to tool for complex UI widgets like wizards, payment forms, drag-and-drop interfaces, or anything with a long and complex user flow.</li>
+<li><strong>Visualizer</strong>: One of XState's killer features is its visualizer. You can paste your machine definition into the Stately Studio and get an interactive diagram of your state machine. This is an incredible tool for debugging, documentation, and communicating logic to your team.</li>
+</ul>
+<h2 id="module-synthesis">Module Synthesis 📋</h2>
+<h2 id="module-synthesis_1">Module Synthesis</h2>
+<p>In this chapter, we explored the landscape of state management in modern React, focusing on how TypeScript enhances each approach. We saw that while the libraries and patterns differ, the goal of TypeScript remains the same: to create a predictable, robust, and self-documenting state layer for our applications.</p>
+<p>We started with <strong>Redux</strong>, learning the foundational types (<code>RootState</code>, <code>AppDispatch</code>) before seeing how <strong>Redux Toolkit</strong> automates nearly all of this work with <code>createSlice</code>, providing a best-in-class, type-safe experience. We mastered the use of typed hooks and saw how <strong>selectors</strong> with <code>reselect</code> provide a memoized, efficient way to derive data from the store.</p>
+<p>We then looked at <strong>Zustand</strong>, a lightweight alternative whose "TypeScript-first" design gives us a fully-typed store with minimal boilerplate. We contrasted these external libraries with a powerful built-in solution: the <strong>Context-Reducer pattern</strong>. We learned how to combine <code>useContext</code> and <code>useReducer</code> to create a capable, type-safe state manager without any dependencies, and how to augment it with <strong>action creators</strong> for better decoupling.</p>
+<p>Finally, we briefly touched on advanced topics like typing <strong>middleware</strong> and using the formal state machine library <strong>XState</strong> for modeling highly complex, explicit state transitions with unparalleled type safety.</p>
+<h2 id="looking-ahead">Looking Ahead</h2>
+<p>You are now equipped to handle state management at any scale, from local component state to complex global stores, all with the safety and confidence that TypeScript provides. You can choose the right tool for the job and implement it in a way that is robust and maintainable.</p>
+<p>In the next chapter, <strong>Chapter 25: Type-Safe API Integration</strong>, we will turn our attention to the final frontier of frontend state: data from the outside world. We'll learn how to type REST and GraphQL API responses, build type-safe fetch wrappers, and use modern data-fetching libraries like React Query and tRPC to create end-to-end type-safe applications, from the database all the way to the DOM.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-10-25 16:27:49 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

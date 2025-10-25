@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>21_Typing_React_19_Features</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">04_TypeScript_Integration</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-21-typing-react-19-features">Chapter 21: Typing React 19 Features</h1>
+<h2 id="typing-the-use-hook">Typing the <code>use</code> Hook</h2>
+<h2 id="learning-objective">Learning Objective</h2>
+<p>Correctly type the data returned by the <code>use</code> hook when consuming promises and context, leveraging TypeScript's powerful inference capabilities.</p>
+<h2 id="why-this-matters">Why This Matters</h2>
+<p>The <code>use</code> hook is a fundamental new primitive in React 19 for reading resources like promises and context. Understanding how to type it is essential for working with data fetching in Server Components and creating more readable client components, ensuring that the data you "unwrap" from these resources is fully type-safe.</p>
+<h2 id="discovery-phase">Discovery Phase</h2>
+<p>The primary use case for the <code>use</code> hook is unwrapping the value from a promise. This is especially common in async Server Components for data fetching.</p>
+<p>Let's see how TypeScript infers the type of data fetched from a simple API.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">use</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="c1">// Define the shape of the data we expect from the API.</span>
+<span class="nx">type</span><span class="w"> </span><span class="nx">Todo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="nx">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="nx">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">title</span><span class="o">:</span><span class="w"> </span><span class="nx">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="kr">boolean</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// A function that returns a promise of our data.</span>
+<span class="c1">// We explicitly type the return value as `Promise&lt;Todo&gt;`.</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">fetchTodo</span><span class="p">(</span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="nx">number</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="p">&lt;</span><span class="nt">Todo</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`https://jsonplaceholder.typicode.com/todos/</span><span class="si">${</span><span class="nx">id</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">.</span><span class="nx">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s1">&#39;Failed to fetch&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="c1">// This is an async Server Component.</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">TodoItem</span><span class="p">({</span><span class="w"> </span><span class="nx">id</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="nx">number</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// We pass the promise directly to `use`.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">todoPromise</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">fetchTodo</span><span class="p">(</span><span class="nx">id</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">todo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">use</span><span class="p">(</span><span class="nx">todoPromise</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Because `fetchTodo` returns `Promise&lt;Todo&gt;`, TypeScript infers</span>
+<span class="w">  </span><span class="c1">// that `todo` is of type `Todo`. We get full autocompletion!</span>
+<span class="w">  </span><span class="c1">// `todo` is NOT a promise here, it&#39;s the resolved value.</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h3</span><span class="p">&gt;{</span><span class="nx">todo</span><span class="p">.</span><span class="nx">title</span><span class="p">}&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Status</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">todo</span><span class="p">.</span><span class="nx">completed</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;Done&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Pending&#39;</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">TodoItem</span><span class="w"> </span><span class="na">id</span><span class="o">=</span><span class="p">{</span><span class="mf">1</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Rendered Output</strong> (assuming the API call is successful):</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">&lt;h3&gt;</span>delectus<span class="w"> </span>aut<span class="w"> </span>autem<span class="nt">&lt;/h3&gt;</span>
+<span class="nt">&lt;p&gt;</span>Status:<span class="w"> </span>Pending<span class="nt">&lt;/p&gt;</span>
+</code></pre></div>
+
+<p>The magic is in the inference. Because our <code>fetchTodo</code> function has a clear return type of <code>Promise&lt;Todo&gt;</code>, TypeScript knows that when <code>use</code> successfully unwraps it, the resulting <code>todo</code> variable must be of type <code>Todo</code>. There's no need for manual type annotations around the <code>use</code> call itself.</p>
+<p>This makes data fetching code in React 19 incredibly clean and fully type-safe.</p>
+<h2 id="deep-dive">Deep Dive</h2>
+<h3 id="typing-use-with-context">Typing <code>use</code> with Context</h3>
+<p>The <code>use</code> hook can also read context. This provides a cleaner syntax than <code>useContext</code>, especially when you need to read context conditionally.</p>
+<div class="codehilite"><pre><span></span><code><span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createContext</span><span class="p">,</span><span class="w"> </span><span class="nx">use</span><span class="p">,</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="c1">// Define the shape of our context value.</span>
+<span class="nx">type</span><span class="w"> </span><span class="nx">Theme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;light&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;dark&#39;</span><span class="p">;</span>
+<span class="nx">type</span><span class="w"> </span><span class="nx">ThemeContextType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">theme</span><span class="o">:</span><span class="w"> </span><span class="nx">Theme</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">toggleTheme</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// Create the context with a default value.</span>
+<span class="c1">// It&#39;s good practice to type the context here.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">ThemeContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createContext</span><span class="p">&lt;</span><span class="nt">ThemeContextType</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">ThemeToggleButton</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Read the context value with `use`.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">use</span><span class="p">(</span><span class="nx">ThemeContext</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// TypeScript knows `context` is of type `ThemeContextType | null`.</span>
+<span class="w">  </span><span class="c1">// We must check for null in case we&#39;re outside a provider.</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s1">&#39;ThemeToggleButton must be used within a ThemeProvider&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="c1">// Inside this block, `context` is narrowed to `ThemeContextType`.</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">context</span><span class="p">.</span><span class="nx">toggleTheme</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="nx">Switch</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="p">{</span><span class="nx">context</span><span class="p">.</span><span class="nx">theme</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;light&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;dark&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;light&#39;</span><span class="p">}</span><span class="w"> </span><span class="nx">mode</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Provider component</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">theme</span><span class="p">,</span><span class="w"> </span><span class="nx">setTheme</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Theme</span><span class="p">&gt;(</span><span class="s1">&#39;light&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">toggleTheme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setTheme</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;light&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;dark&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;light&#39;</span><span class="p">));</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">themeValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">theme</span><span class="p">,</span><span class="w"> </span><span class="nx">toggleTheme</span><span class="w"> </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">ThemeContext</span><span class="p">.</span><span class="na">Provider</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">themeValue</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="mf">20</span><span class="p">,</span><span class="w"> </span><span class="nx">background</span><span class="o">:</span><span class="w"> </span><span class="nx">theme</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;light&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;#fff&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#333&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="nx">theme</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;light&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;#000&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#fff&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Current</span><span class="w"> </span><span class="nx">theme</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">theme</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">ThemeToggleButton</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">ThemeContext</span><span class="p">.</span><span class="na">Provider</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Just like with <code>useContext</code>, the type safety of <code>use(ThemeContext)</code> depends on how you create the context. By providing a generic argument to <code>createContext&lt;ThemeContextType | null&gt;</code>, we give TypeScript all the information it needs. The <code>use</code> hook simply infers its return type from the context object you pass to it.</p>
+<h3 id="common-confusion-usepromise-vs-await-promise">Common Confusion: <code>use(promise)</code> vs. <code>await promise</code></h3>
+<p><strong>You might think</strong>: "In an async component, <code>const data = use(promise)</code> is the same as <code>const data = await promise</code>."</p>
+<p><strong>Actually</strong>: While they both yield the resolved value of the promise, they have different behaviors within React. <code>use</code> integrates with React's rendering lifecycle, particularly with Suspense. If the promise is not yet resolved, <code>use</code> can signal to React to show a Suspense fallback and re-render the component when the data is ready. <code>await</code> simply blocks the rendering of the component until the promise resolves.</p>
+<p><strong>Why the confusion happens</strong>: The syntax looks similar, and in the "happy path" where data is ready instantly, the result is the same.</p>
+<p><strong>How to remember</strong>: Use <code>await</code> for server-side logic <em>before</em> you start rendering. Use <code>use</code> when you are fetching data <em>as part of</em> the rendering process for a component.</p>
+<h3 id="production-perspective">Production Perspective</h3>
+<ul>
+<li><strong>Type Your Fetching Functions</strong>: The key to type safety with <code>use(promise)</code> is to have strongly-typed data fetching functions. Always define the return type as <code>Promise&lt;MyDataType&gt;</code>. This creates a clear contract that <code>use</code> can infer from.</li>
+<li><strong>Error Handling</strong>: <code>use</code> will throw the promise's rejection reason if it fails. This is designed to be caught by a parent <code>&lt;ErrorBoundary&gt;</code>. Your types should reflect the success case; error cases are handled by React's error boundary mechanism.</li>
+<li><strong>Conditional <code>use</code></strong>: A major advantage of <code>use</code> over <code>useContext</code> is that it can be called conditionally. This is perfectly type-safe.
+  <code>typescript
+  function MyComponent({ useTheme }) {
+    let theme = 'default';
+    if (useTheme) {
+      // `context` is only defined and typed within this block.
+      const context = use(ThemeContext);
+      if (context) theme = context.theme;
+    }
+    return &lt;div&gt;Theme is: {theme}&lt;/div&gt;;
+  }</code></li>
+</ul>
+<h2 id="type-safe-actions">Type-Safe Actions</h2>
+<h2 id="learning-objective_1">Learning Objective</h2>
+<p>Define strongly-typed Server and Client Actions to handle form submissions and mutations with full type safety for both the state and the payload.</p>
+<h2 id="why-this-matters_1">Why This Matters</h2>
+<p>Actions are a central feature of React 19 for handling data mutations. Without types, it's easy to make mistakes, like misspelling a form field name or returning an incorrect error state. Typing your actions creates a robust, self-documenting contract between your forms and your mutation logic.</p>
+<h2 id="discovery-phase_1">Discovery Phase</h2>
+<p>An "Action" in React is just a function. To make it type-safe, we simply need to type its arguments and return value. An action function typically receives two arguments: the previous state of the form, and the form's data payload.</p>
+<p>Let's define a simple Server Action to create a to-do item.</p>
+<div class="codehilite"><pre><span></span><code><span class="s1">&#39;use server&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// This directive marks it as a Server Action</span>
+
+<span class="c1">// Step 1: Define the shape of the state our action will manage.</span>
+<span class="c1">// It can include an error message or a success message.</span>
+<span class="k">export</span><span class="w"> </span><span class="nx">type</span><span class="w"> </span><span class="nx">FormState</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="nx">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">error</span><span class="o">?:</span><span class="w"> </span><span class="kr">boolean</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// Step 2: Define the action function with types.</span>
+<span class="c1">// `prevState`: The state from the previous submission.</span>
+<span class="c1">// `formData`: The data submitted from the &lt;form&gt;.</span>
+<span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">createTodoAction</span><span class="p">(</span>
+<span class="w">  </span><span class="nx">prevState</span><span class="o">:</span><span class="w"> </span><span class="nx">FormState</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">formData</span><span class="o">:</span><span class="w"> </span><span class="nx">FormData</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">FormState</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">todoText</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">formData</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;todo&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Basic validation</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">todoText</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="ow">typeof</span><span class="w"> </span><span class="nx">todoText</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s1">&#39;string&#39;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">todoText</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">3</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Todo must be at least 3 characters long.&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">error</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// In a real app, you would save this to a database.</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Creating todo: </span><span class="si">${</span><span class="nx">todoText</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// Simulate a delay</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">res</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span><span class="w"> </span><span class="mf">500</span><span class="p">));</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="sb">`Successfully added &quot;</span><span class="si">${</span><span class="nx">todoText</span><span class="si">}</span><span class="sb">&quot;`</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Failed to create todo.&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">error</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is the foundation of a type-safe action. Let's break down the signature:
+<code>async function createTodoAction(prevState: FormState, formData: FormData): Promise&lt;FormState&gt;</code></p>
+<ol>
+<li><strong><code>prevState: FormState</code></strong>: The first argument is the state returned by the <em>previous</em> run of this action. We've typed it with our custom <code>FormState</code> type.</li>
+<li><strong><code>formData: FormData</code></strong>: The second argument is the payload. For native <code>&lt;form&gt;</code> submissions, this is a <code>FormData</code> object. <code>FormData</code> is a standard web API type, so we don't need to define it ourselves.</li>
+<li><strong><code>Promise&lt;FormState&gt;</code></strong>: The function is <code>async</code>, so it returns a promise. The resolved value of the promise must match the <code>FormState</code> shape. This is the new state that will be available to the UI.</li>
+</ol>
+<p>By defining these types, we've created a clear contract. We know exactly what kind of state to expect and what the function will return.</p>
+<h2 id="deep-dive_1">Deep Dive</h2>
+<h3 id="accessing-form-data">Accessing Form Data</h3>
+<p>The <code>formData.get('fieldName')</code> method returns a <code>FormDataEntryValue</code>, which is a union type: <code>string | File | null</code>. This means you often need to perform type checking to ensure the value is what you expect.</p>
+<div class="codehilite"><pre><span></span><code><span class="s1">&#39;use server&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">z</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;zod&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// A popular validation library</span>
+
+<span class="k">export</span><span class="w"> </span><span class="nx">type</span><span class="w"> </span><span class="nx">AddItemState</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="nx">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">errors</span><span class="o">?:</span><span class="w"> </span><span class="nx">Record</span><span class="o">&lt;</span><span class="nx">string</span><span class="p">,</span><span class="w"> </span><span class="nx">string</span><span class="p">[]</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// Using a schema for validation is a best practice.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">itemSchema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">z</span><span class="p">.</span><span class="nx">object</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="nx">z</span><span class="p">.</span><span class="nx">string</span><span class="p">().</span><span class="nx">min</span><span class="p">(</span><span class="mf">3</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Name is too short&#39;</span><span class="w"> </span><span class="p">}),</span>
+<span class="w">  </span><span class="nx">quantity</span><span class="o">:</span><span class="w"> </span><span class="nx">z</span><span class="p">.</span><span class="nx">coerce</span><span class="p">.</span><span class="nx">number</span><span class="p">().</span><span class="nx">min</span><span class="p">(</span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Quantity must be at least 1&#39;</span><span class="w"> </span><span class="p">}),</span>
+<span class="p">});</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">addItemAction</span><span class="p">(</span><span class="nx">prevState</span><span class="o">:</span><span class="w"> </span><span class="nx">AddItemState</span><span class="p">,</span><span class="w"> </span><span class="nx">formData</span><span class="o">:</span><span class="w"> </span><span class="nx">FormData</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">AddItemState</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// `Object.fromEntries` converts FormData to a plain object.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">rawData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Object</span><span class="p">.</span><span class="nx">fromEntries</span><span class="p">(</span><span class="nx">formData</span><span class="p">.</span><span class="nx">entries</span><span class="p">());</span>
+
+<span class="w">  </span><span class="c1">// Validate the data against the schema.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">validationResult</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">itemSchema</span><span class="p">.</span><span class="nx">safeParse</span><span class="p">(</span><span class="nx">rawData</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">validationResult</span><span class="p">.</span><span class="nx">success</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// `flatten()` formats the errors into a useful shape.</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">errors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">validationResult</span><span class="p">.</span><span class="nx">error</span><span class="p">.</span><span class="nx">flatten</span><span class="p">().</span><span class="nx">fieldErrors</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Validation failed.&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">errors</span><span class="p">,</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="c1">// At this point, `validationResult.data` is fully typed as { name: string, quantity: number }</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="p">,</span><span class="w"> </span><span class="nx">quantity</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">validationResult</span><span class="p">.</span><span class="nx">data</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Adding item: </span><span class="si">${</span><span class="nx">name</span><span class="si">}</span><span class="sb"> (x</span><span class="si">${</span><span class="nx">quantity</span><span class="si">}</span><span class="sb">)`</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="sb">`Added </span><span class="si">${</span><span class="nx">name</span><span class="si">}</span><span class="sb">!`</span><span class="w"> </span><span class="p">};</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This more robust example introduces a common pattern:</p>
+<ol>
+<li><strong>Schema Definition</strong>: We use a library like Zod to define the expected shape and validation rules for our form data. This is a single source of truth.</li>
+<li><strong>Parsing</strong>: We parse the raw <code>FormData</code> against the schema.</li>
+<li><strong>Typed Data</strong>: If parsing is successful, Zod gives us a fully typed data object. This is much safer than manually calling <code>formData.get()</code> and checking types for every field.</li>
+<li><strong>Structured Errors</strong>: If parsing fails, Zod provides a structured error object that we can return as part of our state, making it easy to display field-specific error messages in the UI.</li>
+</ol>
+<h3 id="production-perspective_1">Production Perspective</h3>
+<ul>
+<li><strong>Use Schema Validation</strong>: For any non-trivial form, use a validation library like Zod, Valibot, or ArkType. It co-locates your validation logic, provides type safety after parsing, and generates structured error messages.</li>
+<li><strong>Server Actions vs. Client Actions</strong>: The typing pattern is identical for both. A Client Action is just a function defined in a <code>'use client'</code> component that is <em>not</em> marked with <code>async</code>. Server Actions are <code>async</code> and live in <code>'use server'</code> files or are defined within Server Components.</li>
+<li><strong>Progressive Enhancement</strong>: Type-safe actions work seamlessly with progressively enhanced forms. The <code>FormData</code> object is the standard way browsers submit forms, so your action will work even if JavaScript is disabled on the client. Your types ensure the server-side handling is robust.</li>
+</ul>
+<h2 id="typing-useactionstate">Typing <code>useActionState</code></h2>
+<h2 id="learning-objective_2">Learning Objective</h2>
+<p>Type the <code>useActionState</code> hook and understand how TypeScript infers the form state and action dispatcher types from the provided action function.</p>
+<h2 id="why-this-matters_2">Why This Matters</h2>
+<p><code>useActionState</code> (formerly <code>useFormState</code>) is the primary hook for managing form state with Actions. Its type inference is excellent, but understanding <em>how</em> it works is key to building complex, type-safe forms that handle pending states, validation errors, and success messages correctly.</p>
+<h2 id="discovery-phase_2">Discovery Phase</h2>
+<p>Let's take the <code>createTodoAction</code> we defined in the previous section and wire it up in a client component using <code>useActionState</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useActionState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createTodoAction</span><span class="p">,</span><span class="w"> </span><span class="nx">type</span><span class="w"> </span><span class="nx">FormState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./actions&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Assuming actions are in actions.ts</span>
+
+<span class="c1">// The initial state must match the `FormState` type.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">initialState</span><span class="o">:</span><span class="w"> </span><span class="nx">FormState</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">TodoForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Step 1: Pass the action and initial state to the hook.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">formAction</span><span class="p">,</span><span class="w"> </span><span class="nx">isPending</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useActionState</span><span class="p">(</span><span class="nx">createTodoAction</span><span class="p">,</span><span class="w"> </span><span class="nx">initialState</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Step 2: TypeScript infers the types for you!</span>
+<span class="w">  </span><span class="c1">// `state` is inferred as `FormState`</span>
+<span class="w">  </span><span class="c1">// `formAction` is inferred as a function that takes a `FormData` payload</span>
+<span class="w">  </span><span class="c1">// `isPending` is inferred as `boolean`</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">action</span><span class="o">=</span><span class="p">{</span><span class="nx">formAction</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;todo&quot;</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Add a new todo&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="w"> </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">isPending</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">isPending</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;Adding...&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Add Todo&#39;</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">message</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="nx">state</span><span class="p">.</span><span class="nx">error</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;green&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">message</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">)}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">TodoForm</span><span class="p">;</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:</p>
+<ol>
+<li>Type "Read a book" and click "Add Todo".</li>
+<li>The button shows "Adding..." for half a second.</li>
+<li>A green message appears: "Successfully added "Read a book"".</li>
+<li>Type "a" and click "Add Todo".</li>
+<li>The button shows "Adding...".</li>
+<li>A red message appears: "Todo must be at least 3 characters long."</li>
+</ol>
+<p>This is the magic of <code>useActionState</code>'s type inference. Because our <code>createTodoAction</code> was typed as <code>(prevState: FormState, formData: FormData) =&gt; Promise&lt;FormState&gt;</code>, the hook knows:</p>
+<ul>
+<li>The first element it returns (<code>state</code>) must be of type <code>FormState</code>.</li>
+<li>The second element (<code>formAction</code>) is the function to pass to the <code>&lt;form&gt;</code>'s <code>action</code> prop.</li>
+<li>The third element (<code>isPending</code>) is a <code>boolean</code>.</li>
+</ul>
+<p>You get complete type safety with almost no manual type annotations at the hook call site.</p>
+<h2 id="deep-dive_2">Deep Dive</h2>
+<h3 id="the-useactionstate-type-signature">The <code>useActionState</code> Type Signature</h3>
+<p>Let's look at a simplified type definition for <code>useActionState</code> to understand what's happening.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">useActionState</span><span class="o">&lt;</span><span class="nx">State</span><span class="p">,</span><span class="w"> </span><span class="nx">Payload</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">  </span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">State</span><span class="p">,</span><span class="w"> </span><span class="nx">payload</span><span class="o">:</span><span class="w"> </span><span class="kt">Payload</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">State</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">initialState</span><span class="o">:</span><span class="w"> </span><span class="kt">State</span><span class="p">,</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">State</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">payload</span><span class="o">:</span><span class="w"> </span><span class="kt">Payload</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">,</span><span class="w"> </span><span class="nx">isPending</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">];</span>
+</code></pre></div>
+
+<p>This is a generic function. When you call it, TypeScript performs these steps:</p>
+<ol>
+<li>It looks at the <code>action</code> function you provided (<code>createTodoAction</code>).</li>
+<li>It infers <code>State</code> from the type of the first argument and the return value (<code>FormState</code>).</li>
+<li>It infers <code>Payload</code> from the type of the second argument (<code>FormData</code>).</li>
+<li>It then uses these inferred <code>State</code> and <code>Payload</code> types to define the types of the array it returns.</li>
+</ol>
+<p>This is why having a well-typed action function is the most critical step. The hook's type safety flows directly from it.</p>
+<h3 id="common-confusion-is-the-third-argument-ispending-new">Common Confusion: "Is the third argument (<code>isPending</code>) new?"</h3>
+<p><strong>You might think</strong>: "I've seen <code>useFormState</code> before, but it only returned two values."</p>
+<p><strong>Actually</strong>: Yes, the <code>isPending</code> boolean is a new and welcome addition in React 19. <code>useActionState</code> is the new name for <code>useFormState</code>, and it now returns a tuple with three elements: <code>[state, formAction, isPending]</code>.</p>
+<p><strong>Why the confusion happens</strong>: The name change and the added return value are recent updates. Many older examples will show the two-argument version.</p>
+<p><strong>How to remember</strong>: <code>useActionState</code> gives you the <strong>State</strong>, the <strong>Action</strong> to dispatch, and tells you if it <strong>isPending</strong>. The name itself helps you remember what it provides.</p>
+<h3 id="production-perspective_2">Production Perspective</h3>
+<ul>
+<li><strong>Initial State Type</strong>: Ensure your <code>initialState</code> perfectly matches the <code>State</code> type your action expects. Any mismatch will be caught by TypeScript.</li>
+<li><strong>Displaying Field-Specific Errors</strong>: When your action's state includes a dictionary of field errors (as in our Zod example), you can easily map them to the UI.</li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Assuming `state.errors` is of type `Record&lt;string, string[]&gt;`</span>
+<span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">action</span><span class="o">=</span><span class="p">{</span><span class="nx">formAction</span><span class="p">}&gt;</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;name&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">errors</span><span class="o">?</span><span class="p">.</span><span class="nx">name</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">state</span><span class="p">.</span><span class="nx">errors</span><span class="p">.</span><span class="nx">name</span><span class="p">[</span><span class="mf">0</span><span class="p">]}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;quantity&quot;</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;number&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">errors</span><span class="o">?</span><span class="p">.</span><span class="nx">quantity</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">state</span><span class="p">.</span><span class="nx">errors</span><span class="p">.</span><span class="nx">quantity</span><span class="p">[</span><span class="mf">0</span><span class="p">]}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p">&gt;</span><span class="nx">Submit</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="p">);</span>
+</code></pre></div>
+
+<ul>
+<li><strong>Resetting Form State</strong>: <code>useActionState</code> does not automatically clear the form state message after a successful submission. A common pattern is to wrap the form in another component that can reset the state by changing the <code>key</code> prop on the form component, causing it to remount with its initial state.</li>
+</ul>
+<h2 id="typing-useformstatus">Typing <code>useFormStatus</code></h2>
+<h2 id="learning-objective_3">Learning Objective</h2>
+<p>Utilize the <code>useFormStatus</code> hook to create responsive form components that react to pending states, and understand its built-in TypeScript types.</p>
+<h2 id="why-this-matters_3">Why This Matters</h2>
+<p>Often, you want to give the user feedback <em>while</em> a form submission is in progress. You might want to disable a button, show a spinner, or change some text. The <code>useFormStatus</code> hook provides this information without requiring you to pass <code>isPending</code> state down through props. Its types are provided by React, making it simple to use correctly.</p>
+<h2 id="discovery-phase_3">Discovery Phase</h2>
+<p>The most important rule of <code>useFormStatus</code> is that it <strong>must be used in a component that is a descendant of a <code>&lt;form&gt;</code> element</strong>. It will not work in the same component that renders the <code>&lt;form&gt;</code>.</p>
+<p>Let's create a dedicated <code>SubmitButton</code> component that uses this hook.</p>
+<div class="codehilite"><pre><span></span><code><span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useFormStatus</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react-dom&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Note: imported from &#39;react-dom&#39;</span>
+
+<span class="c1">// This component MUST be rendered inside a &lt;form&gt;</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">SubmitButton</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// `useFormStatus` returns an object with the status of the parent form.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useFormStatus</span><span class="p">();</span>
+
+<span class="w">  </span><span class="c1">// TypeScript knows the shape of `status` automatically.</span>
+<span class="w">  </span><span class="c1">// `status.pending` is a boolean.</span>
+<span class="w">  </span><span class="c1">// `status.data` is a FormData object if pending, otherwise null.</span>
+<span class="w">  </span><span class="c1">// `status.method` is &#39;get&#39; or &#39;post&#39;.</span>
+<span class="w">  </span><span class="c1">// `status.action` is the action function itself.</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="w"> </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">status</span><span class="p">.</span><span class="nx">pending</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">status</span><span class="p">.</span><span class="nx">pending</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;Saving...&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Save&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// --- USAGE ---</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useActionState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">someServerAction</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./actions&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">formAction</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useActionState</span><span class="p">(</span><span class="nx">someServerAction</span><span class="p">,</span><span class="w"> </span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">action</span><span class="o">=</span><span class="p">{</span><span class="nx">formAction</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="nx">Name</span><span class="o">:</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;name&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* We use our status-aware button here */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">SubmitButton</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Dummy action for demonstration</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">someServerAction</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">((</span><span class="nx">res</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span><span class="w"> </span><span class="mf">1000</span><span class="p">));</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:</p>
+<ol>
+<li>Click the "Save" button.</li>
+<li>The button immediately becomes disabled and its text changes to "Saving...".</li>
+<li>After a 1-second delay (from our dummy action), the form submission completes, and the button returns to its original "Save" text and enabled state.</li>
+</ol>
+<p>This works without any prop drilling. The <code>SubmitButton</code> is "aware" of the state of the parent <code>&lt;form&gt;</code> thanks to the <code>useFormStatus</code> hook. The types for the <code>status</code> object are provided by <code>@types/react-dom</code>, so you get autocompletion and type safety for free.</p>
+<h2 id="deep-dive_3">Deep Dive</h2>
+<h3 id="the-formstatus-type">The <code>FormStatus</code> Type</h3>
+<p>The <code>useFormStatus</code> hook returns an object of type <code>FormStatus</code>. Let's look at its definition:</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">interface</span><span class="w"> </span><span class="nx">FormStatus</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">pending</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="kt">FormData</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">method</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;get&quot;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s2">&quot;post&quot;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="p">((</span><span class="nx">formData</span><span class="o">:</span><span class="w"> </span><span class="kt">FormData</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="ow">void</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<ul>
+<li><strong><code>pending</code></strong>: The most used property. <code>true</code> if the form is submitting, <code>false</code> otherwise.</li>
+<li><strong><code>data</code></strong>: A <code>FormData</code> object representing the data that is currently being submitted. This is useful for creating optimistic UI updates, which we'll see in the next section. When not pending, it's <code>null</code>.</li>
+<li><strong><code>method</code></strong>: The HTTP method used for the submission.</li>
+<li><strong><code>action</code></strong>: A reference to the action function that was called.</li>
+</ul>
+<h3 id="common-confusion-why-is-useformstatus-in-react-dom">Common Confusion: "Why is <code>useFormStatus</code> in <code>react-dom</code>?"</h3>
+<p><strong>You might think</strong>: "Shouldn't all hooks be in the <code>react</code> package?"</p>
+<p><strong>Actually</strong>: <code>useFormStatus</code> is in <code>react-dom</code> because its functionality is intrinsically tied to the DOM (specifically, the <code>&lt;form&gt;</code> element). It's part of the glue between React's component model and the browser's native form behavior. Other DOM-specific hooks, like <code>useFormState</code> in older versions, also lived here.</p>
+<p><strong>Why the confusion happens</strong>: It's one of the few hooks imported from a different package, which is an easy detail to forget.</p>
+<p><strong>How to remember</strong>: If the hook is directly related to a native <strong>DOM</strong> element's behavior (like <code>&lt;form&gt;</code>), it's likely in <code>react-**dom**</code>.</p>
+<h3 id="production-perspective_3">Production Perspective</h3>
+<ul>
+<li><strong>Component Encapsulation</strong>: The primary benefit of <code>useFormStatus</code> is that it allows you to create highly reusable, encapsulated components. You can build a design system with <code>SubmitButton</code>, <code>FormSpinner</code>, or <code>FormErrorMessage</code> components that automatically react to form state without needing any props passed to them.</li>
+<li><strong>User Experience</strong>: Always use <code>useFormStatus</code> (or the <code>isPending</code> value from <code>useActionState</code>) to disable submit buttons during a mutation. This prevents accidental double submissions, which is a common source of bugs and user frustration.</li>
+<li><strong>Debugging</strong>: If <code>useFormStatus</code> isn't working, the first thing to check is its location in the component tree. It <em>must</em> be a child of the <code>&lt;form&gt;</code> it's tracking. A common mistake is to place it in the same component that renders the <code>&lt;form&gt;</code>, which will not work.</li>
+</ul>
+<h2 id="typing-useoptimistic">Typing <code>useOptimistic</code></h2>
+<h2 id="learning-objective_4">Learning Objective</h2>
+<p>Apply generics to the <code>useOptimistic</code> hook to safely implement optimistic UI updates, providing instant feedback to users.</p>
+<h2 id="why-this-matters_4">Why This Matters</h2>
+<p>In a world of fast user interfaces, waiting for a server response can feel slow. Optimistic updates—updating the UI <em>before</em> the server confirms the change—make an application feel instantaneous. The <code>useOptimistic</code> hook is React's built-in tool for this, and typing it correctly is crucial for preventing inconsistencies between the optimistic state and the real state.</p>
+<h2 id="discovery-phase_4">Discovery Phase</h2>
+<p>Let's build a simple message list where new messages appear instantly, even though the "server" takes a moment to respond.</p>
+<div class="codehilite"><pre><span></span><code><span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useOptimistic</span><span class="p">,</span><span class="w"> </span><span class="nx">useRef</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="c1">// Define the shape of a single message</span>
+<span class="nx">type</span><span class="w"> </span><span class="nx">Message</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="nx">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">sending</span><span class="o">?:</span><span class="w"> </span><span class="kr">boolean</span><span class="p">;</span><span class="w"> </span><span class="c1">// A flag for optimistic items</span>
+<span class="p">};</span>
+
+<span class="c1">// A dummy server action</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">sendMessage</span><span class="p">(</span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="nx">FormData</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="p">&lt;</span><span class="nt">Message</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">text</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">message</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">)</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">string</span><span class="p">;</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">res</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span><span class="w"> </span><span class="mf">1000</span><span class="p">));</span><span class="w"> </span><span class="c1">// Simulate network delay</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">text</span><span class="w"> </span><span class="p">};</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">MessageList</span><span class="p">({</span><span class="w"> </span><span class="nx">initialMessages</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">initialMessages</span><span class="o">:</span><span class="w"> </span><span class="nx">Message</span><span class="p">[]</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Step 1: `useOptimistic` is a generic hook.</span>
+<span class="w">  </span><span class="c1">// `OptimisticState` is the type of the state (`Message[]`).</span>
+<span class="w">  </span><span class="c1">// `ActionPayload` is the type of the data passed to the update function (`string`).</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">optimisticMessages</span><span class="p">,</span><span class="w"> </span><span class="nx">addOptimisticMessage</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useOptimistic</span><span class="p">&lt;</span><span class="nt">Message</span><span class="err">[],</span><span class="w"> </span><span class="na">string</span><span class="p">&gt;(</span>
+<span class="w">    </span><span class="nx">initialMessages</span><span class="p">,</span>
+<span class="w">    </span><span class="c1">// Step 2: Define the update function.</span>
+<span class="w">    </span><span class="c1">// It takes the current state and the payload, and returns the new optimistic state.</span>
+<span class="w">    </span><span class="p">(</span><span class="nx">currentState</span><span class="p">,</span><span class="w"> </span><span class="nx">newMessageText</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">...</span><span class="nx">currentState</span><span class="p">,</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="nx">newMessageText</span><span class="p">,</span><span class="w"> </span><span class="nx">sending</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">formRef</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">&lt;</span><span class="nt">HTMLFormElement</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">formAction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">formData</span><span class="o">:</span><span class="w"> </span><span class="nx">FormData</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">newMessageText</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">formData</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">)</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">string</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// Step 3: Call the optimistic update function with the payload.</span>
+<span class="w">    </span><span class="c1">// This updates the UI instantly.</span>
+<span class="w">    </span><span class="nx">addOptimisticMessage</span><span class="p">(</span><span class="nx">newMessageText</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Reset the form</span>
+<span class="w">    </span><span class="nx">formRef</span><span class="p">.</span><span class="nx">current</span><span class="o">?</span><span class="p">.</span><span class="nx">reset</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// Now, call the actual server action.</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">sendMessage</span><span class="p">(</span><span class="nx">formData</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// Once the promise resolves, React will automatically revert the optimistic</span>
+<span class="w">    </span><span class="c1">// state and re-render with the final state from the server (if different).</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">optimisticMessages</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">msg</span><span class="p">,</span><span class="w"> </span><span class="nx">index</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">index</span><span class="p">}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">opacity</span><span class="o">:</span><span class="w"> </span><span class="nx">msg</span><span class="p">.</span><span class="nx">sending</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mf">1</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">msg</span><span class="p">.</span><span class="nx">text</span><span class="p">}</span><span class="w"> </span><span class="p">{</span><span class="nx">msg</span><span class="p">.</span><span class="nx">sending</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">small</span><span class="p">&gt;(</span><span class="nx">Sending</span><span class="p">...)&lt;/</span><span class="nt">small</span><span class="p">&gt;}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">action</span><span class="o">=</span><span class="p">{</span><span class="nx">formAction</span><span class="p">}</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">formRef</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;message&quot;</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Type a message...&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p">&gt;</span><span class="nx">Send</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:</p>
+<ol>
+<li>The list shows initial messages.</li>
+<li>You type "Hello" into the input and click "Send".</li>
+<li>Instantly, "Hello (Sending...)" appears in the list with 50% opacity. The input field clears.</li>
+<li>One second later, the "(Sending...)" text disappears, and the opacity returns to 100% as React reconciles the optimistic state with the real state.</li>
+</ol>
+<h3 id="typing-breakdown">Typing Breakdown</h3>
+<p>The signature is <code>useOptimistic&lt;State, Action&gt;(passthroughState, updateFn)</code>.</p>
+<ol>
+<li><strong><code>State</code></strong>: The first generic argument is the type of the state itself. In our case, it's <code>Message[]</code>. This is the type of <code>optimisticMessages</code>.</li>
+<li><strong><code>Action</code></strong>: The second generic argument is the type of the payload you'll pass to the updater function. We chose <code>string</code> because we only need the message text to create the optimistic state. This is the type expected by <code>addOptimisticMessage</code>.</li>
+<li><strong><code>passthroughState</code></strong>: This is the "real" state, which React will use as the basis for updates. Here, it's <code>initialMessages</code>.</li>
+<li><strong><code>updateFn</code></strong>: A function <code>(currentState: State, action: Action) =&gt; State</code>. TypeScript enforces this signature. It ensures that our updater takes the correct state and payload types and returns the new state in the correct shape.</li>
+</ol>
+<h2 id="deep-dive_4">Deep Dive</h2>
+<h3 id="common-confusion-do-i-need-to-manually-revert-the-state">Common Confusion: "Do I need to manually revert the state?"</h3>
+<p><strong>You might think</strong>: "After the server action finishes, I need to call another function to remove the <code>sending: true</code> flag."</p>
+<p><strong>Actually</strong>: No, React handles this automatically. <code>useOptimistic</code> is designed to be "fire-and-forget." When the component re-renders after the server action completes (because the <code>initialMessages</code> prop might change), React will automatically discard the optimistic state and use the new "real" state.</p>
+<p><strong>Why the confusion happens</strong>: In manual implementations of optimistic updates, you often have to manage the "revert" logic yourself.</p>
+<p><strong>How to remember</strong>: The <code>useOptimistic</code> hook is a time-traveler. It shows you a possible future, but when the present catches up (the server responds), it automatically snaps back to reality.</p>
+<h3 id="production-perspective_4">Production Perspective</h3>
+<ul>
+<li><strong>When to Use</strong>: Optimistic updates are best for actions that are very likely to succeed. For high-stakes operations (like a payment), it's often better to show a pending state and wait for server confirmation.</li>
+<li><strong>Handling Errors</strong>: If the server action throws an error, React will also discard the optimistic update and revert to the last known "real" state. You should handle this error with an Error Boundary or by returning an error state from your action to display a message to the user.</li>
+<li><strong>Matching Keys</strong>: For lists, ensure your keys are stable. When React reconciles the optimistic and real state, it uses keys to match items. If an optimistic item has a temporary key, make sure the server response includes that key so React can seamlessly merge the states.</li>
+</ul>
+<h2 id="server-component-types">Server Component Types</h2>
+<h2 id="learning-objective_5">Learning Objective</h2>
+<p>Understand the typing conventions for async Server Components, including how to type their props and return values.</p>
+<h2 id="why-this-matters_5">Why This Matters</h2>
+<p>Server Components are a new paradigm in React. They execute on the server and can perform asynchronous operations like database queries directly within the component. Typing them correctly ensures that your data fetching logic is sound and that the props you pass between Server Components are safe.</p>
+<h2 id="discovery-phase_5">Discovery Phase</h2>
+<p>At its core, a Server Component is an <code>async</code> function that returns JSX. The typing follows naturally from this definition.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="c1">// Assume db is a typed database client, like Prisma or Drizzle</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">db</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./db&#39;</span><span class="p">;</span>
+
+<span class="c1">// Define the shape of props for this Server Component</span>
+<span class="nx">type</span><span class="w"> </span><span class="nx">UserProfileProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="nx">number</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// The component is an `async` function.</span>
+<span class="c1">// The return type is implicitly `Promise&lt;React.ReactElement&gt;`.</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">UserProfileProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// You can `await` data fetching directly inside the component.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">db</span><span class="p">.</span><span class="nx">user</span><span class="p">.</span><span class="nx">findUnique</span><span class="p">({</span><span class="w"> </span><span class="nx">where</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">User</span><span class="w"> </span><span class="nx">not</span><span class="w"> </span><span class="nx">found</span><span class="p">.&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="c1">// `user` is fully typed based on your database schema.</span>
+<span class="w">  </span><span class="c1">// We can safely access properties like `user.name`.</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Email</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This looks remarkably simple, and the typing is straightforward:</p>
+<ol>
+<li><strong>Props</strong>: You type the props (<code>UserProfileProps</code>) just like any other component.</li>
+<li><strong>Function Signature</strong>: The function is marked <code>async</code>.</li>
+<li><strong>Return Type</strong>: Because it's an <code>async</code> function returning JSX, TypeScript correctly infers the return type as <code>Promise&lt;React.ReactElement&gt;</code>. You rarely need to write this out explicitly.</li>
+</ol>
+<p>The key takeaway is that you don't need special TypeScript syntax for Server Components. You just type them as asynchronous functions.</p>
+<h2 id="deep-dive_5">Deep Dive</h2>
+<h3 id="what-you-cant-do-in-a-server-component">What You Can't Do in a Server Component</h3>
+<p>The type system won't stop you from trying to use client-side features, but it's important to know the rules. Server Components cannot use:</p>
+<ul>
+<li>Hooks like <code>useState</code>, <code>useEffect</code>, <code>useContext</code>, etc. They have no state and are not interactive.</li>
+<li>Browser-only APIs like <code>window</code> or <code>localStorage</code>.</li>
+<li>Event handlers like <code>onClick</code> or <code>onChange</code>. Interactivity is handled by Client Components.</li>
+</ul>
+<p>An attempt to use <code>useState</code> would look like this:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// THIS IS AN ERROR</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">MyServerComponent</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span><span class="w"> </span><span class="c1">// Error: React Hooks can only be called in a Client Component.</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="o">&lt;</span><span class="nx">div</span><span class="o">&gt;</span><span class="p">...</span><span class="o">&lt;</span><span class="err">/div&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Frameworks like Next.js will give you a clear error if you try to do this.</p>
+<h3 id="composing-server-components">Composing Server Components</h3>
+<p>You can easily compose Server Components and <code>await</code> them, just like any other async function.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">UserProfile</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./UserProfile&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">UserPosts</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./UserPosts&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Another async Server Component</span>
+
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserDashboard</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="nx">number</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// You can render components in parallel using Promise.all</span>
+<span class="w">  </span><span class="c1">// or await them sequentially.</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* React can handle a promise that resolves to JSX */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">UserProfile</span><span class="w"> </span><span class="na">userId</span><span class="o">=</span><span class="p">{</span><span class="nx">userId</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Posts</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* You can also await a component before rendering it */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">{</span><span class="k">await</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">UserPosts</span><span class="w"> </span><span class="na">userId</span><span class="o">=</span><span class="p">{</span><span class="nx">userId</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>React's renderer is designed to handle promises as children. When it encounters a promise (like the one returned by <code>&lt;UserProfile&gt;</code>), it can stream the rest of the page and fill in the content of <code>UserProfile</code> once its data has been fetched and it has rendered.</p>
+<h3 id="production-perspective_5">Production Perspective</h3>
+<ul>
+<li><strong>Data Fetching Co-location</strong>: The primary benefit of Server Components is co-locating your data fetching with your view logic. Your types should flow from your data source (e.g., a typed database client or an OpenAPI-generated API client) through your component to ensure end-to-end type safety.</li>
+<li><strong>Props must be Serializable</strong>: When a Server Component renders a Client Component (which we'll cover next), the props you pass must be serializable. This means they can be converted to a string and sent over the network. You can pass primitives, plain objects, and arrays. You cannot pass functions, Dates, Maps, Sets, or other complex objects that aren't part of the JSON standard. TypeScript won't enforce this rule by default, but frameworks will warn you.</li>
+</ul>
+<h2 id="client-component-types">Client Component Types</h2>
+<h2 id="learning-objective_6">Learning Objective</h2>
+<p>Type Client Components correctly, understanding the role of the <code>'use client'</code> directive and the serialization boundary for props passed from Server Components.</p>
+<h2 id="why-this-matters_6">Why This Matters</h2>
+<p>Client Components are the interactive building blocks of your application. They are essentially the same components we've been building for years, but in the new server-first paradigm, it's crucial to understand how they receive data from their server-side parents and how to type that boundary correctly.</p>
+<h2 id="discovery-phase_6">Discovery Phase</h2>
+<p>A Client Component is any component in a file that starts with the <code>'use client'</code> directive. Once you add this directive, everything in that file is considered part of the client bundle.</p>
+<p>Let's create an interactive <code>Counter</code> button that receives its initial count from a Server Component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: CounterButton.tsx</span>
+<span class="s1">&#39;use client&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// This directive makes it a Client Component.</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="c1">// Props are typed just like any other component.</span>
+<span class="nx">type</span><span class="w"> </span><span class="nx">CounterButtonProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">initialCount</span><span class="o">:</span><span class="w"> </span><span class="nx">number</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">CounterButton</span><span class="p">({</span><span class="w"> </span><span class="nx">initialCount</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">CounterButtonProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Now we can use hooks like `useState`!</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="nx">initialCount</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCount</span><span class="p">(</span><span class="nx">c</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">c</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span>
+<span class="w">      </span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, let's use this Client Component from a Server Component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// FileName: page.tsx (A Server Component)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">CounterButton</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./CounterButton&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Server-side logic to determine the initial count.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">initialCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">10</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Here</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="nx">an</span><span class="w"> </span><span class="nx">interactive</span><span class="w"> </span><span class="nx">button</span><span class="o">:</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* We pass the server-calculated value as a prop to the Client Component. */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">CounterButton</span><span class="w"> </span><span class="na">initialCount</span><span class="o">=</span><span class="p">{</span><span class="nx">initialCount</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:
+The page loads with a button showing a random number between 0 and 9 (e.g., "Count: 7"). Each time you click the button, the count increments.</p>
+<p>The typing is exactly what we've learned in previous chapters. The only new concept is the <code>'use client'</code> directive. From a TypeScript perspective, there is no difference in how you type a Client Component versus a traditional React component. The key is understanding the boundary between server and client.</p>
+<h2 id="deep-dive_6">Deep Dive</h2>
+<h3 id="the-serialization-boundary">The Serialization Boundary</h3>
+<p>When a Server Component renders a Client Component, the props are serialized (turned into a string, typically JSON) and sent from the server to the client. The client then "hydrates" the Client Component using these props.</p>
+<p>This means you <strong>cannot</strong> pass props that are not serializable.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// In a Server Component:</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ClientComponent</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./ClientComponent&quot;</span><span class="p">;</span>
+
+<span class="c1">// ✅ OK: Primitives, plain objects, arrays</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">serializableProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;hello&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">count</span><span class="o">:</span><span class="w"> </span><span class="mf">123</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">items</span><span class="o">:</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;item&quot;</span><span class="w"> </span><span class="p">}],</span>
+<span class="p">};</span>
+<span class="c1">// &lt;ClientComponent data={serializableProps} /&gt;</span>
+
+<span class="c1">// ❌ ERROR: Functions, Dates, Maps, Sets, etc.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">nonSerializableProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">onClick</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;I will not be sent to the client&quot;</span><span class="p">),</span>
+<span class="w">  </span><span class="nx">date</span><span class="o">:</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Date</span><span class="p">(),</span>
+<span class="p">};</span>
+<span class="c1">// &lt;ClientComponent data={nonSerializableProps} /&gt; // This will cause a runtime error in Next.js/etc.</span>
+</code></pre></div>
+
+<p><strong>How do you type this?</strong></p>
+<p>TypeScript doesn't have a built-in way to enforce that a type is "JSON serializable." This is a limitation you need to be aware of. The best practice is to keep props passed from server to client simple.</p>
+<p>If you need to pass complex data, like a <code>Date</code>, convert it to a serializable format on the server (e.g., an ISO string) and then parse it back into a <code>Date</code> object on the client.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Server Component</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ClientTime</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./ClientTime&#39;</span><span class="p">;</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ServerPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">now</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Date</span><span class="p">();</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">ClientTime</span><span class="w"> </span><span class="na">dateString</span><span class="o">=</span><span class="p">{</span><span class="nx">now</span><span class="p">.</span><span class="nx">toISOString</span><span class="p">()}</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// ClientTime.tsx</span>
+<span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useMemo</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ClientTime</span><span class="p">({</span><span class="w"> </span><span class="nx">dateString</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">dateString</span><span class="o">:</span><span class="w"> </span><span class="nx">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Date</span><span class="p">(</span><span class="nx">dateString</span><span class="p">),</span><span class="w"> </span><span class="p">[</span><span class="nx">dateString</span><span class="p">]);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Time</span><span class="w"> </span><span class="nx">is</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">date</span><span class="p">.</span><span class="nx">toLocaleTimeString</span><span class="p">()}&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This pattern ensures that only serializable data crosses the server-client boundary, keeping your application robust.</p>
+<h3 id="production-perspective_6">Production Perspective</h3>
+<ul>
+<li><strong>Keep Server Components Lean</strong>: Server Components are for fetching data and composing other components. They should not contain complex logic.</li>
+<li><strong>Keep Client Components Small</strong>: Use the <code>'use client'</code> directive at the "leaves" of your component tree. Create small, interactive components and compose them within larger Server Components. This minimizes the amount of JavaScript sent to the browser.</li>
+<li><strong>Shared Types</strong>: It's a great practice to have a shared <code>types.ts</code> file that can be imported by both your Server and Client Components. This ensures that both sides of the boundary agree on the shape of the data being passed.</li>
+</ul>
+<h2 id="typing-async-transitions">Typing Async Transitions</h2>
+<h2 id="learning-objective_7">Learning Objective</h2>
+<p>Type the <code>useTransition</code> hook to manage loading states for asynchronous actions without blocking the UI, ensuring type safety for the transition callback.</p>
+<h2 id="why-this-matters_7">Why This Matters</h2>
+<p>When an action triggers a slow network request or a heavy computation, you don't want the UI to freeze. Transitions allow you to keep the UI interactive while the async work happens in the background. <code>useTransition</code> is the hook that powers this, and its typing is simple but essential for correct usage.</p>
+<h2 id="discovery-phase_7">Discovery Phase</h2>
+<p>Let's build a simple UI that "searches" for a query. The search is simulated to be slow, and we'll use <code>useTransition</code> to show a pending indicator without the UI feeling sluggish.</p>
+<div class="codehilite"><pre><span></span><code><span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useTransition</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="c1">// A fake search function that returns a promise</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">search</span><span class="p">(</span><span class="nx">query</span><span class="o">:</span><span class="w"> </span><span class="nx">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="p">&lt;</span><span class="nt">string</span><span class="err">[]</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">res</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span><span class="w"> </span><span class="mf">500</span><span class="p">));</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">query</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">[];</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">[</span><span class="sb">`Result for &quot;</span><span class="si">${</span><span class="nx">query</span><span class="si">}</span><span class="sb">&quot; 1`</span><span class="p">,</span><span class="w"> </span><span class="sb">`Result for &quot;</span><span class="si">${</span><span class="nx">query</span><span class="si">}</span><span class="sb">&quot; 2`</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">SearchApp</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">query</span><span class="p">,</span><span class="w"> </span><span class="nx">setQuery</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">results</span><span class="p">,</span><span class="w"> </span><span class="nx">setResults</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">string</span><span class="err">[]</span><span class="p">&gt;([]);</span>
+
+<span class="w">  </span><span class="c1">// Step 1: Call `useTransition`.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isPending</span><span class="p">,</span><span class="w"> </span><span class="nx">startTransition</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useTransition</span><span class="p">();</span>
+
+<span class="w">  </span><span class="c1">// TypeScript infers the types:</span>
+<span class="w">  </span><span class="c1">// `isPending` is a `boolean`.</span>
+<span class="w">  </span><span class="c1">// `startTransition` is a function: `(callback: () =&gt; void) =&gt; void`.</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">ChangeEvent</span><span class="p">&lt;</span><span class="nt">HTMLInputElement</span><span class="p">&gt;)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">newQuery</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">setQuery</span><span class="p">(</span><span class="nx">newQuery</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Step 2: Wrap the slow/async state update in `startTransition`.</span>
+<span class="w">    </span><span class="nx">startTransition</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// This update is marked as a &quot;transition&quot;.</span>
+<span class="w">      </span><span class="c1">// React will keep the UI interactive while it processes.</span>
+<span class="w">      </span><span class="nx">search</span><span class="p">(</span><span class="nx">newQuery</span><span class="p">).</span><span class="nx">then</span><span class="p">(</span><span class="nx">res</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setResults</span><span class="p">(</span><span class="nx">res</span><span class="p">);</span>
+<span class="w">      </span><span class="p">});</span>
+<span class="w">    </span><span class="p">});</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">query</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">opacity</span><span class="o">:</span><span class="w"> </span><span class="nx">isPending</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mf">0.5</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mf">1</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">h3</span><span class="p">&gt;</span><span class="nx">Results</span><span class="o">:</span><span class="p">&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">results</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">res</span><span class="p">,</span><span class="w"> </span><span class="nx">i</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">i</span><span class="p">}&gt;{</span><span class="nx">res</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;)}</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">isPending</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Searching</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:</p>
+<ol>
+<li>You type "React" into the input field.</li>
+<li>The input field updates instantly. The UI does not freeze.</li>
+<li>The results section becomes semi-transparent, and "Searching..." appears.</li>
+<li>After 500ms, the results for "React" appear, the opacity returns to normal, and "Searching..." disappears.</li>
+</ol>
+<p>The typing is very straightforward:</p>
+<ul>
+<li><code>useTransition()</code> returns a tuple <code>[boolean, (callback: () =&gt; void) =&gt; void]</code>.</li>
+<li><code>isPending</code> is a simple boolean you can use to show loading indicators.</li>
+<li><code>startTransition</code> takes a callback function. This function must not have any arguments and should return <code>void</code>. Inside this callback, you trigger the state update that depends on the async operation.</li>
+</ul>
+<h2 id="deep-dive_7">Deep Dive</h2>
+<h3 id="usetransition-vs-actions"><code>useTransition</code> vs. Actions</h3>
+<p>React 19 Actions have built-in support for transitions. When you use <code>useActionState</code>, the <code>isPending</code> value it returns is powered by the same transition mechanism.</p>
+<p><strong>When should you use <code>useTransition</code> manually?</strong>
+You should use <code>useTransition</code> when you have an async update that is <em>not</em> part of a native <code>&lt;form&gt;</code> submission. Common use cases include:</p>
+<ul>
+<li>Live search results as a user types.</li>
+<li>Filtering or sorting a large list of data on the client.</li>
+<li>Fetching new data when a tab is clicked.</li>
+</ul>
+<p>For any data mutation triggered by a <code>&lt;form&gt;</code>, prefer using an Action with <code>useActionState</code> or <code>useFormStatus</code>, as they provide the same pending state with less boilerplate.</p>
+<h3 id="common-confusion-can-i-await-inside-starttransition">Common Confusion: "Can I <code>await</code> inside <code>startTransition</code>?"</h3>
+<p><strong>You might think</strong>: "Since I'm doing async work, I should make the callback <code>async</code>."</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// THIS IS NOT THE INTENDED PATTERN</span>
+<span class="nx">startTransition</span><span class="p">(</span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">search</span><span class="p">(</span><span class="nx">newQuery</span><span class="p">);</span>
+<span class="w">  </span><span class="nx">setResults</span><span class="p">(</span><span class="nx">res</span><span class="p">);</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p><strong>Actually</strong>: While this might appear to work, it's not the recommended pattern. <code>startTransition</code> is designed to be synchronous. It marks any state updates that happen <em>synchronously within its callback</em> as transitions. The correct pattern is to call the async function and then call your state setter inside the <code>.then()</code> block, as shown in the main example.</p>
+<p><strong>Why the confusion happens</strong>: It's natural to associate <code>async/await</code> with any asynchronous operation.</p>
+<p><strong>How to remember</strong>: <code>startTransition</code> doesn't wait for your promise. It just "tags" the state updates inside its callback. The async work happens, and when it's done, the <code>.then()</code> callback triggers the tagged state update.</p>
+<h3 id="production-perspective_7">Production Perspective</h3>
+<ul>
+<li><strong>Improving User Experience</strong>: Transitions are a powerful tool for improving perceived performance. Use them for any interaction that might take more than 50-100ms to prevent the UI from feeling janky or unresponsive.</li>
+<li><strong>Combining with <code>useDeferredValue</code></strong>: <code>useTransition</code> is for when you're updating state. A related hook, <code>useDeferredValue</code>, is for when you're re-rendering a part of the UI based on a value that can change rapidly (like a search query). They often solve similar problems, but <code>useTransition</code> gives you an explicit <code>isPending</code> state, which is often more useful.</li>
+<li><strong>Typing the Callback</strong>: The type <code>() =&gt; void</code> for the <code>startTransition</code> callback is strict. If your function takes arguments or has a meaningful return value, it won't be accepted. Ensure the function you pass is a simple, argument-less thunk that triggers the state update.</li>
+</ul>
+<h2 id="module-synthesis">Module Synthesis 📋</h2>
+<h2 id="module-synthesis_1">Module Synthesis</h2>
+<p>In this chapter, we've applied our foundational TypeScript knowledge to the cutting-edge features of React 19. We've seen how these new APIs were designed with TypeScript in mind, offering a superior developer experience with powerful type inference that reduces boilerplate and enhances safety.</p>
+<p>We began with the <strong><code>use</code> hook</strong>, demystifying how it seamlessly infers return types from promises and context, leading to cleaner data-fetching and context consumption patterns. We then established the core pattern for <strong>Type-Safe Actions</strong>, creating a robust contract for our form mutations using <code>FormData</code> and libraries like Zod for validation.</p>
+<p>Building on that, we saw how hooks like <strong><code>useActionState</code></strong> and <strong><code>useFormStatus</code></strong> leverage the types from our actions to provide fully-typed state and status variables with zero manual annotation. We tackled the most advanced new hook, <strong><code>useOptimistic</code></strong>, using generics to create instantaneous-feeling UIs while maintaining a clear and safe distinction between the optimistic and server-confirmed states.</p>
+<p>We then navigated the new architectural paradigm of <strong>Server and Client Components</strong>. We learned to type async Server Components as simple async functions and understood the critical <strong>serialization boundary</strong> when passing props to interactive Client Components marked with <code>'use client'</code>. Finally, we typed <strong><code>useTransition</code></strong>, giving us a tool to keep our applications responsive during asynchronous state updates.</p>
+<h2 id="looking-ahead">Looking Ahead</h2>
+<p>You are now proficient in typing both the classic and the modern, React 19-specific parts of the library. You can build complex, interactive, and performant applications with a high degree of type safety.</p>
+<p>In the next chapter, <strong>Chapter 22: Advanced TypeScript Patterns in React</strong>, we will push our skills even further. We'll move beyond the basics of typing components and hooks to explore advanced, professional-grade patterns. We'll learn how to build highly flexible and reusable components using discriminated unions for props, create polymorphic components with the "as prop" pattern, and leverage conditional types to build truly dynamic and powerful component APIs. This is where we transition from being proficient to being an expert in TypeScript with React.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-10-25 16:27:48 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

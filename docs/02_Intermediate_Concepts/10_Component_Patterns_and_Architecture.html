@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10_Component_Patterns_and_Architecture</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">02_Intermediate_Concepts</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-10-component-patterns-and-architecture">Chapter 10: Component Patterns and Architecture</h1>
+<h2 id="container-and-presentational-components">Container and Presentational Components</h2>
+<h2 id="learning-objective">Learning Objective</h2>
+<p>Re-evaluate the classic "Container and Presentational" pattern in the context of React Server Components and hooks, and understand how modern React simplifies this separation of concerns.</p>
+<h2 id="why-this-matters">Why This Matters</h2>
+<p>The Container/Presentational pattern was one of the first major architectural patterns in React, designed to separate data fetching and logic (containers) from rendering and UI (presentational). While the original pattern is less common now, the core principle of separating concerns is more important than ever. Understanding how RSCs and hooks achieve this separation naturally will help you write cleaner, more maintainable code.</p>
+<h2 id="discovery-phase-the-classic-pattern">Discovery Phase: The Classic Pattern</h2>
+<p>Let's look at a classic implementation of this pattern. We'd have a "smart" container component that knows how to fetch data and a "dumb" presentational component that just knows how to render it.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// The &quot;Dumb&quot; Presentational Component</span>
+<span class="c1">// It only receives props and renders UI. No data fetching, no state.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileView</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Email</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// The &quot;Smart&quot; Container Component</span>
+<span class="c1">// It handles logic, state, and data fetching.</span>
+<span class="kd">class</span><span class="w"> </span><span class="nx">UserProfileContainer</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">Component</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">state</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">user</span><span class="o">:</span><span class="w"> </span><span class="kc">null</span><span class="w"> </span><span class="p">};</span>
+
+<span class="w">  </span><span class="nx">componentDidMount</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/users/</span><span class="si">${</span><span class="k">this</span><span class="p">.</span><span class="nx">props</span><span class="p">.</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">res</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">setState</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">}));</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="nx">render</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">UserProfileView</span><span class="w"> </span><span class="na">user</span><span class="o">=</span><span class="p">{</span><span class="k">this</span><span class="p">.</span><span class="nx">state</span><span class="p">.</span><span class="nx">user</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// Usage: &lt;UserProfileContainer userId=&quot;1&quot; /&gt;</span>
+</code></pre></div>
+
+<p>This pattern was revolutionary because it made <code>UserProfileView</code> highly reusable and easy to test. You could render it in a tool like Storybook just by passing it different <code>user</code> props. However, it created a lot of boilerplate, often requiring two files for one piece of UI.</p>
+<h2 id="deep-dive-the-modern-approach-with-rscs-and-hooks">Deep Dive: The Modern Approach with RSCs and Hooks</h2>
+<p>Modern React provides more direct ways to achieve the same separation of concerns.</p>
+<h3 id="case-1-the-component-is-purely-for-data-display-no-interactivity">Case 1: The Component is Purely for Data Display (No Interactivity)</h3>
+<p>If the component's job is just to fetch and display data, a <strong>React Server Component</strong> is the perfect modern equivalent. It naturally combines the data fetching and rendering logic in one place, but keeps that logic on the server.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// This is a Server Component by default.</span>
+<span class="c1">// It acts as its own data container.</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// 1. Data fetching logic is co-located with the view.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">db</span><span class="p">.</span><span class="nx">users</span><span class="p">.</span><span class="nx">find</span><span class="p">(</span><span class="nx">userId</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// 2. Rendering logic uses the fetched data.</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Email</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Usage: &lt;UserProfile userId=&quot;1&quot; /&gt;</span>
+</code></pre></div>
+
+<p>This single async component achieves the same goal as the original two-component pattern, but with far less code. The concern of "data fetching" is separated from the client by virtue of running on the server. The client receives only the final HTML, making this the ultimate "presentational" output.</p>
+<h3 id="case-2-the-component-has-interactive-ui">Case 2: The Component Has Interactive UI</h3>
+<p>What if the profile view also had a client-side button, like a "Follow" button? Here, we combine an RSC with a Client Component. The RSC acts as the container, and the Client Component is the interactive presentational piece.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// The Server Component acts as the &quot;Container&quot;</span>
+<span class="c1">// It fetches the data.</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">db</span><span class="p">.</span><span class="nx">users</span><span class="p">.</span><span class="nx">find</span><span class="p">(</span><span class="nx">userId</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="c1">// It passes the static data down to the client view.</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">UserProfileView</span><span class="w"> </span><span class="na">user</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// The Client Component is the &quot;Presentational&quot; part</span>
+<span class="c1">// It handles its own interactive state.</span>
+<span class="p">(</span><span class="s2">&quot;use client&quot;</span><span class="p">);</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileView</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isFollowing</span><span class="p">,</span><span class="w"> </span><span class="nx">setIsFollowing</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Email</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setIsFollowing</span><span class="p">(</span><span class="o">!</span><span class="nx">isFollowing</span><span class="p">)}&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">isFollowing</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;Following&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Follow&quot;</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is the modern evolution of the pattern.</p>
+<ul>
+<li>The <strong>Server Component</strong> is the data container.</li>
+<li>The <strong>Client Component</strong> is the interactive view.</li>
+</ul>
+<p>The separation of concerns is now between the server and the client, which is a much clearer and more impactful boundary than the original class-based pattern.</p>
+<h2 id="production-perspective">Production Perspective</h2>
+<ul>
+<li><strong>RSCs as Natural Containers</strong>: Think of your page-level Server Components as the primary data containers for your application. They fetch and distribute data to the rest of the tree.</li>
+<li><strong>Separating Logic with Hooks</strong>: For complex client-side logic, the modern approach is not to create a separate container component, but to extract the logic into a custom hook (<code>useUserProfile</code>). The presentational component then uses this hook. This keeps the logic reusable without requiring two components.</li>
+<li><strong>When is the old pattern still useful?</strong>: You will encounter the Container/Presentational pattern in older codebases. Understanding it is important for maintenance. However, for new development in React 19, the combination of Server Components for data and Client Components (with custom hooks for complex logic) is the superior approach.</li>
+</ul>
+<h2 id="higher-order-components-hocs">Higher-Order Components (HOCs)</h2>
+<h2 id="learning-objective_1">Learning Objective</h2>
+<p>Understand the Higher-Order Component (HOC) pattern, its original purpose, and why custom hooks have largely replaced it for logic sharing in modern React.</p>
+<h3 id="legacy-pattern-notice">Legacy Pattern Notice</h3>
+<p><strong>Pre-Hooks</strong>: HOCs were a primary method for reusing component logic. They are a function that takes a component and returns a new, enhanced component.</p>
+<p><strong>Modern React</strong>: Custom Hooks provide a more direct and less complex way to share stateful logic. While HOCs are still used in some libraries and legacy code, they are no longer a recommended pattern for new application code.</p>
+<h2 id="discovery-phase-the-hoc-pattern-explained">Discovery Phase: The HOC Pattern Explained</h2>
+<p>A Higher-Order Component is a function that wraps a component to provide it with extra props or behavior. A classic example is a <code>withUserData</code> HOC that fetches user data and injects it as a prop into the wrapped component.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// This is the HOC. It&#39;s a function that takes a component...</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">withUserData</span><span class="p">(</span><span class="nx">WrappedComponent</span><span class="p">,</span><span class="w"> </span><span class="nx">userId</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...and returns a new component.</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">WithUserData</span><span class="p">(</span><span class="nx">props</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">    </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/users/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">res</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
+<span class="w">        </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">data</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">));</span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="nx">data</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+
+<span class="w">    </span><span class="c1">// It renders the original component with the new `user` prop.</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">WrappedComponent</span><span class="w"> </span><span class="p">{</span><span class="na">...props</span><span class="p">}</span><span class="w"> </span><span class="na">user</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="p">}</span>
+
+<span class="c1">// A simple presentational component that knows nothing about fetching.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserGreeter</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Hello</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// We create the enhanced component by calling the HOC.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">UserGreeterWithData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">withUserData</span><span class="p">(</span><span class="nx">UserGreeter</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;1&quot;</span><span class="p">);</span>
+
+<span class="c1">// Usage: &lt;UserGreeterWithData /&gt;</span>
+</code></pre></div>
+
+<p>This pattern allowed us to reuse the data-fetching logic for any component that needed user data. However, it had several drawbacks:</p>
+<ul>
+<li><strong>Wrapper Hell</strong>: Nesting multiple HOCs (<code>withTheme(withAuth(withUserData(MyComponent)))</code>) created deeply nested component trees that were hard to debug.</li>
+<li><strong>Prop Name Collisions</strong>: If two HOCs both injected a prop named <code>data</code>, one would overwrite the other.</li>
+<li><strong>Implicit Dependencies</strong>: It wasn't clear from looking at <code>UserGreeter</code> where the <code>user</code> prop was coming from.</li>
+</ul>
+<h2 id="deep-dive-the-modern-solution-custom-hooks">Deep Dive: The Modern Solution - Custom Hooks</h2>
+<p>Custom hooks solve the exact same problem—reusing stateful logic—in a much cleaner way. Let's rewrite our example using a <code>useUserData</code> custom hook.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// The custom hook encapsulates the logic.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">useUserData</span><span class="p">(</span><span class="nx">userId</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/users/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">res</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">data</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">));</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">user</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// The component now explicitly uses the hook.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserGreeter</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useUserData</span><span class="p">(</span><span class="nx">userId</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="nx">data</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Hello</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// Usage: &lt;UserGreeter userId=&quot;1&quot; /&gt;</span>
+</code></pre></div>
+
+<p>Comparing the two approaches reveals why hooks are superior:</p>
+<ul>
+<li><strong>No Wrapper Hell</strong>: Hooks are just function calls inside your component. There's no extra nesting in the component tree.</li>
+<li><strong>No Prop Collisions</strong>: The component gets the value back from the hook and can assign it to any variable name it wants (<code>const userData = useUserData(...)</code>).</li>
+<li><strong>Explicit Dependencies</strong>: It's perfectly clear inside <code>UserGreeter</code> where the <code>user</code> data comes from. The dependency is explicit: <code>const user = useUserData(userId)</code>.</li>
+<li><strong>Better Composition</strong>: You can use multiple hooks in a single component with no issues, and even use the output of one hook as the input to another.</li>
+</ul>
+<h2 id="production-perspective_1">Production Perspective</h2>
+<ul>
+<li><strong>When are HOCs still used?</strong>: You will still encounter HOCs in the wild. Some libraries, especially older ones or those that need to manipulate component rendering in complex ways (like styling libraries or form libraries), still use them. For example, <code>React.memo</code> is technically an HOC.</li>
+<li><strong>The Migration Path</strong>: When working in a legacy codebase, a common and valuable refactoring task is to convert HOCs into custom hooks. This often simplifies the code, improves type safety with TypeScript, and makes the component's logic easier to follow.</li>
+<li><strong>The RSC Alternative</strong>: It's also worth noting that for the specific <code>withUserData</code> example, the absolute best modern solution is often a Server Component that simply <code>await</code>s the data, as we saw in the previous section. Custom hooks are the answer for sharing logic on the <strong>client</strong>.</li>
+</ul>
+<h2 id="render-props-pattern">Render Props Pattern</h2>
+<h2 id="learning-objective_2">Learning Objective</h2>
+<p>Understand the Render Props pattern, its use case for sharing logic via props, and how custom hooks and component composition offer more direct alternatives.</p>
+<h3 id="legacy-pattern-notice_1">Legacy Pattern Notice</h3>
+<p><strong>Pre-Hooks</strong>: The Render Props pattern was another popular technique for sharing stateful logic. It involves a component whose primary prop is a function that returns JSX.</p>
+<p><strong>Modern React</strong>: Like HOCs, this pattern has been largely superseded by custom hooks for logic sharing. However, the underlying idea of passing components as props remains a cornerstone of React composition.</p>
+<h2 id="discovery-phase-the-render-props-pattern-explained">Discovery Phase: The Render Props Pattern Explained</h2>
+<p>A component using the Render Props pattern takes a function as a prop (commonly named <code>render</code> or passed as <code>children</code>). This function receives the state from the component and is responsible for rendering the UI.</p>
+<p>Here is a <code>MouseTracker</code> component that uses a render prop to share the current mouse coordinates.</p>
+<div class="codehilite"><pre><span></span><code><span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// This component tracks the mouse position...</span>
+<span class="kd">class</span><span class="w"> </span><span class="nx">MouseTracker</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">Component</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">state</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">x</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="p">};</span>
+
+<span class="w">  </span><span class="nx">handleMouseMove</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">setState</span><span class="p">({</span>
+<span class="w">      </span><span class="nx">x</span><span class="o">:</span><span class="w"> </span><span class="nx">event</span><span class="p">.</span><span class="nx">clientX</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">y</span><span class="o">:</span><span class="w"> </span><span class="nx">event</span><span class="p">.</span><span class="nx">clientY</span><span class="p">,</span>
+<span class="w">    </span><span class="p">});</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="nx">render</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span>
+<span class="w">        </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;300px&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1px solid black&quot;</span><span class="w"> </span><span class="p">}}</span>
+<span class="w">        </span><span class="na">onMouseMove</span><span class="o">=</span><span class="p">{</span><span class="k">this</span><span class="p">.</span><span class="nx">handleMouseMove</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* ...and calls the render prop with its state. */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">{</span><span class="k">this</span><span class="p">.</span><span class="nx">props</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">state</span><span class="p">)}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// The parent component decides what to render with the mouse coordinates.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Move</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">mouse</span><span class="w"> </span><span class="nx">around</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">MouseTracker</span>
+<span class="w">        </span><span class="na">render</span><span class="o">=</span><span class="p">{({</span><span class="w"> </span><span class="nx">x</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="c1">// This function is the &quot;render prop&quot;.</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="nx">The</span><span class="w"> </span><span class="nx">mouse</span><span class="w"> </span><span class="nx">position</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="p">({</span><span class="nx">x</span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="nx">y</span><span class="p">})</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">)}</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:
+As you move your mouse over the bordered box, the text updates in real-time with the current X and Y coordinates.</p>
+<p>The <code>MouseTracker</code> component encapsulated the logic of tracking the mouse, and the <code>render</code> prop allowed any parent to reuse that logic to render whatever UI it wanted. The main drawback was the added nesting and syntax complexity within the JSX.</p>
+<h2 id="deep-dive-modern-alternatives">Deep Dive: Modern Alternatives</h2>
+<h3 id="1-the-custom-hook-solution-for-logic-sharing">1. The Custom Hook Solution (for Logic Sharing)</h3>
+<p>Just like with HOCs, a custom hook is the modern, direct replacement for sharing this kind of logic.</p>
+<div class="codehilite"><pre><span></span><code><span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// The custom hook encapsulates the logic.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">useMousePosition</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">position</span><span class="p">,</span><span class="w"> </span><span class="nx">setPosition</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">({</span><span class="w"> </span><span class="nx">x</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleMouseMove</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">setPosition</span><span class="p">({</span><span class="w"> </span><span class="nx">x</span><span class="o">:</span><span class="w"> </span><span class="nx">event</span><span class="p">.</span><span class="nx">clientX</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="o">:</span><span class="w"> </span><span class="nx">event</span><span class="p">.</span><span class="nx">clientY</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="nb">window</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s2">&quot;mousemove&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">handleMouseMove</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nb">window</span><span class="p">.</span><span class="nx">removeEventListener</span><span class="p">(</span><span class="s2">&quot;mousemove&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">handleMouseMove</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">position</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// The component that uses the logic is now much flatter.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">x</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMousePosition</span><span class="p">();</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Move</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">mouse</span><span class="w"> </span><span class="nx">around</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="nx">The</span><span class="w"> </span><span class="nx">mouse</span><span class="w"> </span><span class="nx">position</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="p">({</span><span class="nx">x</span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="nx">y</span><span class="p">})</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is clearly simpler. There's no extra component, no function passed as a prop, just a direct call to the hook that provides the needed values.</p>
+<h3 id="2-the-component-composition-solution-for-slots">2. The Component Composition Solution (for "Slots")</h3>
+<p>The Render Props pattern wasn't just about logic; it was also about giving a component a "slot" to be filled by the parent. The modern way to do this is simply by passing JSX as <code>children</code>. This is the most fundamental composition pattern in React.</p>
+<p>The <code>Collapsible</code> component we saw in Chapter 9 is a perfect example. It uses its <code>children</code> prop as a "render prop" for its content.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Client Component &quot;Shell&quot;</span>
+<span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Card</span><span class="p">({</span><span class="w"> </span><span class="nx">children</span><span class="p">,</span><span class="w"> </span><span class="nx">title</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// This component provides a &quot;slot&quot; for content via `children`.</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1px solid gray&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1em&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">title</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">children</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Server Component Parent</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Card</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./Card&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ServerInfo</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./ServerInfo&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// An RSC</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Page</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">Card</span><span class="w"> </span><span class="na">title</span><span class="o">=</span><span class="s">&quot;Server-Rendered Content&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* We are filling the slot with another component. */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* This is a form of render prop, but much more natural. */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ServerInfo</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">Card</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is the true legacy of the Render Props pattern. While custom hooks replaced it for logic sharing, the core idea of passing renderable content as props (<code>children</code>) is more important than ever, especially for composing Server and Client components.</p>
+<h2 id="production-perspective_2">Production Perspective</h2>
+<ul>
+<li><strong>Logic Sharing</strong>: For sharing stateful, non-visual logic, always prefer custom hooks.</li>
+<li><strong>UI Slots</strong>: For creating reusable UI shells that need to be filled with content, use the <code>children</code> prop. This is the essence of component composition.</li>
+<li><strong>Legacy Code</strong>: You will see the render prop pattern extensively in older codebases and some libraries (e.g., older versions of React Router or Formik). Understanding it is key to working with that code. The migration path is usually to refactor the logic into a custom hook and simplify the component that uses it.</li>
+</ul>
+<h2 id="compound-components">Compound Components</h2>
+<h2 id="learning-objective_3">Learning Objective</h2>
+<p>Implement the Compound Components pattern to create a set of components that work together to manage a shared, implicit state, providing a clean and expressive API for consumers.</p>
+<h2 id="why-this-matters_1">Why This Matters</h2>
+<p>Some UI elements have a complex relationship between a parent and its children. Think of a <code>&lt;select&gt;</code> and <code>&lt;option&gt;</code> pair, or a tabbed interface. The Compound Components pattern allows you to create a similar declarative API for your own components. It makes the components highly reusable and expressive, hiding the complex internal state management from the user.</p>
+<h2 id="discovery-phase-building-a-tab-interface">Discovery Phase: Building a Tab Interface</h2>
+<p>Let's build a set of <code>Tabs</code> components. The desired API should look like this:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">&lt;</span><span class="nt">Tabs</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">&lt;</span><span class="nt">TabList</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">Tab</span><span class="p">&gt;</span><span class="nx">Tab</span><span class="w"> </span><span class="mf">1</span><span class="p">&lt;/</span><span class="nt">Tab</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">Tab</span><span class="p">&gt;</span><span class="nx">Tab</span><span class="w"> </span><span class="mf">2</span><span class="p">&lt;/</span><span class="nt">Tab</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">&lt;/</span><span class="nt">TabList</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">&lt;</span><span class="nt">TabPanels</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">TabPanel</span><span class="p">&gt;</span><span class="nx">Content</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nx">tab</span><span class="w"> </span><span class="mf">1</span><span class="p">&lt;/</span><span class="nt">TabPanel</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">TabPanel</span><span class="p">&gt;</span><span class="nx">Content</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nx">tab</span><span class="w"> </span><span class="mf">2</span><span class="p">&lt;/</span><span class="nt">TabPanel</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">&lt;/</span><span class="nt">TabPanels</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">Tabs</span><span class="p">&gt;</span>
+</code></pre></div>
+
+<p>This API is clean and semantic. To make it work, all these components (<code>Tabs</code>, <code>Tab</code>, <code>TabPanel</code>, etc.) need to communicate with each other. A <code>Tab</code> needs to know which tab is currently active, and it needs to be able to set the active tab when clicked. This shared state is managed implicitly using React Context.</p>
+<h2 id="deep-dive-implementing-compound-components-with-context">Deep Dive: Implementing Compound Components with Context</h2>
+<p>Since this component is interactive, the state management must happen on the client. We'll create a <code>Tabs</code> component with the <code>'use client'</code> directive that acts as the context provider.</p>
+<div class="codehilite"><pre><span></span><code><span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useContext</span><span class="p">,</span><span class="w"> </span><span class="nx">createContext</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// 1. Create a context to hold the shared state.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">TabsContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createContext</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="c1">// 2. The main parent component is the Provider.</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Tabs</span><span class="p">({</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">activeIndex</span><span class="p">,</span><span class="w"> </span><span class="nx">setActiveIndex</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">TabsContext</span><span class="p">.</span><span class="na">Provider</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">activeIndex</span><span class="p">,</span><span class="w"> </span><span class="nx">setActiveIndex</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">children</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">TabsContext</span><span class="p">.</span><span class="na">Provider</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// 3. Child components use the context to read and update state.</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">TabList</span><span class="p">({</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// We can use React.Children to inject props like the index.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">kids</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">Children</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">children</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">child</span><span class="p">,</span><span class="w"> </span><span class="nx">index</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">cloneElement</span><span class="p">(</span><span class="nx">child</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">index</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;flex&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">borderBottom</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1px solid black&quot;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">kids</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Tab</span><span class="p">({</span><span class="w"> </span><span class="nx">children</span><span class="p">,</span><span class="w"> </span><span class="nx">index</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">activeIndex</span><span class="p">,</span><span class="w"> </span><span class="nx">setActiveIndex</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useContext</span><span class="p">(</span><span class="nx">TabsContext</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">isActive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">index</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">activeIndex</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">button</span>
+<span class="w">      </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span>
+<span class="w">        </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1em&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;none&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">background</span><span class="o">:</span><span class="w"> </span><span class="nx">isActive</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;lightblue&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;white&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">fontWeight</span><span class="o">:</span><span class="w"> </span><span class="nx">isActive</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;bold&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;normal&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="p">}}</span>
+<span class="w">      </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setActiveIndex</span><span class="p">(</span><span class="nx">index</span><span class="p">)}</span>
+<span class="w">    </span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">children</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">TabPanels</span><span class="p">({</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">activeIndex</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useContext</span><span class="p">(</span><span class="nx">TabsContext</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// Only render the active panel</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;{</span><span class="nx">React</span><span class="p">.</span><span class="nx">Children</span><span class="p">.</span><span class="nx">toArray</span><span class="p">(</span><span class="nx">children</span><span class="p">)[</span><span class="nx">activeIndex</span><span class="p">]}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">TabPanel</span><span class="p">({</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;{</span><span class="nx">children</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now let's create a component that uses our new <code>Tabs</code> system. This parent component can be a Server Component because the interactivity is fully encapsulated within our client-side <code>Tabs</code> components.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// We can import all the pieces from our client component file.</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Tabs</span><span class="p">,</span><span class="w"> </span><span class="nx">TabList</span><span class="p">,</span><span class="w"> </span><span class="nx">Tab</span><span class="p">,</span><span class="w"> </span><span class="nx">TabPanels</span><span class="p">,</span><span class="w"> </span><span class="nx">TabPanel</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./Tabs&quot;</span><span class="p">;</span>
+
+<span class="c1">// This component can be a Server Component!</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductInfo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Product</span><span class="w"> </span><span class="nx">Information</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Tabs</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">TabList</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Tab</span><span class="p">&gt;</span><span class="nx">Description</span><span class="p">&lt;/</span><span class="nt">Tab</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Tab</span><span class="p">&gt;</span><span class="nx">Specifications</span><span class="p">&lt;/</span><span class="nt">Tab</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Tab</span><span class="p">&gt;</span><span class="nx">Reviews</span><span class="p">&lt;/</span><span class="nt">Tab</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">TabList</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">TabPanels</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">TabPanel</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">This</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">fantastic</span><span class="w"> </span><span class="nx">product</span><span class="w"> </span><span class="nx">that</span><span class="w"> </span><span class="nx">you</span><span class="w"> </span><span class="nx">will</span><span class="w"> </span><span class="nx">absolutely</span><span class="w"> </span><span class="nx">love</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">TabPanel</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">TabPanel</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">li</span><span class="p">&gt;</span><span class="nx">Weight</span><span class="o">:</span><span class="w"> </span><span class="mf">10</span><span class="nx">kg</span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">li</span><span class="p">&gt;</span><span class="nx">Dimensions</span><span class="o">:</span><span class="w"> </span><span class="mf">10</span><span class="nx">x20x30</span><span class="w"> </span><span class="nx">cm</span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">TabPanel</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">TabPanel</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">No</span><span class="w"> </span><span class="nx">reviews</span><span class="w"> </span><span class="nx">yet</span><span class="p">.</span><span class="w"> </span><span class="nx">Be</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">first</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">TabPanel</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">TabPanels</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">Tabs</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:</p>
+<ul>
+<li>The component renders with "Tab 1" active and its content visible.</li>
+<li>Clicking on "Tab 2" makes it active, highlights its title, and shows the content for tab 2.</li>
+</ul>
+<p>This pattern is extremely powerful. The <code>ProductInfo</code> component doesn't need to manage any state. It just declaratively describes the structure of the tabs. All the complex state management is hidden inside our reusable compound components.</p>
+<h2 id="production-perspective_3">Production Perspective</h2>
+<ul>
+<li><strong>API Design</strong>: The primary goal of this pattern is to create a good developer experience. By breaking a complex component into smaller, cooperative pieces, you make the API more flexible and easier to understand.</li>
+<li><strong>Encapsulation</strong>: The context is internal to the set of compound components. The consumer of the <code>Tabs</code> component doesn't need to know or care that context is being used.</li>
+<li><strong>Flexibility</strong>: This pattern allows for great flexibility. The consumer can rearrange the <code>TabList</code> and <code>TabPanels</code> or insert other elements between them, and it will still work, because the communication happens via the shared context, not direct parent-child relationships.</li>
+<li><strong>Accessibility</strong>: When building compound components like tabs, accordions, or menus, it's crucial to implement the appropriate ARIA attributes to make them accessible to screen readers. This logic can be encapsulated within the components themselves.</li>
+</ul>
+<h2 id="controlled-vs-uncontrolled-components-deep-dive">Controlled vs Uncontrolled Components Deep Dive</h2>
+<h2 id="learning-objective_4">Learning Objective</h2>
+<p>Distinguish between controlled and uncontrolled components, particularly for form inputs, and understand how React Actions relate to this concept.</p>
+<h2 id="why-this-matters_2">Why This Matters</h2>
+<p>How you manage data in form inputs is a fundamental architectural decision in React. "Controlled" components put React in charge of the form's state, while "uncontrolled" components let the DOM handle it. Understanding the trade-offs is key to building forms, and the new Actions paradigm introduces a modern take on the uncontrolled approach.</p>
+<h2 id="discovery-phase-a-direct-comparison">Discovery Phase: A Direct Comparison</h2>
+<p>Let's look at the two patterns side-by-side for a simple text input.</p>
+<h3 id="controlled-component">Controlled Component</h3>
+<p>In a controlled component, the value of the input is "controlled" by React state. The state is the single source of truth.</p>
+<div class="codehilite"><pre><span></span><code><span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">ControlledInput</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">value</span><span class="p">,</span><span class="w"> </span><span class="nx">setValue</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;Hello&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setValue</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h4</span><span class="p">&gt;</span><span class="nx">Controlled</span><span class="p">&lt;/</span><span class="nt">h4</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">value</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Current</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">value</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Behavior</strong>:</p>
+<ul>
+<li>The input displays "Hello".</li>
+<li>Every time you type, <code>handleChange</code> fires, <code>setValue</code> is called, and the component re-renders. The input's <code>value</code> is always driven by the <code>value</code> state variable.</li>
+</ul>
+<h3 id="uncontrolled-component">Uncontrolled Component</h3>
+<p>In an uncontrolled component, the DOM manages the input's state internally. We use a <code>ref</code> to read the value from the DOM when we need it, typically on form submission.</p>
+<div class="codehilite"><pre><span></span><code><span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useRef</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UncontrolledInput</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">inputRef</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// We only read the value when we need it.</span>
+<span class="w">    </span><span class="nx">alert</span><span class="p">(</span><span class="s2">&quot;Submitted value: &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">inputRef</span><span class="p">.</span><span class="nx">current</span><span class="p">.</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h4</span><span class="p">&gt;</span><span class="nx">Uncontrolled</span><span class="p">&lt;/</span><span class="nt">h4</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* `defaultValue` sets the initial value, but doesn&#39;t control it after that. */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="na">defaultValue</span><span class="o">=</span><span class="s">&quot;Hello&quot;</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">inputRef</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}&gt;</span><span class="nx">Submit</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Behavior</strong>:</p>
+<ul>
+<li>The input displays "Hello".</li>
+<li>When you type, React does <strong>not</strong> re-render. The DOM is handling the input's state on its own.</li>
+<li>When you click "Submit", we use the ref to pull the current value directly from the DOM.</li>
+</ul>
+<h2 id="deep-dive-trade-offs-and-the-role-of-actions">Deep Dive: Trade-offs and the Role of Actions</h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Controlled Components</th>
+<th>Uncontrolled Components</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Source of Truth</strong></td>
+<td>React state (<code>useState</code>)</td>
+<td>The DOM itself</td>
+</tr>
+<tr>
+<td><strong>Data Flow</strong></td>
+<td>Value flows from state to input. <code>onChange</code> updates state.</td>
+<td>DOM updates itself. React reads value via <code>ref</code>.</td>
+</tr>
+<tr>
+<td><strong>Re-renders</strong></td>
+<td>Re-renders on every keystroke.</td>
+<td>Does not re-render on input change.</td>
+</tr>
+<tr>
+<td><strong>Use Cases</strong></td>
+<td>- Real-time validation<br>- Disabling submit button based on input<br>- Forcing specific formats (e.g., credit card numbers)</td>
+<td>- Simple forms<br>- Performance-critical forms<br>- Integrating with non-React libraries</td>
+</tr>
+</tbody>
+</table>
+<h3 id="how-actions-fit-in">How Actions Fit In</h3>
+<p>The new form Actions model in React 19 is fundamentally an <strong>uncontrolled</strong> pattern. When you use <code>&lt;form action={...}&gt;</code>, React automatically gathers the current values from the DOM inputs using the <code>FormData</code> API when the form is submitted. Your component does not need to hold the value of every input in its state.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// A Server Action</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">searchAction</span><span class="p">(</span><span class="nx">formData</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="s2">&quot;use server&quot;</span><span class="p">;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">formData</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;query&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Server received search for:&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">query</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// ... perform search</span>
+<span class="p">}</span>
+
+<span class="c1">// The component using the action</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">SearchForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// No useState for the input&#39;s value! This is uncontrolled.</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">action</span><span class="o">=</span><span class="p">{</span><span class="nx">searchAction</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;query&quot;</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;search&quot;</span><span class="w"> </span><span class="na">defaultValue</span><span class="o">=</span><span class="s">&quot;Initial query&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p">&gt;</span><span class="nx">Search</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is powerful because it's simple and performant. For many forms, you don't need to know what the user is typing on every single keystroke. You only care about the final value on submission.</p>
+<h3 id="creating-controlled-like-behavior-with-actions">Creating "Controlled-like" Behavior with Actions</h3>
+<p>What if you need both? You want the simplicity of actions, but you also need to show real-time validation. You can combine the patterns. You can use <code>useState</code> to control the input for the user's immediate feedback, but still rely on the action for the submission logic.</p>
+<div class="codehilite"><pre><span></span><code><span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useActionState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">signupAction</span><span class="p">(</span><span class="nx">prevState</span><span class="p">,</span><span class="w"> </span><span class="nx">formData</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="cm">/* ... */</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">SignupForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">actionState</span><span class="p">,</span><span class="w"> </span><span class="nx">formAction</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useActionState</span><span class="p">(</span><span class="nx">signupAction</span><span class="p">,</span><span class="w"> </span><span class="p">{});</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">username</span><span class="p">,</span><span class="w"> </span><span class="nx">setUsername</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">isUsernameValid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">username</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mf">3</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">action</span><span class="o">=</span><span class="p">{</span><span class="nx">formAction</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span><span class="nx">Username</span><span class="o">:</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* This input is CONTROLLED by our component&#39;s state */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">        </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;username&quot;</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">username</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setUsername</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="o">!</span><span class="nx">isUsernameValid</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;red&quot;</span><span class="w"> </span><span class="p">}}&gt;</span><span class="nx">Username</span><span class="w"> </span><span class="nx">must</span><span class="w"> </span><span class="nx">be</span><span class="w"> </span><span class="nx">at</span><span class="w"> </span><span class="nx">least</span><span class="w"> </span><span class="mf">3</span><span class="w"> </span><span class="nx">characters</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">)}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="w"> </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="o">!</span><span class="nx">isUsernameValid</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="nx">Sign</span><span class="w"> </span><span class="nx">Up</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This hybrid approach gives you the best of both worlds: instant client-side feedback from a controlled input, and robust, progressive submission handling from an uncontrolled form action.</p>
+<h2 id="production-perspective_4">Production Perspective</h2>
+<ul>
+<li><strong>Default to Uncontrolled/Actions</strong>: For new forms in React 19, start with the uncontrolled action-based approach. It's simpler, more performant, and enables progressive enhancement.</li>
+<li><strong>Opt-in to Controlled</strong>: Only add the <code>useState</code> to control an input when you have a specific feature that requires it, such as real-time validation, formatting as the user types, or synchronizing the input's value with another UI element.</li>
+<li><strong>Libraries</strong>: Many form libraries (like Formik or React Hook Form) provide their own abstractions over this concept, often giving you a "controller" component that handles the state management for you.</li>
+</ul>
+<h2 id="prop-drilling-and-solutions">Prop Drilling and Solutions</h2>
+<h2 id="learning-objective_5">Learning Objective</h2>
+<p>Identify the problem of "prop drilling" and apply modern solutions, including React Context for client-side state and component composition for server-side data.</p>
+<h2 id="why-this-matters_3">Why This Matters</h2>
+<p>As applications grow, passing data through many layers of intermediate components becomes cumbersome and makes code hard to maintain. This is "prop drilling." Knowing how to avoid it is crucial for building scalable applications. The RSC architecture provides new ways to think about and solve this old problem.</p>
+<h2 id="discovery-phase-the-problem-illustrated">Discovery Phase: The Problem Illustrated</h2>
+<p>Prop drilling is when you pass props through components that don't need them, just to get them to a deeply nested child that does.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// The top-level component has the data.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">theme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;dark&quot;</span><span class="p">;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">Page</span><span class="w"> </span><span class="na">theme</span><span class="o">=</span><span class="p">{</span><span class="nx">theme</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// Page doesn&#39;t use `theme`, it just passes it on.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">Page</span><span class="p">({</span><span class="w"> </span><span class="nx">theme</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">Toolbar</span><span class="w"> </span><span class="na">theme</span><span class="o">=</span><span class="p">{</span><span class="nx">theme</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// Toolbar doesn&#39;t use `theme`, it just passes it on.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">Toolbar</span><span class="p">({</span><span class="w"> </span><span class="nx">theme</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">ThemeButton</span><span class="w"> </span><span class="na">theme</span><span class="o">=</span><span class="p">{</span><span class="nx">theme</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// Finally, the component that actually needs the data.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">ThemeButton</span><span class="p">({</span><span class="w"> </span><span class="nx">theme</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">background</span><span class="o">:</span><span class="w"> </span><span class="nx">theme</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;dark&quot;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;black&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;white&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="nx">theme</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;dark&quot;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;white&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;black&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{</span><span class="nx">style</span><span class="p">}&gt;</span><span class="nx">Themed</span><span class="w"> </span><span class="nx">Button</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is painful. If <code>Toolbar</code> ever gets refactored to not render <code>ThemeButton</code>, the prop chain breaks. If another component needs <code>theme</code>, we have to drill it down a different path.</p>
+<h2 id="deep-dive-modern-solutions">Deep Dive: Modern Solutions</h2>
+<h3 id="solution-1-react-context-for-client-side-state">Solution 1: React Context (for Client-Side State)</h3>
+<p>If the data being passed is client-side state or data that many components need (like theme, current user, language), Context is the ideal solution. It allows a parent component to make data available to any component in the tree below it without passing props.</p>
+<div class="codehilite"><pre><span></span><code><span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createContext</span><span class="p">,</span><span class="w"> </span><span class="nx">useContext</span><span class="p">,</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// 1. Create the context</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">ThemeContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createContext</span><span class="p">(</span><span class="s2">&quot;light&quot;</span><span class="p">);</span>
+
+<span class="c1">// The top-level component PROVIDES the value.</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">theme</span><span class="p">,</span><span class="w"> </span><span class="nx">setTheme</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;dark&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">ThemeContext</span><span class="p">.</span><span class="na">Provider</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">theme</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Page</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">ThemeContext</span><span class="p">.</span><span class="na">Provider</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Page no longer needs to know about `theme`.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">Page</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">Toolbar</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// Toolbar no longer needs to know about `theme`.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">Toolbar</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">ThemeButton</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// The deeply nested component CONSUMES the value directly.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">ThemeButton</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">theme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useContext</span><span class="p">(</span><span class="nx">ThemeContext</span><span class="p">);</span><span class="w"> </span><span class="c1">// Or `use(ThemeContext)` in React 19</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* ... */</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{</span><span class="nx">style</span><span class="p">}&gt;</span><span class="nx">Themed</span><span class="w"> </span><span class="nx">Button</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This breaks the rigid coupling of the prop chain. <code>ThemeButton</code> can now be placed anywhere inside the <code>ThemeContext.Provider</code> and it will just work.</p>
+<h3 id="solution-2-component-composition-for-server-side-content">Solution 2: Component Composition (for Server-Side Content)</h3>
+<p>Sometimes, prop drilling isn't about shared state, but about passing specific content down. In the RSC world, you can often solve this by moving the data fetching to the top and passing the rendered component down, rather than the data itself.</p>
+<p><strong>The Problem</strong>: A <code>Page</code> needs to pass <code>user</code> data to a <code>Header</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// The &quot;drilling&quot; way</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Page</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">db</span><span class="p">.</span><span class="nx">users</span><span class="p">.</span><span class="nx">find</span><span class="p">(</span><span class="mf">1</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">Layout</span><span class="w"> </span><span class="na">user</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;;</span><span class="w"> </span><span class="c1">// Layout doesn&#39;t need user</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">Layout</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Header</span><span class="w"> </span><span class="na">user</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span><span class="w"> </span><span class="p">{</span><span class="cm">/* Header needs user */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;{</span><span class="nx">children</span><span class="p">}&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>The Composition Solution</strong>:
+Instead of passing the <code>user</code> data through <code>Layout</code>, we can render the <code>Header</code> in <code>Page</code> and pass the <em>fully rendered component</em> to <code>Layout</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// All of these can be Server Components</span>
+
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Header</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">header</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">header</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">Layout</span><span class="p">({</span><span class="w"> </span><span class="nx">header</span><span class="p">,</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">header</span><span class="p">}</span><span class="w"> </span><span class="p">{</span><span class="cm">/* Renders the component it was given */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;{</span><span class="nx">children</span><span class="p">}&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// The top-level component composes the tree.</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Page</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">db</span><span class="p">.</span><span class="nx">users</span><span class="p">.</span><span class="nx">find</span><span class="p">(</span><span class="mf">1</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">Layout</span><span class="w"> </span><span class="na">header</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Header</span><span class="w"> </span><span class="na">user</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">This</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">main</span><span class="w"> </span><span class="nx">page</span><span class="w"> </span><span class="nx">content</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">Layout</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is a powerful pattern. <code>Layout</code> is now more generic and reusable. It doesn't need to know anything about a <code>user</code>. It just provides a "slot" for a header. The <code>Page</code> component, which is responsible for the page's data, decides what to put in that slot. This solves the prop drilling problem by moving the dependency up to the parent.</p>
+<h2 id="production-perspective_5">Production Perspective</h2>
+<ul>
+<li><strong>Context for Global State</strong>: Use Context for truly global, client-side concerns that affect many components at different levels: theme, authentication state, language, etc.</li>
+<li><strong>Composition for Layouts</strong>: Use component composition (<code>children</code> and other props that accept JSX) to structure your pages and avoid drilling server-fetched data through layout components.</li>
+<li><strong>Don't Overuse Context</strong>: Context has a performance cost. When the context value changes, all components that consume it will re-render. Don't use it for high-frequency state updates. Sometimes, drilling a prop one or two levels deep is simpler and more performant than creating a new context for it.</li>
+</ul>
+<h2 id="component-composition-strategies">Component Composition Strategies</h2>
+<h2 id="learning-objective_6">Learning Objective</h2>
+<p>Master component composition as the primary tool for building flexible and reusable UIs in React, focusing on the "children" prop and creating specialized "slots".</p>
+<h2 id="why-this-matters_4">Why This Matters</h2>
+<p>"Composition over inheritance" is a core principle of React. Instead of creating complex component hierarchies where components inherit behavior, React encourages you to build small, reusable components and assemble them like building blocks. This approach leads to a more flexible, scalable, and maintainable codebase. In the RSC world, it's also the key to mixing server and client components effectively.</p>
+<h2 id="discovery-phase-the-children-prop">Discovery Phase: The "children" Prop</h2>
+<p>The most common and fundamental composition pattern is using the <code>children</code> prop. Any JSX you put between a component's opening and closing tags is passed to that component as <code>props.children</code>.</p>
+<p>This allows us to create generic "box" or "wrapper" components.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// A generic wrapper component</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">FancyBorder</span><span class="p">({</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;4px solid purple&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1em&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">margin</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1em&quot;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">children</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// We can put anything inside it.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">FancyBorder</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">This</span><span class="w"> </span><span class="nx">content</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="nx">inside</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">fancy</span><span class="w"> </span><span class="nx">border</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">FancyBorder</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is simple but incredibly powerful. <code>FancyBorder</code> doesn't need to know or care what it's rendering. It just provides a wrapper. This is the pattern that enables the Client "Shell" / Server "Slot" architecture we've discussed.</p>
+<h2 id="deep-dive-creating-multiple-slots">Deep Dive: Creating Multiple "Slots"</h2>
+<p>What if you need more than one place to inject content? A component isn't limited to just <code>children</code>. You can accept any prop that contains JSX. This allows you to create components with multiple named "slots".</p>
+<p>Let's build a <code>SplitPane</code> layout component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// This component defines two slots: `left` and `right`.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">SplitPane</span><span class="p">({</span><span class="w"> </span><span class="nx">left</span><span class="p">,</span><span class="w"> </span><span class="nx">right</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;flex&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">gap</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1em&quot;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">flex</span><span class="o">:</span><span class="w"> </span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1px solid gray&quot;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">left</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">flex</span><span class="o">:</span><span class="w"> </span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1px solid gray&quot;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">right</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// The parent component fills the slots.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">SplitPane</span>
+<span class="w">      </span><span class="na">left</span><span class="o">=</span><span class="p">{</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">h3</span><span class="p">&gt;</span><span class="nx">Contacts</span><span class="p">&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="cm">/* ... contact list ... */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="na">right</span><span class="o">=</span><span class="p">{</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">h3</span><span class="p">&gt;</span><span class="nx">Chat</span><span class="p">&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="cm">/* ... chat window ... */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">/&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This pattern is extremely useful for creating reusable page layouts. The <code>SplitPane</code> component is completely generic, and the parent <code>App</code> component provides the specific content for each slot.</p>
+<h3 id="specialization-through-composition">Specialization through Composition</h3>
+<p>Another powerful strategy is to create more specialized versions of a component through composition, rather than by adding more props and internal logic.</p>
+<p><strong>The "Bad" Way (using props)</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">Dialog</span><span class="p">({</span><span class="w"> </span><span class="nx">type</span><span class="p">,</span><span class="w"> </span><span class="nx">title</span><span class="p">,</span><span class="w"> </span><span class="nx">message</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">type</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;warning&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;orange&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;blue&#39;</span><span class="p">;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="sb">`2px solid </span><span class="si">${</span><span class="nx">color</span><span class="si">}</span><span class="sb">`</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">title</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+<span class="c1">// Usage: &lt;Dialog type=&quot;warning&quot; title=&quot;Warning!&quot; message=&quot;...&quot; /&gt;</span>
+</code></pre></div>
+
+<p>This component's logic grows more complex as you add more <code>type</code>s.</p>
+<p><strong>The "Good" Way (using composition)</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Start with a generic, composable base component.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">Dialog</span><span class="p">({</span><span class="w"> </span><span class="nx">title</span><span class="p">,</span><span class="w"> </span><span class="nx">children</span><span class="p">,</span><span class="w"> </span><span class="nx">titleColor</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2px solid gray&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="nx">titleColor</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">title</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;{</span><span class="nx">children</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Create specialized versions by composing the base component.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">WarningDialog</span><span class="p">(</span><span class="nx">props</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">Dialog</span><span class="w"> </span><span class="na">titleColor</span><span class="o">=</span><span class="s">&quot;orange&quot;</span><span class="w"> </span><span class="na">title</span><span class="o">=</span><span class="p">{</span><span class="nx">props</span><span class="p">.</span><span class="nx">title</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">&#39;Warning&#39;</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">props</span><span class="p">.</span><span class="nx">children</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">Dialog</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">SuccessDialog</span><span class="p">(</span><span class="nx">props</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">Dialog</span><span class="w"> </span><span class="na">titleColor</span><span class="o">=</span><span class="s">&quot;green&quot;</span><span class="w"> </span><span class="na">title</span><span class="o">=</span><span class="p">{</span><span class="nx">props</span><span class="p">.</span><span class="nx">title</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">&#39;Success&#39;</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">props</span><span class="p">.</span><span class="nx">children</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">Dialog</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Usage is now more semantic and less prone to typos.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">WarningDialog</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">This</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">warning</span><span class="w"> </span><span class="nx">message</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">WarningDialog</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">SuccessDialog</span><span class="w"> </span><span class="na">title</span><span class="o">=</span><span class="s">&quot;It Worked!&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Your</span><span class="w"> </span><span class="nx">action</span><span class="w"> </span><span class="nx">was</span><span class="w"> </span><span class="nx">successful</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">SuccessDialog</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This approach is more scalable and maintainable. The base <code>Dialog</code> is simple, and the specialized versions (<code>WarningDialog</code>, <code>SuccessDialog</code>) are easy to understand and create.</p>
+<h2 id="production-perspective_6">Production Perspective</h2>
+<ul>
+<li><strong>Composition is the Default</strong>: When building React components, your first instinct should always be to solve problems with composition. Before adding a new prop to change a component's behavior, ask yourself if you could achieve the same result by passing in different <code>children</code> or creating a specialized wrapper component.</li>
+<li><strong>Server and Client Harmony</strong>: This pattern is the key to making RSCs and Client Components work together. A Server Component can compose a Client Component shell, passing server-rendered content into its <code>children</code> slot. This gives you the best of both worlds: server performance and client interactivity.</li>
+<li><strong>Design Systems</strong>: Component libraries and design systems are built on these principles. They provide a set of generic, composable "building blocks" (<code>Box</code>, <code>Flex</code>, <code>Card</code>) that developers can assemble to create complex, application-specific UIs.</li>
+</ul>
+<h2 id="when-to-split-components">When to Split Components</h2>
+<h2 id="learning-objective_7">Learning Objective</h2>
+<p>Develop a set of practical heuristics for deciding when and how to split a large component into smaller, more manageable ones.</p>
+<h2 id="why-this-matters_5">Why This Matters</h2>
+<p>Knowing when to break down a component is a critical skill for maintaining a healthy codebase. Large, monolithic components are hard to read, debug, and reuse. Splitting components effectively leads to a more organized, performant, and maintainable application. The introduction of Server and Client components adds a new, important reason to split components.</p>
+<h2 id="discovery-phase-the-monolithic-component">Discovery Phase: The Monolithic Component</h2>
+<p>It's common for components to start small and grow over time as new features are added. This can lead to a "god component" that does too much.</p>
+<h2 id="module-synthesis">Module Synthesis 📋</h2>
+<h2 id="module-synthesis-timeless-principles-in-a-modern-context">Module Synthesis: Timeless Principles in a Modern Context</h2>
+<p>This chapter has been a bridge between the past and future of React architecture. We've explored foundational patterns that have shaped React development for years and re-evaluated them through the powerful new lens of React 19, Server Components, and Actions.</p>
+<h3 id="key-takeaways">Key Takeaways</h3>
+<ol>
+<li>
+<p><strong>Principles Endure, Patterns Evolve</strong>: The core principles of separating concerns, composition, and managing state remain the same. However, our tools for implementing them have evolved.</p>
+<ul>
+<li><strong>Server Components</strong> are the new "containers" for data fetching.</li>
+<li><strong>Custom Hooks</strong> are the new standard for sharing stateful logic, replacing HOCs and Render Props.</li>
+<li><strong>Client Components</strong> are the new "presentational" layer for interactive UI.</li>
+</ul>
+</li>
+<li>
+<p><strong>Composition is King</strong>: The most powerful and flexible pattern in React is composition, primarily through the <code>children</code> prop. This pattern has become even more central in the RSC era, acting as the primary mechanism for embedding static, server-rendered content within interactive client-side layouts.</p>
+</li>
+<li>
+<p><strong>The Server/Client Boundary is a Key Architectural Driver</strong>: The decision of where to place the <code>'use client'</code> directive is a critical architectural choice. Pushing client boundaries down the tree and splitting components to separate server and client logic are key skills for building performant modern applications.</p>
+</li>
+<li>
+<p><strong>Form Patterns are Modernized</strong>: The classic controlled vs. uncontrolled component debate has a new dimension. Form Actions encourage a powerful, uncontrolled pattern by default, while still allowing for controlled inputs when client-side interactivity is needed.</p>
+</li>
+</ol>
+<h3 id="looking-forward">Looking Forward</h3>
+<p>We now have a robust mental model for how to structure a modern React application, from the individual component patterns to the high-level server/client architecture. We know how to manage both client-side state and server-side data mutations.</p>
+<p>In the next chapter, <strong>Chapter 11: State Management Solutions</strong>, we will zoom in on the challenge of managing state that is truly global to the client-side application. We'll do a deep dive into React's built-in Context API and then explore popular external libraries like Redux and Zustand, providing a clear guide on when and why you might need to reach for a dedicated state management solution.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-10-25 16:27:47 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

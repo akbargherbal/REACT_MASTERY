@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>07_React_19_Compiler_and_Automatic_Optimization</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">02_Intermediate_Concepts</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-7-react-19-compiler-and-automatic-optimization">Chapter 7: React 19 Compiler and Automatic Optimization</h1>
+<h2 id="understanding-the-react-compiler">Understanding the React Compiler</h2>
+<h2 id="learning-objective">Learning Objective</h2>
+<p>Understand what the React Compiler is, the problem it solves, and its role as a build-time tool for automatic performance optimization.</p>
+<h2 id="why-this-matters">Why This Matters</h2>
+<p>The React Compiler is one of the most significant updates to React in its history. It fundamentally changes the developer experience by removing the need for manual performance optimizations like <code>useMemo</code> and <code>useCallback</code>. Understanding the compiler allows you to write simpler, cleaner code that is also highly performant by default, letting you focus on features instead of fine-tuning re-renders.</p>
+<h2 id="discovery-phase-the-problem-we-just-learned-to-solve">Discovery Phase: The Problem We Just Learned to Solve</h2>
+<p>In Chapter 6, we spent considerable effort learning the tools of manual memoization: <code>useMemo</code>, <code>useCallback</code>, and <code>React.memo</code>. We saw that without them, even simple state changes could trigger a cascade of unnecessary re-renders in child components.</p>
+<p>Let's quickly revisit the core problem with a simple example:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">DisplayData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">memo</span><span class="p">(({</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Rendering DisplayData&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">First</span><span class="w"> </span><span class="nx">item</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">data</span><span class="p">.</span><span class="nx">items</span><span class="p">.</span><span class="nx">color</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="p">});</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// This object is re-created on every single render of App</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">chartData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">items</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;blue&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="p">,</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;red&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCount</span><span class="p">((</span><span class="nx">c</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">c</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span>
+<span class="w">        </span><span class="nx">Re</span><span class="o">-</span><span class="nx">render</span><span class="w"> </span><span class="nx">App</span><span class="w"> </span><span class="p">({</span><span class="nx">count</span><span class="p">})</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">DisplayData</span><span class="w"> </span><span class="na">data</span><span class="o">=</span><span class="p">{</span><span class="nx">chartData</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">App</span><span class="p">;</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:</p>
+<ol>
+<li>Open your developer console. You'll see "Rendering DisplayData".</li>
+<li>Click the "Re-render App" button. The count goes up.</li>
+<li>Notice "Rendering DisplayData" is logged to the console <strong>every single time</strong> you click the button.</li>
+</ol>
+<p>Even though <code>chartData</code> is visually identical, we created a new object in memory. Because <code>chartData !== previousChartData</code>, <code>React.memo</code> gives up and re-renders the child. The "fix" we learned in Chapter 6 was to manually memoize it:</p>
+<p><code>const chartData = useMemo(() =&gt; ({ items: [...] }), []);</code></p>
+<p>This works, but it adds complexity. We, the developers, had to:</p>
+<ol>
+<li>Identify the performance problem.</li>
+<li>Know which tool to use (<code>useMemo</code>).</li>
+<li>Apply it correctly, including the dependency array.</li>
+</ol>
+<p>This cognitive overhead scales across an entire application and is a common source of bugs and developer friction.</p>
+<h2 id="deep-dive-the-compiler-as-a-solution">Deep Dive: The Compiler as a Solution</h2>
+<p>The React team recognized that this manual work was a burden. The solution is the <strong>React Compiler</strong>.</p>
+<p>The React Compiler (previously codenamed "React Forget") is not a new hook or a runtime library feature. It is a <strong>build-time tool</strong>. It integrates with your build process (like Vite or Next.js) and automatically rewrites your React components into an optimized form before they ever reach the browser.</p>
+<p>Think of it like a specialized compiler for your code:</p>
+<ul>
+<li>A <strong>TypeScript compiler</strong> takes your TypeScript code and transforms it into browser-compatible JavaScript.</li>
+<li>A <strong>React Compiler</strong> takes your standard React code and transforms it into memoized, performance-optimized React code.</li>
+</ul>
+<p>The compiler is sophisticated enough to understand the "Rules of React." It analyzes your code to see which values can change over time (state, props) and which calculations depend on them. It then automatically wraps these calculations in the equivalent of <code>useMemo</code> and <code>useCallback</code> so you don't have to.</p>
+<p>With the compiler enabled, our original "problematic" code just works optimally. We don't need to change a thing. The compiler sees that <code>chartData</code> is not dependent on any changing values (like <code>count</code>) and will effectively treat it as a constant across re-renders, preventing <code>DisplayData</code> from re-rendering unnecessarily.</p>
+<h3 id="common-confusion-is-the-compiler-part-of-react-itself">Common Confusion: Is the compiler part of React itself?</h3>
+<p><strong>You might think</strong>: The compiler is a new part of the React library that I import from.</p>
+<p><strong>Actually</strong>: No. You will likely never see or interact with the compiler directly. It's a dependency that will be included in frameworks like Next.js or configured in your build tool like Vite. It operates on your code behind the scenes.</p>
+<p><strong>How to remember</strong>: The compiler is to React what a grammar checker is to a word processor. It works in the background to improve your output without you having to manually invoke it on every sentence.</p>
+<h2 id="production-perspective">Production Perspective</h2>
+<p>The React Compiler represents a major philosophical shift.</p>
+<p><strong>Old Philosophy</strong>: "React is fast, but you need to manually apply memoization to keep large apps fast."
+<strong>New Philosophy</strong>: "React is fast by default. Write natural, straightforward code, and the compiler will handle the optimization."</p>
+<p><strong>Impact on Teams</strong>:</p>
+<ul>
+<li><strong>Reduced Cognitive Load</strong>: Developers can focus on application logic. Junior developers can write performant code without needing to be experts in React's render cycle.</li>
+<li><strong>Fewer Bugs</strong>: Eliminates a whole class of bugs related to incorrect dependency arrays in <code>useMemo</code>/<code>useCallback</code>.</li>
+<li><strong>Simpler Code Reviews</strong>: Code is easier to read and review without being cluttered by memoization hooks.</li>
+<li><strong>Better Performance by Default</strong>: Applications become faster simply by enabling the compiler, without any code changes.</li>
+</ul>
+<p>The introduction of the compiler doesn't mean performance knowledge is obsolete. It means the baseline is much higher, and developers can focus their performance efforts on true bottlenecks (like algorithmic complexity or network issues) rather than on boilerplate memoization.</p>
+<h2 id="how-automatic-memoization-works">How Automatic Memoization Works</h2>
+<h2 id="learning-objective_1">Learning Objective</h2>
+<p>Develop a mental model for how the React Compiler analyzes component code and automatically memoizes values and functions to prevent unnecessary re-renders.</p>
+<h2 id="why-this-matters_1">Why This Matters</h2>
+<p>While the compiler can feel like magic, it's not. It's a predictable system that follows a set of rules. Understanding its basic principles will help you write code that works <em>with</em> the compiler, diagnose issues, and appreciate the simplicity it brings.</p>
+<h2 id="discovery-phase-a-simple-reactive-component">Discovery Phase: A Simple Reactive Component</h2>
+<p>Let's start with a component that has a mix of static and derived data.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">showDetails</span><span class="p">,</span><span class="w"> </span><span class="nx">setShowDetails</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// This value depends on props</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">fullName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">firstName</span><span class="si">}</span><span class="sb"> </span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">lastName</span><span class="si">}</span><span class="sb">`</span><span class="p">;</span>
+
+<span class="w">  </span><span class="c1">// This object is created on every render</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">background</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;lightgray&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;10px&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="sb">`1px solid </span><span class="si">${</span><span class="nx">showDetails</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;blue&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;gray&quot;</span><span class="si">}</span><span class="sb">`</span><span class="p">,</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="c1">// This function is created on every render</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleToggleDetails</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setShowDetails</span><span class="p">(</span><span class="o">!</span><span class="nx">showDetails</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Rendering UserProfile&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{</span><span class="nx">style</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h3</span><span class="p">&gt;{</span><span class="nx">fullName</span><span class="p">}&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleToggleDetails</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">showDetails</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;Hide&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Show&quot;</span><span class="p">}</span><span class="w"> </span><span class="nx">Details</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">showDetails</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Email</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">;</span>
+</code></pre></div>
+
+<p>Without a compiler, every time the <code>showDetails</code> state changes, this component re-renders, and <code>fullName</code>, <code>style</code>, and <code>handleToggleDetails</code> are all re-created from scratch. This is usually fine for a small component, but if we were passing <code>style</code> or <code>handleToggleDetails</code> to a memoized child component, it would cause an unnecessary re-render.</p>
+<h2 id="deep-dive-the-compilers-mental-model">Deep Dive: The Compiler's Mental Model</h2>
+<p>The React Compiler reads the code for <code>UserProfile</code> and performs a static analysis. It builds a graph of all the values and their dependencies.</p>
+<ol>
+<li>
+<p><strong>Identify Inputs</strong>: The compiler sees that the component takes <code>user</code> (props) and creates <code>showDetails</code> (state). These are the "roots" of reactivity. They can change from outside or inside the component.</p>
+</li>
+<li>
+<p><strong>Trace Dependencies</strong>:</p>
+<ul>
+<li>It sees <code>fullName</code> depends only on <code>user.firstName</code> and <code>user.lastName</code>.</li>
+<li>It sees <code>style</code> depends on <code>showDetails</code>.</li>
+<li>It sees <code>handleToggleDetails</code> depends on <code>showDetails</code> (to calculate the next state) and <code>setShowDetails</code> (the state setter).</li>
+</ul>
+</li>
+<li>
+<p><strong>Apply Memoization</strong>: Based on this analysis, the compiler conceptually rewrites the component. While the actual output is more complex, we can imagine it looks something like this:</p>
+</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">,</span><span class="w"> </span><span class="nx">useCallback</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">showDetails</span><span class="p">,</span><span class="w"> </span><span class="nx">setShowDetails</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+
+<span class="c1">// COMPILER&#39;S WORK: Memoize `fullName` and re-calculate only when `user` changes.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">fullName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="k">return</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">firstName</span><span class="si">}</span><span class="sb"> </span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">lastName</span><span class="si">}</span><span class="sb">`</span><span class="p">;</span>
+<span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">.</span><span class="nx">firstName</span><span class="p">,</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">lastName</span><span class="p">]);</span>
+
+<span class="c1">// COMPILER&#39;S WORK: Memoize `style` and re-calculate only when `showDetails` changes.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({</span>
+<span class="nx">background</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;lightgray&#39;</span><span class="p">,</span>
+<span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;10px&#39;</span><span class="p">,</span>
+<span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="sb">`1px solid </span><span class="si">${</span><span class="nx">showDetails</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;blue&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;gray&#39;</span><span class="si">}</span><span class="sb">`</span>
+<span class="p">}),</span><span class="w"> </span><span class="p">[</span><span class="nx">showDetails</span><span class="p">]);</span>
+
+<span class="c1">// COMPILER&#39;S WORK: Memoize `handleToggleDetails` and re-create only when its dependencies change.</span>
+<span class="c1">// (In this case, its dependencies are stable, so it&#39;s created once).</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">handleToggleDetails</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useCallback</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="nx">setShowDetails</span><span class="p">(</span><span class="o">!</span><span class="nx">showDetails</span><span class="p">);</span>
+<span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">showDetails</span><span class="p">]);</span>
+
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Rendering UserProfile&#39;</span><span class="p">);</span>
+
+<span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="c1">// ... JSX remains the same ...</span>
+<span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is the key takeaway: <strong>The React Compiler does the work of <code>useMemo</code> and <code>useCallback</code> for you.</strong></p>
+<p>It understands that <code>fullName</code> doesn't need to be re-calculated when <code>showDetails</code> changes. It also understands that the <code>style</code> object doesn't need to be a new object if <code>showDetails</code> hasn't changed. This automatic memoization means that if you passed <code>style</code> to a <code>&lt;ChildComponent style={style} /&gt;</code> wrapped in <code>React.memo</code>, the child would not re-render unnecessarily.</p>
+<h3 id="common-confusion-does-the-compiler-memoize-everything">Common Confusion: Does the compiler memoize everything?</h3>
+<p><strong>You might think</strong>: The compiler will wrap every single variable and function in <code>useMemo</code> or <code>useCallback</code>, which might add its own overhead.</p>
+<p><strong>Actually</strong>: The compiler is highly optimized. It only memoizes values that "cross component boundaries" (i.e., are passed as props or context values) or are used in a hook's dependency array. It can also perform more advanced optimizations, like hoisting constant values outside the component entirely or breaking a component's rendering into smaller, independent parts.</p>
+<p><strong>How to remember</strong>: The compiler's goal is to prevent unnecessary re-renders of <em>other components</em> and to skip expensive calculations. It applies memoization surgically where it will have the most impact, not everywhere.</p>
+<h2 id="production-perspective_1">Production Perspective</h2>
+<p>Understanding the compiler's model helps you write code that it can easily understand and optimize.</p>
+<ul>
+<li><strong>Predictability</strong>: Because the compiler is deterministic, you can be confident that writing standard, clean React code will result in a performant output.</li>
+<li><strong>Focus on Deriving State</strong>: This model encourages you to derive as much as possible from your source-of-truth state and props. You don't need to worry about the performance cost of re-calculating <code>fullName</code> on every render, because you know the compiler will memoize it. This leads to less state and simpler logic.</li>
+<li><strong>Safety</strong>: The compiler is designed to be safe. It will never change the observable behavior of your code. If it can't prove that an optimization is safe, it will skip it. This is why following the "Rules of React" is so important.</li>
+</ul>
+<h2 id="when-to-skip-manual-optimization">When to Skip Manual Optimization</h2>
+<h2 id="learning-objective_2">Learning Objective</h2>
+<p>Adopt the new best practice for performance optimization in React 19: rely on the compiler first and avoid premature manual optimization.</p>
+<h2 id="why-this-matters_2">Why This Matters</h2>
+<p>One of the hardest parts of learning React performance used to be knowing <em>when</em> and <em>where</em> to apply <code>useMemo</code> and <code>useCallback</code>. The React Compiler simplifies this decision dramatically. The new default is to do nothing. This frees up immense mental energy and prevents a common anti-pattern: premature optimization.</p>
+<h2 id="discovery-phase-the-old-way-of-thinking">Discovery Phase: The Old Way of Thinking</h2>
+<p>Let's consider a component that renders a list of items and allows filtering. A developer trained on pre-compiler React might write it like this, with "defensive" memoization.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">,</span><span class="w"> </span><span class="nx">useCallback</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">initialItems</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./data.js&quot;</span><span class="p">;</span>
+
+<span class="c1">// Assume ListItem is a memoized component: const ListItem = React.memo(...)</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">OldSchoolTodoList</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">items</span><span class="p">,</span><span class="w"> </span><span class="nx">setItems</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="nx">initialItems</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">filter</span><span class="p">,</span><span class="w"> </span><span class="nx">setFilter</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// &quot;I should memoize this expensive filtering so it doesn&#39;t run when I&#39;m not typing&quot;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">visibleItems</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Filtering items...&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">items</span><span class="p">.</span><span class="nx">filter</span><span class="p">((</span><span class="nx">item</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span>
+<span class="w">      </span><span class="nx">item</span><span class="p">.</span><span class="nx">text</span><span class="p">.</span><span class="nx">toLowerCase</span><span class="p">().</span><span class="nx">includes</span><span class="p">(</span><span class="nx">filter</span><span class="p">.</span><span class="nx">toLowerCase</span><span class="p">()),</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">items</span><span class="p">,</span><span class="w"> </span><span class="nx">filter</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="c1">// &quot;I should memoize this callback in case I pass it to a memoized child component&quot;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleFilterChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useCallback</span><span class="p">((</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setFilter</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">filter</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleFilterChange</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">visibleItems</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">item</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">ListItem</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">item</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="w"> </span><span class="na">item</span><span class="o">=</span><span class="p">{</span><span class="nx">item</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This code is cluttered. Every piece of logic is wrapped in a hook. The developer had to think about performance at every step. While this code might be performant, it's harder to read, write, and maintain. The dependency arrays are potential sources of bugs.</p>
+<h2 id="deep-dive-the-new-way-of-thinking">Deep Dive: The New Way of Thinking</h2>
+<p>With the React Compiler, you write the simplest, most straightforward code first. You express your logic directly.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">initialItems</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./data.js&quot;</span><span class="p">;</span>
+
+<span class="c1">// Assume ListItem is a memoized component: const ListItem = React.memo(...)</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">CompilerEraTodoList</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">items</span><span class="p">,</span><span class="w"> </span><span class="nx">setItems</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="nx">initialItems</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">filter</span><span class="p">,</span><span class="w"> </span><span class="nx">setFilter</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Just calculate what you need. The compiler will memoize this for you.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">visibleItems</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">items</span><span class="p">.</span><span class="nx">filter</span><span class="p">((</span><span class="nx">item</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span>
+<span class="w">    </span><span class="nx">item</span><span class="p">.</span><span class="nx">text</span><span class="p">.</span><span class="nx">toLowerCase</span><span class="p">().</span><span class="nx">includes</span><span class="p">(</span><span class="nx">filter</span><span class="p">.</span><span class="nx">toLowerCase</span><span class="p">()),</span>
+<span class="w">  </span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Just define the function. The compiler will memoize it if needed.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleFilterChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setFilter</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">filter</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleFilterChange</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">visibleItems</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">item</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">ListItem</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">item</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="w"> </span><span class="na">item</span><span class="o">=</span><span class="p">{</span><span class="nx">item</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This code is identical in its logic but dramatically simpler. It's easier to read and has no dependency arrays to manage. The React Compiler, running at build time, will analyze this component and produce an output that is just as performant (if not more so) than the manually optimized version.</p>
+<h3 id="the-new-rulebook-for-optimization">The New Rulebook for Optimization</h3>
+<p><strong>The default is to add NO manual memoization.</strong></p>
+<ol>
+<li><strong>Write Simple Code</strong>: Write your components in the most direct and readable way, deriving values as needed.</li>
+<li><strong>Trust the Compiler</strong>: Assume the compiler will handle memoization for you.</li>
+<li><strong>Profile if Needed</strong>: If you encounter a performance issue (e.g., a UI interaction is slow), use the React DevTools Profiler to identify the bottleneck.</li>
+<li><strong>Optimize Selectively</strong>: Only if profiling reveals a specific, expensive calculation that the compiler is missing (a rare edge case), should you consider reaching for a manual <code>useMemo</code>.</li>
+</ol>
+<p>This flips the old model on its head. Instead of "memoize proactively," the new model is "profile reactively."</p>
+<h3 id="common-confusion-is-usememo-completely-useless-now">Common Confusion: Is <code>useMemo</code> completely useless now?</h3>
+<p><strong>You might think</strong>: If the compiler does everything, then <code>useMemo</code> and <code>useCallback</code> are deprecated and I should never use them.</p>
+<p><strong>Actually</strong>: They are not deprecated. They remain part of React's API as an escape hatch for specific, advanced scenarios where you might need to override the compiler's behavior or when the compiler isn't enabled. For example, if you have a calculation that is so incredibly expensive that you want to be absolutely certain it's memoized, even during development without the compiler, you might still use <code>useMemo</code>.</p>
+<p><strong>How to remember</strong>: Think of <code>useMemo</code> and <code>useCallback</code> like inline assembly in a C++ compiler. 99.9% of the time, you let the compiler do its job. For that 0.1% of cases where you are smarter than the compiler for a very specific problem, the escape hatch is there.</p>
+<h2 id="production-perspective_2">Production Perspective</h2>
+<p>Adopting this new mindset is crucial for teams working with React 19.</p>
+<ul>
+<li><strong>Onboarding</strong>: It's much easier to teach new developers to write simple, declarative code than to teach them the intricacies of <code>useMemo</code> dependency arrays.</li>
+<li><strong>Code Quality</strong>: Codebases will become simpler and more consistent. The "style" of memoization will no longer be a point of debate in code reviews.</li>
+<li><strong>Refactoring</strong>: Refactoring code is easier when you don't have to constantly update memoization wrappers and dependency arrays.</li>
+</ul>
+<p>The primary challenge will be un-learning old habits. Developers who have spent years carefully wrapping functions in <code>useCallback</code> will need to consciously practice trusting the compiler and writing simpler code.</p>
+<h2 id="compiler-friendly-code-patterns">Compiler-Friendly Code Patterns</h2>
+<h2 id="learning-objective_3">Learning Objective</h2>
+<p>Learn the "Rules of React" that the compiler relies on, and how to write code that is easy for the compiler to analyze and optimize.</p>
+<h2 id="why-this-matters_3">Why This Matters</h2>
+<p>The React Compiler is powerful, but it's not magic. It works by making certain assumptions about your code. If you violate these assumptions, the compiler may not be able to optimize your component effectively, or in the worst case, it could lead to bugs. Writing predictable, "compiler-friendly" code ensures you get the full performance benefits.</p>
+<h2 id="discovery-phase-code-the-compiler-might-not-understand">Discovery Phase: Code the Compiler Might Not Understand</h2>
+<p>Let's look at a piece of code that breaks one of React's core rules: direct mutation.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">BadlyBehavedComponent</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">({</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Alice&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">age</span><span class="o">:</span><span class="w"> </span><span class="mf">30</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleBirthday</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// ❌ DANGER: Direct mutation of state!</span>
+<span class="w">    </span><span class="nx">user</span><span class="p">.</span><span class="nx">age</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mf">1</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">user</span><span class="p">);</span><span class="w"> </span><span class="c1">// This won&#39;t even trigger a re-render in many cases!</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">age</span><span class="p">}</span><span class="w"> </span><span class="nx">years</span><span class="w"> </span><span class="nx">old</span><span class="p">.</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleBirthday</span><span class="p">}&gt;</span><span class="nx">Have</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">birthday</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This component is already buggy. In React, you must treat state as immutable. When you call <code>setUser(user)</code>, React sees that the new <code>user</code> object is the same object in memory as the old one (<code>newUser === oldUser</code>) and may skip the re-render entirely.</p>
+<p>The React Compiler would also be confused by this. It assumes that state is only ever updated via setter functions with new values. When it sees <code>user.age += 1</code>, it can't be sure about the flow of data. Is <code>user</code> changing? Is this a side effect? This kind of unpredictable code forces the compiler to be conservative and bail out of many potential optimizations.</p>
+<h2 id="deep-dive-the-rules-of-react-for-the-compiler">Deep Dive: The Rules of React (for the Compiler)</h2>
+<p>To get the most out of the compiler, you should follow the same rules that have always been best practice in React. The compiler just makes them more important.</p>
+<h3 id="rule-1-treat-state-and-props-as-immutable">Rule 1: Treat State and Props as Immutable</h3>
+<p>Never modify objects or arrays you receive as props or have in state directly. Always create a new object or array for updates.</p>
+<p><strong>BAD ❌</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Mutating state</span>
+<span class="nx">user</span><span class="p">.</span><span class="nx">age</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">31</span><span class="p">;</span>
+<span class="nx">setUser</span><span class="p">(</span><span class="nx">user</span><span class="p">);</span>
+
+<span class="c1">// Mutating props</span>
+<span class="nx">props</span><span class="p">.</span><span class="nx">items</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">newItem</span><span class="p">);</span>
+</code></pre></div>
+
+<p><strong>GOOD ✅</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Create a new object for state update</span>
+<span class="nx">setUser</span><span class="p">({</span><span class="w"> </span><span class="p">...</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">age</span><span class="o">:</span><span class="w"> </span><span class="mf">31</span><span class="w"> </span><span class="p">});</span>
+
+<span class="c1">// Create a new array from props</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">newItems</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[...</span><span class="nx">props</span><span class="p">.</span><span class="nx">items</span><span class="p">,</span><span class="w"> </span><span class="nx">newItem</span><span class="p">];</span>
+</code></pre></div>
+
+<p><strong>Why it helps the compiler</strong>: When you create new objects/arrays, the compiler has a clear signal that a value has changed. It can easily trace this new value through your component and know exactly which parts of the UI need to be updated and which calculations need to be re-run.</p>
+<h3 id="rule-2-components-should-be-reasonably-pure">Rule 2: Components should be (Reasonably) Pure</h3>
+<p>Given the same props and state, your component should ideally always produce the same JSX. Avoid side effects like random number generation or API calls directly in the render body.</p>
+<p><strong>BAD ❌</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">UnpredictableComponent</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Side effect directly in render</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">randomNumber</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">();</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="o">&lt;</span><span class="nx">div</span><span class="o">&gt;</span><span class="nx">Your</span><span class="w"> </span><span class="nx">lucky</span><span class="w"> </span><span class="nx">number</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="p">{</span><span class="nx">randomNumber</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/div&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>GOOD ✅</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">PredictableComponent</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Calculation is derived directly from state</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">seed</span><span class="p">,</span><span class="w"> </span><span class="nx">setSeed</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">1</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">randomNumber</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">someHashFunction</span><span class="p">(</span><span class="nx">seed</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="nx">div</span><span class="o">&gt;</span>
+<span class="w">      </span><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">Your</span><span class="w"> </span><span class="nx">lucky</span><span class="w"> </span><span class="nx">number</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="p">{</span><span class="nx">randomNumber</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+<span class="w">      </span><span class="o">&lt;</span><span class="nx">button</span><span class="w"> </span><span class="nx">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setSeed</span><span class="p">((</span><span class="nx">s</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">s</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}</span><span class="o">&gt;</span><span class="nx">New</span><span class="w"> </span><span class="nb">Number</span><span class="o">&lt;</span><span class="err">/button&gt;</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Why it helps the compiler</strong>: The compiler assumes that the code inside your component is primarily for calculating the UI. If the code does unpredictable things, the compiler can't safely memoize it. It can't cache the result of a function that produces a different value every time it's called.</p>
+<h3 id="rule-3-follow-the-rules-of-hooks">Rule 3: Follow the Rules of Hooks</h3>
+<p>This is a given, but the compiler relies on it.</p>
+<ul>
+<li>Only call Hooks at the top level.</li>
+<li>Don't call Hooks inside loops, conditions, or nested functions (except for the <code>use</code> hook).</li>
+</ul>
+<p><strong>Why it helps the compiler</strong>: The compiler is specifically designed to understand the hook model. It knows that <code>useState</code> returns a reactive value and that <code>useEffect</code> defines a side effect. Following these rules allows the compiler to correctly analyze your component's lifecycle and data flow.</p>
+<p>The good news is that these are not new rules. They are the same principles that lead to clean, maintainable, and bug-free React code, even without a compiler. The compiler simply rewards you for following these best practices with automatic performance gains.</p>
+<h2 id="production-perspective_3">Production Perspective</h2>
+<ul>
+<li><strong>Linters are Key</strong>: Using the official ESLint plugin for React (<code>eslint-plugin-react-hooks</code>) is more important than ever. It will enforce the Rules of Hooks and catch many common mistakes that could confuse the compiler.</li>
+<li><strong>Code Reviews</strong>: Emphasize immutability and purity during code reviews. These are no longer just "nice-to-haves" for clarity; they are prerequisites for optimal performance.</li>
+<li><strong>Gradual Adoption</strong>: When introducing the compiler to an old codebase that might not have followed these rules strictly, do it gradually. Enable it, fix any issues that arise, and ensure that the code is being brought up to modern standards.</li>
+</ul>
+<h2 id="performance-without-usecallbackusememo">Performance Without useCallback/useMemo</h2>
+<h2 id="learning-objective_4">Learning Objective</h2>
+<p>Witness a direct, practical comparison of a component optimized manually versus the same component written simply and optimized automatically by the compiler.</p>
+<h2 id="why-this-matters_4">Why This Matters</h2>
+<p>Seeing is believing. This section provides the "aha!" moment by taking a concrete example from Chapter 6—one that required careful manual memoization—and showing how the compiler achieves the same result with simpler code. This solidifies the value proposition of the compiler and helps you build trust in the new, simpler way of writing components.</p>
+<h2 id="discovery-phase-the-manually-optimized-parent-component">Discovery Phase: The Manually Optimized Parent Component</h2>
+<p>Let's revisit the <code>ParentComponent</code> and <code>IncrementButton</code> example from section 6.6. Our goal was to prevent <code>IncrementButton</code> from re-rendering when <code>otherState</code> changed. We achieved this with <code>React.memo</code> and <code>useCallback</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// The &quot;Old Way&quot; - Manual Optimization</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useCallback</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">IncrementButton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">memo</span><span class="p">(({</span><span class="w"> </span><span class="nx">onIncrement</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;IncrementButton is rendering!&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">onIncrement</span><span class="p">}&gt;</span><span class="nx">Increment</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">});</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">ParentWithManualMemo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">otherState</span><span class="p">,</span><span class="w"> </span><span class="nx">setOtherState</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// We had to manually wrap this in useCallback</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleIncrement</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useCallback</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setCount</span><span class="p">((</span><span class="nx">c</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">c</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// Empty dependency array was crucial</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h4</span><span class="p">&gt;</span><span class="nx">Manual</span><span class="w"> </span><span class="nx">Optimization</span><span class="p">&lt;/</span><span class="nt">h4</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">IncrementButton</span><span class="w"> </span><span class="na">onIncrement</span><span class="o">=</span><span class="p">{</span><span class="nx">handleIncrement</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">hr</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setOtherState</span><span class="p">(</span><span class="o">!</span><span class="nx">otherState</span><span class="p">)}&gt;</span>
+<span class="w">        </span><span class="nx">Toggle</span><span class="w"> </span><span class="nx">Other</span><span class="w"> </span><span class="nx">State</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Other</span><span class="w"> </span><span class="nx">State</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nb">String</span><span class="p">(</span><span class="nx">otherState</span><span class="p">)}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Recall the Behavior</strong>:</p>
+<ol>
+<li>On initial render, "IncrementButton is rendering!" is logged.</li>
+<li>When you click "Toggle Other State", <strong>nothing</strong> is logged. The re-render is successfully skipped.</li>
+</ol>
+<p>This was a success, but it required us to know about and correctly use <code>useCallback</code>.</p>
+<h2 id="deep-dive-the-compiler-optimized-version">Deep Dive: The Compiler-Optimized Version</h2>
+<p>Now, let's write the same component as if we were targeting an environment with the React Compiler enabled. We write the most natural, straightforward code.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// The &quot;New Way&quot; - Automatic Optimization by the Compiler</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// React.memo is still useful to signal our intent to the compiler and for non-compiler environments.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">IncrementButton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">memo</span><span class="p">(({</span><span class="w"> </span><span class="nx">onIncrement</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;IncrementButton is rendering!&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">onIncrement</span><span class="p">}&gt;</span><span class="nx">Increment</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">});</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">ParentWithCompiler</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">otherState</span><span class="p">,</span><span class="w"> </span><span class="nx">setOtherState</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Just a plain function. No useCallback.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleIncrement</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setCount</span><span class="p">((</span><span class="nx">c</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">c</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h4</span><span class="p">&gt;</span><span class="nx">Automatic</span><span class="w"> </span><span class="nx">Optimization</span><span class="p">&lt;/</span><span class="nt">h4</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">IncrementButton</span><span class="w"> </span><span class="na">onIncrement</span><span class="o">=</span><span class="p">{</span><span class="nx">handleIncrement</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">hr</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setOtherState</span><span class="p">(</span><span class="o">!</span><span class="nx">otherState</span><span class="p">)}&gt;</span>
+<span class="w">        </span><span class="nx">Toggle</span><span class="w"> </span><span class="nx">Other</span><span class="w"> </span><span class="nx">State</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Other</span><span class="w"> </span><span class="nx">State</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nb">String</span><span class="p">(</span><span class="nx">otherState</span><span class="p">)}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Expected Behavior (with compiler enabled)</strong>:
+The behavior will be <strong>identical</strong> to the manually optimized version.</p>
+<ol>
+<li>On initial render, "IncrementButton is rendering!" is logged.</li>
+<li>When you click "Toggle Other State", <strong>nothing</strong> is logged.</li>
+</ol>
+<h3 id="why-does-this-work">Why does this work?</h3>
+<ol>
+<li>We still use <code>React.memo</code> on <code>IncrementButton</code>. This is an important signal that this component is pure and can be skipped if its props don't change.</li>
+<li>The React Compiler analyzes <code>ParentWithCompiler</code>.</li>
+<li>It sees the <code>handleIncrement</code> function. It analyzes its dependencies and finds it only depends on <code>setCount</code>, which is stable.</li>
+<li>It sees that <code>handleIncrement</code> is passed as a prop to a memoized component, <code>IncrementButton</code>.</li>
+<li>Recognizing this pattern, the compiler automatically memoizes <code>handleIncrement</code> for us. It effectively does the <code>useCallback</code> work behind the scenes.</li>
+<li>Therefore, when <code>otherState</code> changes and <code>ParentWithCompiler</code> re-renders, the compiler provides the exact same function instance for <code>handleIncrement</code> as the previous render.</li>
+<li><code>React.memo</code> compares the <code>onIncrement</code> prop, sees that it hasn't changed, and skips re-rendering <code>IncrementButton</code>.</li>
+</ol>
+<p>We achieved the same optimal performance with simpler, more readable code, simply by letting the compiler do its job.</p>
+<h2 id="production-perspective_4">Production Perspective</h2>
+<p>This side-by-side comparison is the most powerful argument for the compiler. It demonstrates a direct reduction in code complexity without sacrificing performance.</p>
+<ul>
+<li><strong>Team Velocity</strong>: Teams can build features faster when they aren't debating the nuances of dependency arrays.</li>
+<li><strong>Maintainability</strong>: The compiler-friendly version is easier to change. If <code>handleIncrement</code> later needed to depend on another piece of state, you would just use it. In the manual version, you'd have to remember to add it to the dependency array, or you'd introduce a stale closure bug. The compiler handles this automatically.</li>
+<li><strong>The Role of <code>React.memo</code></strong>: <code>React.memo</code> remains a useful tool. It's a clear signal to both human developers and the compiler that a component is a candidate for memoization. While the compiler can sometimes be smart enough to optimize children even without <code>memo</code>, using it makes your intent explicit and guarantees the optimization.</li>
+</ul>
+<h2 id="compiler-limitations-and-edge-cases">Compiler Limitations and Edge Cases</h2>
+<h2 id="learning-objective_5">Learning Objective</h2>
+<p>Recognize scenarios where the compiler might not be able to optimize code and understand why these limitations exist.</p>
+<h2 id="why-this-matters_5">Why This Matters</h2>
+<p>No tool is perfect. Understanding the boundaries of the React Compiler helps you avoid writing code that it can't handle, debug issues when they arise, and know when a manual escape hatch like <code>useMemo</code> might still be necessary. It helps you move from a "magical" understanding of the compiler to a practical, engineering-based one.</p>
+<h2 id="discovery-phase-when-assumptions-are-broken">Discovery Phase: When Assumptions are Broken</h2>
+<p>The compiler's power comes from its ability to make assumptions based on the "Rules of React." When your code breaks these rules in subtle ways, the compiler must play it safe and bail out of optimization.</p>
+<p>Consider a component that uses a value from <code>localStorage</code>, which is a mutable source external to React's state system.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// Assume this is a memoized child component</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">DisplayValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">memo</span><span class="p">(({</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Rendering DisplayValue with value:&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Value</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">value</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="p">});</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UnoptimizableComponent</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// This value is derived from a source React doesn&#39;t control.</span>
+<span class="w">  </span><span class="c1">// The compiler cannot know when `localStorage` might change.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">externalValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">localStorage</span><span class="p">.</span><span class="nx">getItem</span><span class="p">(</span><span class="s2">&quot;my-key&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s2">&quot;default&quot;</span><span class="p">;</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="nx">externalValue</span><span class="w"> </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">This</span><span class="w"> </span><span class="nx">component</span><span class="w"> </span><span class="nx">has</span><span class="w"> </span><span class="nx">rendered</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}</span><span class="w"> </span><span class="nx">times</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCount</span><span class="p">((</span><span class="nx">c</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">c</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span><span class="nx">Re</span><span class="o">-</span><span class="nx">render</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">DisplayValue</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">data</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:</p>
+<ol>
+<li>Open your console.</li>
+<li>In the console, run <code>localStorage.setItem('my-key', 'hello')</code>.</li>
+<li>Click the "Re-render" button. You will see "Rendering DisplayValue..." with the value "hello".</li>
+<li>Now, in the console, run <code>localStorage.setItem('my-key', 'world')</code>.</li>
+<li>Click the "Re-render" button again. You will see "Rendering DisplayValue..." with the value "world".</li>
+</ol>
+<p>The compiler cannot safely memoize <code>data</code>. Why? Because <code>externalValue</code> depends on <code>localStorage</code>, which can be changed by anything at any time (another browser tab, a browser extension, etc.). The compiler can't "see" that dependency. If it memoized <code>data</code>, it might show a stale value from <code>localStorage</code>. To ensure correctness, it must re-create <code>data</code> on every render, which will cause <code>DisplayValue</code> to re-render every time.</p>
+<h2 id="deep-dive-common-edge-cases">Deep Dive: Common Edge Cases</h2>
+<p>Here are some common patterns and scenarios where the compiler will be conservative and avoid memoization.</p>
+<h3 id="1-breaking-immutability">1. Breaking Immutability</h3>
+<p>As discussed in section 7.4, if you mutate state or props, the compiler loses its ability to track changes reliably. It will likely bail out of optimizing your component.</p>
+<h3 id="2-unstable-dependencies-from-non-standard-hooks">2. Unstable Dependencies from Non-Standard Hooks</h3>
+<p>The compiler is deeply integrated with React's built-in hooks. If you use a third-party library with hooks that don't properly stabilize their return values, it can break memoization.</p>
+<p><strong>Example</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// A poorly designed custom hook</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">useUnstableUser</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Returns a new object every time, even if the user data is the same</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Alice&quot;</span><span class="w"> </span><span class="p">};</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">MyComponent</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useUnstableUser</span><span class="p">();</span>
+
+<span class="w">  </span><span class="c1">// The compiler will see that `user` is a new object on every render.</span>
+<span class="w">  </span><span class="c1">// Any calculation based on `user` cannot be safely memoized.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">welcomeMessage</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`Hello, </span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="si">}</span><span class="sb">`</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Good hook libraries will ensure their return values are stable (using <code>useMemo</code> internally, for instance) to prevent this.</p>
+<h3 id="3-code-that-is-hard-to-analyze-statically">3. Code That Is Hard to Analyze Statically</h3>
+<p>If your component's logic is extremely complex, with values being passed through many nested, dynamic functions, the compiler might not be able to follow the data flow and will opt for safety over optimization.</p>
+<h3 id="what-to-do-in-these-cases">What to do in these cases?</h3>
+<p>If you encounter a true edge case where the compiler can't optimize a performance bottleneck, you have two options:</p>
+<ol>
+<li>
+<p><strong>Refactor the Code</strong>: The best solution is usually to refactor your component to follow the Rules of React more closely. In our <code>localStorage</code> example, the correct pattern would be to read from <code>localStorage</code> inside a <code>useEffect</code> and store the value in React state. This brings the external value into React's managed world, allowing the compiler to understand it.</p>
+<p><code>jsx
+function OptimizableComponent() {
+  const [externalValue, setExternalValue] = useState(() =&gt;
+    localStorage.getItem("my-key"),
+  );
+  // ... now the compiler can track `externalValue` as regular state.
+}</code></p>
+</li>
+<li>
+<p><strong>Use Manual Memoization</strong>: If refactoring is not possible, you can fall back to using <code>useMemo</code> or <code>useCallback</code>. This is you telling the compiler, "I know more than you about this specific value. Trust me and memoize it according to these dependencies."</p>
+</li>
+</ol>
+<h2 id="production-perspective_5">Production Perspective</h2>
+<ul>
+<li><strong>Edge cases are rare</strong>: For the vast majority of application code that follows standard React patterns, the compiler will work perfectly.</li>
+<li><strong>Correctness over Performance</strong>: The compiler's prime directive is to never change the logic of your application. It will always choose correctness over a potentially risky optimization.</li>
+<li><strong>Future Improvements</strong>: The React team is continuously improving the compiler. Some things that are limitations today may be handled automatically in the future. Always rely on the latest documentation for your React version.</li>
+<li><strong><code>'use memo'</code> Directive</strong>: The React team has discussed a potential <code>'use memo'</code> directive that could be used at the top of a file or function to give developers more granular control, for instance, to tell the compiler to be more aggressive or to ignore a specific function. This is a potential future escape hatch to keep an eye on.</li>
+</ul>
+<h2 id="debugging-compiler-optimizations">Debugging Compiler Optimizations</h2>
+<h2 id="learning-objective_6">Learning Objective</h2>
+<p>Learn how to use tools like the React DevTools Profiler to verify that the compiler is working as expected and to diagnose performance issues.</p>
+<h2 id="why-this-matters_6">Why This Matters</h2>
+<p>Since the compiler works in the background, you need a way to "see" its effects. Knowing how to debug and verify its optimizations builds confidence and provides the tools you need to investigate performance issues, ensuring that you're not just hoping for speed but confirming it.</p>
+<h2 id="discovery-phase-how-do-we-know-its-working">Discovery Phase: How Do We Know It's Working?</h2>
+<p>We've established that the compiler should make our simple code performant. But how do we prove it? The primary tool for this is the <strong>React DevTools Profiler</strong>.</p>
+<p>Let's use our <code>ParentWithCompiler</code> example from section 7.5.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// from section 7.5</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">IncrementButton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">memo</span><span class="p">(({</span><span class="w"> </span><span class="nx">onIncrement</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// We&#39;ll remove the console.log to rely on the Profiler</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">onIncrement</span><span class="p">}&gt;</span><span class="nx">Increment</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">});</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">ParentWithCompiler</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">otherState</span><span class="p">,</span><span class="w"> </span><span class="nx">setOtherState</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleIncrement</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setCount</span><span class="p">((</span><span class="nx">c</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">c</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h4</span><span class="p">&gt;</span><span class="nx">Automatic</span><span class="w"> </span><span class="nx">Optimization</span><span class="p">&lt;/</span><span class="nt">h4</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">IncrementButton</span><span class="w"> </span><span class="na">onIncrement</span><span class="o">=</span><span class="p">{</span><span class="nx">handleIncrement</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">hr</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setOtherState</span><span class="p">(</span><span class="o">!</span><span class="nx">otherState</span><span class="p">)}&gt;</span>
+<span class="w">        </span><span class="nx">Toggle</span><span class="w"> </span><span class="nx">Other</span><span class="w"> </span><span class="nx">State</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Other</span><span class="w"> </span><span class="nx">State</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nb">String</span><span class="p">(</span><span class="nx">otherState</span><span class="p">)}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">ParentWithCompiler</span><span class="p">;</span>
+</code></pre></div>
+
+<p>Our hypothesis is that when we click "Toggle Other State," the <code>IncrementButton</code> component should not re-render. Let's use the Profiler to check.</p>
+<h3 id="using-the-react-devtools-profiler">Using the React DevTools Profiler</h3>
+<ol>
+<li><strong>Open React DevTools</strong>: In your browser's developer tools, go to the "Profiler" tab.</li>
+<li><strong>Start Profiling</strong>: Click the blue "record" button (●).</li>
+<li><strong>Perform an Action</strong>: Click the "Toggle Other State" button in your application one time.</li>
+<li><strong>Stop Profiling</strong>: Click the red "record" button again.</li>
+</ol>
+<p>You will now see a "flame graph" for the commit that happened when you clicked the button.</p>
+<p><strong>What you should see</strong>:</p>
+<p>The flame graph will show which components rendered. You should see <code>ParentWithCompiler</code> in the graph, likely colored green to indicate it rendered. However, you should <strong>not</strong> see <code>IncrementButton</code>. Or, if you do see it, it will be grayed out, and when you click on it, the right-hand panel will say <strong>"Did not render during this profiling session."</strong></p>
+<p>This is the visual proof. The Profiler confirms that React did not re-render <code>IncrementButton</code>, which means the compiler successfully memoized the <code>handleIncrement</code> prop.</p>
+<h2 id="deep-dive-interpreting-profiler-results">Deep Dive: Interpreting Profiler Results</h2>
+<p>The Profiler is your ground truth for rendering behavior.</p>
+<ul>
+<li><strong>Green/Yellow Bars</strong>: These components rendered in the profiled commit. The color indicates how long they took to render.</li>
+<li><strong>Gray Bars</strong>: These components did <em>not</em> render. This is what you want to see for properly memoized components during an unrelated state update.</li>
+<li><strong>"Why did this render?"</strong>: When you select a component that rendered, the right-hand panel often gives you a reason, such as "Props changed" or "State changed".</li>
+</ul>
+<h3 id="what-if-a-component-re-renders-when-it-shouldnt">What if a component re-renders when it shouldn't?</h3>
+<p>Imagine you run the profiler and see that <code>IncrementButton</code> <em>did</em> render. The Profiler tells you it's because "Props changed". This is your debugging clue. It tells you that, for some reason, the <code>onIncrement</code> prop is not stable.</p>
+<p>This leads to a few possibilities:</p>
+<ol>
+<li><strong>Is the compiler enabled?</strong> The most basic check. If the compiler isn't running, no automatic memoization will occur.</li>
+<li><strong>Is the code compiler-friendly?</strong> Review the component for patterns that might cause the compiler to bail out, like mutation or other rule violations we discussed in section 7.6.</li>
+<li><strong>Is there a bug in a custom hook?</strong> If the unstable prop is coming from a custom hook, the issue might be in that hook's implementation (e.g., it returns a new object/function on every call).</li>
+</ol>
+<h3 id="other-debugging-tools">Other Debugging Tools</h3>
+<ul>
+<li><strong>Compiler Logs</strong>: Future versions of the compiler and its build tool integrations may offer verbose logging modes. These could show you which components are being optimized and which are being skipped, along with a reason. This would provide insight directly from the source.</li>
+<li><strong>React Compiler Playground</strong>: The React team may release a playground tool (similar to the TypeScript playground) that lets you paste in your React code and see the conceptual compiled output. This would be an excellent educational tool for understanding how the compiler "thinks".</li>
+</ul>
+<h2 id="production-perspective_6">Production Perspective</h2>
+<ul>
+<li><strong>Profiling as a Routine</strong>: For performance-critical parts of an application, profiling should be a regular part of the development process, not just something you do when there's a problem.</li>
+<li><strong>Automated Performance Testing</strong>: In a CI/CD environment, you can use tools like Playwright combined with the Profiler API to write automated tests that fail if a certain interaction causes too many components to re-render. This can catch performance regressions before they reach production.</li>
+<li><strong>Focus on Interactions</strong>: Don't try to eliminate every single re-render. Focus your debugging and optimization efforts on user interactions that feel slow. The goal is a great user experience, not a perfectly gray flame graph.</li>
+</ul>
+<h2 id="migration-from-manual-optimization">Migration from Manual Optimization</h2>
+<h2 id="learning-objective_7">Learning Objective</h2>
+<p>Develop a safe and systematic strategy for removing legacy <code>useMemo</code> and <code>useCallback</code> hooks from an existing codebase after enabling the React Compiler.</p>
+<h2 id="why-this-matters_7">Why This Matters</h2>
+<p>Many developers will be working on large, existing codebases that are filled with manual memoization hooks. Simply deleting all of them could be risky. A structured migration plan ensures that you can clean up your code and reap the benefits of the compiler without introducing regressions.</p>
+<h2 id="discovery-phase-a-codebase-full-of-usememo">Discovery Phase: A Codebase Full of <code>useMemo</code></h2>
+<p>Imagine you've just joined a team and you're looking at a component from their legacy codebase. It's functional but filled with years of defensive performance tuning.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// legacy/UserProfile.jsx - Before Migration</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">,</span><span class="w"> </span><span class="nx">useCallback</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Avatar</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./Avatar&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Assume this is a memoized component</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">UserStats</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./UserStats&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Assume this is a memoized component</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">tab</span><span class="p">,</span><span class="w"> </span><span class="nx">setTab</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">userFullName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Calculating full name&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">firstName</span><span class="si">}</span><span class="sb"> </span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">lastName</span><span class="si">}</span><span class="sb">`</span><span class="p">;</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">.</span><span class="nx">firstName</span><span class="p">,</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">lastName</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">avatarData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">(</span>
+<span class="w">    </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({</span>
+<span class="w">      </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="nx">userFullName</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">src</span><span class="o">:</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">,</span>
+<span class="w">    </span><span class="p">}),</span>
+<span class="w">    </span><span class="p">[</span><span class="nx">userFullName</span><span class="p">,</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">],</span>
+<span class="w">  </span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">statsData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">(</span>
+<span class="w">    </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({</span>
+<span class="w">      </span><span class="nx">followers</span><span class="o">:</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">followers</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">following</span><span class="o">:</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">following</span><span class="p">,</span>
+<span class="w">    </span><span class="p">}),</span>
+<span class="w">    </span><span class="p">[</span><span class="nx">user</span><span class="p">.</span><span class="nx">followers</span><span class="p">,</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">following</span><span class="p">],</span>
+<span class="w">  </span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSetTabProfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useCallback</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTab</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">),</span><span class="w"> </span><span class="p">[]);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSetTabActivity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useCallback</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTab</span><span class="p">(</span><span class="s2">&quot;activity&quot;</span><span class="p">),</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Avatar</span><span class="w"> </span><span class="na">data</span><span class="o">=</span><span class="p">{</span><span class="nx">avatarData</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">userFullName</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSetTabProfile</span><span class="p">}&gt;</span><span class="nx">Profile</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSetTabActivity</span><span class="p">}&gt;</span><span class="nx">Activity</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">tab</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;profile&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">UserStats</span><span class="w"> </span><span class="na">data</span><span class="o">=</span><span class="p">{</span><span class="nx">statsData</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;}</span>
+<span class="w">      </span><span class="p">{</span><span class="sr">/_ ... activity tab content ... _/</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This component is a prime candidate for migration. It has multiple <code>useMemo</code> and <code>useCallback</code> calls that add noise and complexity. Our goal is to remove them safely.</p>
+<h2 id="deep-dive-a-step-by-step-migration-strategy">Deep Dive: A Step-by-Step Migration Strategy</h2>
+<p>Here is a safe, incremental process for migrating a component like this.</p>
+<h3 id="step-1-enable-the-compiler-and-verify">Step 1: Enable the Compiler and Verify</h3>
+<p>First, ensure the React Compiler is configured correctly in your project's build process. Then, run your application's test suite. All existing tests should pass. The compiler is designed to not change the behavior of your code, so if tests fail, it might indicate your code was relying on a subtle bug that the compiler's analysis has exposed.</p>
+<h3 id="step-2-choose-a-component-and-profile">Step 2: Choose a Component and Profile</h3>
+<p>Pick a single component to migrate, like our <code>UserProfile</code>. Before changing anything, use the React DevTools Profiler to get a baseline.</p>
+<ul>
+<li>Trigger a re-render (e.g., by clicking a tab button).</li>
+<li>Observe which child components re-render (e.g., <code>Avatar</code>, <code>UserStats</code>). With the manual memoization, they probably won't re-render unless their specific data changes. This is our performance target.</li>
+</ul>
+<h3 id="step-3-remove-manual-memoization-hooks">Step 3: Remove Manual Memoization Hooks</h3>
+<p>Now, refactor the code to its simple, declarative form.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// legacy/UserProfile.jsx - After Migration</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Avatar</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./Avatar&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">UserStats</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./UserStats&#39;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">tab</span><span class="p">,</span><span class="w"> </span><span class="nx">setTab</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;profile&#39;</span><span class="p">);</span>
+
+<span class="c1">// Just calculate the values. Let the compiler handle memoization.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">userFullName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">firstName</span><span class="si">}</span><span class="sb"> </span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">lastName</span><span class="si">}</span><span class="sb">`</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">avatarData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="nx">userFullName</span><span class="p">,</span>
+<span class="nx">src</span><span class="o">:</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">avatarUrl</span>
+<span class="p">};</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">statsData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="nx">followers</span><span class="o">:</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">followers</span><span class="p">,</span>
+<span class="nx">following</span><span class="o">:</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">following</span>
+<span class="p">};</span>
+
+<span class="c1">// Just define the functions.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">handleSetTabProfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTab</span><span class="p">(</span><span class="s1">&#39;profile&#39;</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">handleSetTabActivity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTab</span><span class="p">(</span><span class="s1">&#39;activity&#39;</span><span class="p">);</span>
+
+<span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="c1">// ... JSX is unchanged ...</span>
+<span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="step-4-re-run-tests-and-re-profile">Step 4: Re-run Tests and Re-profile</h3>
+<p>Run the test suite again for the migrated component. Everything should still pass.</p>
+<p>Now, go back to the Profiler and repeat the same actions from Step 2. The results should be the same or very similar. You should see that <code>Avatar</code> and <code>UserStats</code> are still not re-rendering unnecessarily. This confirms that the compiler has successfully taken over the job of the manual hooks you removed.</p>
+<h3 id="step-5-commit-and-repeat">Step 5: Commit and Repeat</h3>
+<p>Commit the successful migration of this single component. Now you can move on to the next one. This incremental approach is much safer than a global find-and-replace.</p>
+<h3 id="common-confusion-do-i-also-remove-reactmemo">Common Confusion: Do I also remove <code>React.memo</code>?</h3>
+<p><strong>You might think</strong>: If the compiler is so smart, I should remove <code>React.memo</code> from my child components too.</p>
+<p><strong>Actually</strong>: It's generally best to <strong>keep <code>React.memo</code></strong>. As we've discussed, <code>React.memo</code> is a strong, explicit signal of your intent. It tells both human developers and the compiler that a component is pure and can be skipped. While the compiler might be able to figure this out on its own, <code>React.memo</code> makes it unambiguous and guarantees the optimization. The migration strategy is focused on removing <code>useMemo</code> and <code>useCallback</code> from <em>within</em> components, not <code>React.memo</code> from around them.</p>
+<h2 id="production-perspective_7">Production Perspective</h2>
+<ul>
+<li><strong>Automate Where Possible</strong>: You can create codemods (automated code transformation scripts) to handle the bulk of removing <code>useMemo</code> and <code>useCallback</code>. However, these should always be followed by manual review and profiling.</li>
+<li><strong>Prioritize High-Traffic Areas</strong>: For large applications, start the migration process in the most performance-critical and frequently visited parts of your UI. This will deliver the biggest impact first.</li>
+<li><strong>Team Education</strong>: The most important part of the migration is educating the team on the new "compiler-first" mindset. Otherwise, developers may continue to add new <code>useMemo</code> and <code>useCallback</code> calls out of habit, negating the benefits of the migration. Update your team's style guides and linting rules to discourage the use of manual memoization hooks.</li>
+</ul>
+<h2 id="module-synthesis">Module Synthesis 📋</h2>
+<h2 id="module-synthesis-the-compiler-and-a-new-era-of-simplicity">Module Synthesis: The Compiler and a New Era of Simplicity</h2>
+<p>This chapter introduced a fundamental shift in how we approach React development. We've moved from a world where performance was a manual, explicit task to one where it is an automatic, implicit benefit of the framework.</p>
+<h3 id="key-takeaways">Key Takeaways</h3>
+<ol>
+<li>
+<p><strong>The Compiler is a Build Tool, Not a Hook</strong>: The React Compiler works behind the scenes, transforming your straightforward React code into highly optimized code without you needing to change how you write components.</p>
+</li>
+<li>
+<p><strong>Automatic Memoization is the New Default</strong>: The compiler analyzes your component's data flow and automatically applies the equivalent of <code>useMemo</code> and <code>useCallback</code>. This eliminates the need for manual memoization in the vast majority of cases.</p>
+</li>
+<li>
+<p><strong>Simpler is Now Faster</strong>: The new best practice is to write the simplest, most declarative code possible. The cluttered, "defensively memoized" style of the past is now an anti-pattern. Your goal is to write code that is easy for both humans and the compiler to understand.</p>
+</li>
+<li>
+<p><strong>The "Rules of React" are Paramount</strong>: The compiler's ability to optimize your code relies on you following established React best practices: treating state and props as immutable, keeping components relatively pure, and following the Rules of Hooks.</p>
+</li>
+<li>
+<p><strong>Verification over Assumption</strong>: While you can trust the compiler, you should verify its work. The React DevTools Profiler is the essential tool for confirming that your components are behaving as expected and not re-rendering unnecessarily.</p>
+</li>
+<li>
+<p><strong>Migration is a Process</strong>: For existing codebases, migrating away from manual memoization should be a gradual, systematic process of removing hooks, testing, and profiling on a component-by-component basis.</p>
+</li>
+</ol>
+<h3 id="looking-forward">Looking Forward</h3>
+<p>With the burden of manual memoization lifted, we can focus on higher-level concerns. We've freed up the mental space previously occupied by dependency arrays and re-render checks.</p>
+<p>This new freedom sets the stage perfectly for our next topic. In <strong>Chapter 8: Actions and Form Handling</strong>, we will explore another major React 19 feature that dramatically simplifies one of the most common and complex parts of web development: managing forms, mutations, and pending states. You'll see how React is continuing this trend of providing powerful, built-in solutions for previously complex problems.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-10-25 16:27:47 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

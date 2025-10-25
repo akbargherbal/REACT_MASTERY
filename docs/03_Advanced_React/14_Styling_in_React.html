@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>14_Styling_in_React</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">03_Advanced_React</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-14-styling-in-react">Chapter 14: Styling in React</h1>
+<h2 id="css-modules">CSS Modules</h2>
+<h2 id="learning-objective">Learning Objective</h2>
+<p>Understand how to use CSS Modules to write locally scoped CSS, preventing class name collisions and improving maintainability in large applications.</p>
+<h2 id="why-this-matters">Why This Matters</h2>
+<p>In a traditional CSS setup, every class name you write is global. If two different components both use a class named <code>.container</code>, their styles will conflict and overwrite each other, leading to unpredictable bugs. CSS Modules solve this fundamental problem by automatically making your class names unique, allowing you to write simple, component-specific CSS without worrying about global scope.</p>
+<h2 id="discovery-phase">Discovery Phase</h2>
+<p>Let's see the problem in action. Imagine we have two separate components, a <code>PrimaryCard</code> and a <code>SecondaryCard</code>, both using the generic class name <code>.card</code>.</p>
+<p><strong>The Problem: Global CSS Collision</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c">/* styles.css */</span>
+<span class="p">.</span><span class="nc">card</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="kt">rem</span><span class="p">;</span>
+<span class="w">  </span><span class="k">border</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="kt">px</span><span class="w"> </span><span class="kc">solid</span><span class="w"> </span><span class="kc">blue</span><span class="p">;</span>
+<span class="w">  </span><span class="k">background-color</span><span class="p">:</span><span class="w"> </span><span class="kc">lightblue</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">card</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c">/* OOPS! Someone else redefined .card in the same file or another one */</span>
+<span class="w">  </span><span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="kt">rem</span><span class="p">;</span>
+<span class="w">  </span><span class="k">border</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="kt">px</span><span class="w"> </span><span class="kc">solid</span><span class="w"> </span><span class="kc">green</span><span class="p">;</span>
+<span class="w">  </span><span class="k">background-color</span><span class="p">:</span><span class="w"> </span><span class="kc">lightgreen</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>The second definition will always win, breaking the first component's styles. Now, let's solve this with CSS Modules.</p>
+<p>With CSS Modules, you name your stylesheet <code>[ComponentName].module.css</code>. This special naming convention tells your build tool (like Vite or Next.js) to process this file as a CSS Module.</p>
+<p>Let's create a <code>Button</code> component.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">/</span><span class="nt">_</span><span class="w"> </span><span class="nt">Button</span><span class="p">.</span><span class="nc">module</span><span class="p">.</span><span class="nc">css</span><span class="w"> </span><span class="nt">_</span><span class="o">/</span>
+<span class="p">.</span><span class="nc">button</span><span class="w"> </span><span class="p">{</span>
+<span class="k">background-color</span><span class="p">:</span><span class="w"> </span><span class="mh">#61dafb</span><span class="p">;</span><span class="w"> </span><span class="err">/_</span><span class="w"> </span><span class="err">React</span><span class="w"> </span><span class="err">blue</span><span class="w"> </span><span class="err">_/</span>
+<span class="k">border</span><span class="p">:</span><span class="w"> </span><span class="kc">none</span><span class="p">;</span>
+<span class="k">color</span><span class="p">:</span><span class="w"> </span><span class="kc">white</span><span class="p">;</span>
+<span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="kt">px</span><span class="w"> </span><span class="mi">20</span><span class="kt">px</span><span class="p">;</span>
+<span class="k">border-radius</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="kt">px</span><span class="p">;</span>
+<span class="k">cursor</span><span class="p">:</span><span class="w"> </span><span class="kc">pointer</span><span class="p">;</span>
+<span class="k">font-size</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="kt">px</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">primary</span><span class="w"> </span><span class="p">{</span>
+<span class="k">background-color</span><span class="p">:</span><span class="w"> </span><span class="mh">#007bff</span><span class="p">;</span><span class="w"> </span><span class="err">/_</span><span class="w"> </span><span class="err">A</span><span class="w"> </span><span class="err">different</span><span class="w"> </span><span class="err">blue</span><span class="w"> </span><span class="err">_/</span>
+<span class="k">font-weight</span><span class="p">:</span><span class="w"> </span><span class="kc">bold</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="c1">// 1. Import the stylesheet as an object</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">styles</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./Button.module.css&quot;</span><span class="p">;</span>
+
+<span class="c1">// A library for conditionally joining class names</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">clsx</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;clsx&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Button</span><span class="p">({</span><span class="w"> </span><span class="nx">isPrimary</span><span class="p">,</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// 2. The `styles` object maps your class names to unique generated names</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">styles</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// Will log something like: { button: &quot;Button_button**1_a2b&quot;, primary: &quot;Button_primary**c3d4e&quot; }</span>
+
+<span class="w">  </span><span class="c1">// 3. Apply the class names to your element</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">buttonClasses</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">clsx</span><span class="p">(</span><span class="nx">styles</span><span class="p">.</span><span class="nx">button</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">[</span><span class="nx">styles</span><span class="p">.</span><span class="nx">primary</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="nx">isPrimary</span><span class="p">,</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">buttonClasses</span><span class="p">}&gt;{</span><span class="nx">children</span><span class="p">}&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// Usage in another component</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Button</span><span class="p">&gt;</span><span class="nx">Default</span><span class="w"> </span><span class="nx">Button</span><span class="p">&lt;/</span><span class="nt">Button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Button</span><span class="w"> </span><span class="na">isPrimary</span><span class="o">=</span><span class="p">{</span><span class="kc">true</span><span class="p">}&gt;</span><span class="nx">Primary</span><span class="w"> </span><span class="nx">Button</span><span class="p">&lt;/</span><span class="nt">Button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Rendered Output</strong>:</p>
+<p>The browser will render two buttons. If you inspect the HTML, you will see something like this:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">&lt;</span><span class="nt">button</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;Button_button__1_a2b&quot;</span><span class="p">&gt;</span>Default Button<span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">button</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;Button_button__1_a2b Button_primary__c3d4e&quot;</span><span class="p">&gt;</span>
+  Primary Button
+<span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+</code></pre></div>
+
+<p>Notice that the class names are not <code>button</code> and <code>primary</code>. They have been transformed into unique strings that include the component name, the original class name, and a unique hash. This makes a collision impossible.</p>
+<h2 id="deep-dive">Deep Dive</h2>
+<p>CSS Modules are not a React feature, but a build-time process. Here's what happens:</p>
+<ol>
+<li><strong>Import</strong>: When you <code>import styles from './Button.module.css'</code>, the build tool intercepts this.</li>
+<li><strong>Transformation</strong>: It processes <code>Button.module.css</code>, takes every class name you defined (e.g., <code>.button</code>), and transforms it into a unique string (e.g., <code>Button_button__1_a2b</code>).</li>
+<li><strong>JavaScript Object</strong>: It creates a JavaScript object where the keys are your original class names (<code>button</code>) and the values are the new, unique class names (<code>Button_button__1_a2b</code>).</li>
+<li><strong>Injection</strong>: It injects the transformed CSS into the final CSS output for the page.</li>
+</ol>
+<p>The <code>styles</code> object you get in your component is simply a lookup table. <code>styles.button</code> gives you the unique string to use in the <code>className</code> prop.</p>
+<h3 id="composing-classes">Composing Classes</h3>
+<p>You rarely apply just one class. You often need to apply classes conditionally. While you can use template literals, a small library like <code>clsx</code> (or <code>classnames</code>) makes this much cleaner.</p>
+<ul>
+<li><strong>Without <code>clsx</code></strong>: <code>className={\</code>${styles.button} ${isPrimary ? styles.primary : ''}`}`</li>
+<li><strong>With <code>clsx</code></strong>: <code>className={clsx(styles.button, { [styles.primary]: isPrimary })}</code></li>
+</ul>
+<p>The <code>clsx</code> version is more readable, especially when you have multiple conditional classes.</p>
+<h3 id="common-confusion-can-i-still-use-global-css">Common Confusion: Can I still use global CSS?</h3>
+<p><strong>You might think</strong>: Using CSS Modules means I can <em>only</em> use locally scoped CSS.</p>
+<p><strong>Actually</strong>: You can mix and match. Any stylesheet named without <code>.module.css</code> (e.g., <code>global.css</code>) will be treated as regular, global CSS.</p>
+<p><strong>Why the confusion happens</strong>: The <code>.module.css</code> convention is strict, so it's easy to assume it's an all-or-nothing system.</p>
+<p><strong>How to remember</strong>:</p>
+<ul>
+<li><code>Component.module.css</code> -&gt; Local, scoped styles.</li>
+<li><code>global.css</code> -&gt; Global, application-wide styles.</li>
+</ul>
+<p>You typically use a global stylesheet for base styles like fonts, resets, and CSS variables, and CSS Modules for component-specific styles.</p>
+<h2 id="production-perspective">Production Perspective</h2>
+<p><strong>When professionals choose CSS Modules</strong>:</p>
+<ul>
+<li>When they want the safety of scoped styles but prefer writing traditional CSS in separate <code>.css</code> files.</li>
+<li>In large teams where the risk of style collision is high.</li>
+<li>For performance-critical applications, as CSS Modules have <strong>zero runtime overhead</strong>. The transformation happens at build time, and the output is just static CSS and class names.</li>
+</ul>
+<p><strong>Trade-offs</strong>:</p>
+<ul>
+<li>✅ <strong>Advantage</strong>: Scoped styles prevent bugs.</li>
+<li>✅ <strong>Advantage</strong>: Zero runtime cost, making it very performant.</li>
+<li>✅ <strong>Advantage</strong>: You can use all CSS features like media queries and pseudo-selectors without any special syntax.</li>
+<li>⚠️ <strong>Cost</strong>: The disconnect between the JSX and the styles (in separate files) can sometimes make development slower.</li>
+<li>⚠️ <strong>Cost</strong>: Dynamic styling based on props can be clumsy, often requiring you to define multiple classes and apply them conditionally.</li>
+</ul>
+<h2 id="styled-components">Styled Components</h2>
+<h2 id="learning-objective_1">Learning Objective</h2>
+<p>Learn how to use the Styled Components library to create React components with co-located, dynamic styles, embracing the CSS-in-JS pattern.</p>
+<h2 id="why-this-matters_1">Why This Matters</h2>
+<p>CSS Modules solve the scoping problem, but they still keep styles in a separate file from the component's logic. This can lead to context-switching. The CSS-in-JS pattern, popularized by libraries like Styled Components, brings your styles directly into your component file. This co-location makes components truly self-contained and allows you to easily create dynamic styles based on props.</p>
+<h2 id="discovery-phase_1">Discovery Phase</h2>
+<p>Let's rebuild our <code>Button</code> component using Styled Components. Instead of a <code>.css</code> file, we'll define our styles right inside our component file using JavaScript.</p>
+<p>First, you'd need to install the library: <code>npm install styled-components</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="c1">// 1. Import the `styled` function from the library</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">styled</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;styled-components&#39;</span><span class="p">;</span>
+
+<span class="c1">// 2. Create a new component using the `styled` factory</span>
+<span class="c1">// This uses JavaScript&#39;s tagged template literals.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">StyledButton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">styled</span><span class="p">.</span><span class="nx">button</span><span class="sb">`</span>
+<span class="sb">/_ You write regular CSS inside the backticks _/</span>
+<span class="sb">background-color: #61dafb;</span>
+<span class="sb">border: none;</span>
+<span class="sb">color: white;</span>
+<span class="sb">padding: 10px 20px;</span>
+<span class="sb">border-radius: 5px;</span>
+<span class="sb">cursor: pointer;</span>
+<span class="sb">font-size: 16px;</span>
+
+<span class="sb">/_ 3. Dynamic styling based on props! _/</span>
+<span class="sb">/_ If the component receives a `</span><span class="nx">$primary</span><span class="sb">` prop, apply these styles. _/</span>
+<span class="si">${</span><span class="p">(</span><span class="nx">props</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">props</span><span class="p">.</span><span class="nx">$primary</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="sb">`    background-color: #007bff;</span>
+<span class="sb">    font-weight: bold;</span>
+<span class="sb"> `</span><span class="si">}</span>
+<span class="sb">`</span><span class="p">;</span>
+
+<span class="c1">// Usage in another component</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">StyledButton</span><span class="p">&gt;</span><span class="nx">Default</span><span class="w"> </span><span class="nx">Button</span><span class="p">&lt;/</span><span class="nt">StyledButton</span><span class="p">&gt;</span>
+<span class="p">{</span><span class="sr">/_ Pass the `$primary` prop to activate the conditional styles _/</span><span class="p">}</span>
+<span class="p">&lt;</span><span class="nt">StyledButton</span><span class="w"> </span><span class="err">$</span><span class="na">primary</span><span class="p">&gt;</span><span class="nx">Primary</span><span class="w"> </span><span class="nx">Button</span><span class="p">&lt;/</span><span class="nt">StyledButton</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Rendered Output</strong>:</p>
+<p>The output looks identical to the CSS Modules version. However, inspecting the HTML reveals a different mechanism:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">&lt;</span><span class="nt">button</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;sc-a-b-c-d-e-f-g-h-i-j-k-l-m&quot;</span><span class="p">&gt;</span>Default Button<span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">button</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;sc-a-b-c-d-e-f-g-h-i-j-k-l-m sc-a-b-c-d-e-f-g-h-i-j-k-l-n&quot;</span><span class="p">&gt;</span>
+  Primary Button
+<span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+</code></pre></div>
+
+<p><em>(Note: Class names are simplified for clarity. They are actually hashes.)</em></p>
+<p>Styled Components automatically generates unique class names and injects the corresponding CSS into a <code>&lt;style&gt;</code> tag in the document's <code>&lt;head&gt;</code>.</p>
+<h2 id="deep-dive_1">Deep Dive</h2>
+<p>This approach is fundamentally different. We are not styling an element; we are creating a <strong>styled React component</strong>.</p>
+<ol>
+<li><strong><code>styled.button</code></strong>: The <code>styled</code> object is a factory. <code>styled.button</code> creates a React component that will render an HTML <code>&lt;button&gt;</code>. You can use <code>styled.div</code>, <code>styled.h1</code>, etc., for any valid HTML tag.</li>
+<li><strong>Tagged Template Literal</strong>: The backticks (<code>`</code>) are not just for strings. This is a special JavaScript syntax. The CSS inside is passed to the <code>styled.button</code> function, which parses it.</li>
+<li><strong>Props-Based Adaptation</strong>: Inside the template literal, you can use an interpolation <code>${(props) =&gt; ...}</code> to access the component's props. This is incredibly powerful. We check for <code>props.$primary</code> and return an additional string of CSS if it's true.</li>
+<li><strong>Transient Props (<code>$</code>)</strong>: We use <code>$primary</code> instead of <code>primary</code>. The <code>$</code> prefix is a convention in Styled Components that tells the library this prop is <em>only</em> for styling. Styled Components will not pass it down to the underlying DOM element, which avoids invalid HTML attributes and keeps your DOM clean.</li>
+</ol>
+<h3 id="extending-styles">Extending Styles</h3>
+<p>You can easily create variations of components based on others.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">TomatoButton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">styled</span><span class="p">(</span><span class="nx">StyledButton</span><span class="p">)</span><span class="sb">`</span>
+<span class="sb">  background-color: tomato;</span>
+<span class="sb">`</span><span class="p">;</span>
+
+<span class="c1">// Usage: &lt;TomatoButton&gt;I&#39;m a tomato button!&lt;/TomatoButton&gt;</span>
+<span class="c1">// It will have all the styles of StyledButton, but with a different background.</span>
+</code></pre></div>
+
+<h3 id="common-confusion-isnt-this-just-inline-styles">Common Confusion: "Isn't this just inline styles?"</h3>
+<p><strong>You might think</strong>: Writing styles inside a component is the same as using the <code>style</code> prop, like <code>&lt;button style={{ backgroundColor: 'blue' }}&gt;</code>.</p>
+<p><strong>Actually</strong>: It's completely different and much more powerful.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;">Inline Styles (<code>style</code> prop)</th>
+<th style="text-align: left;">Styled Components</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Mechanism</strong></td>
+<td style="text-align: left;">Adds styles directly to the element's <code>style</code> attribute.</td>
+<td style="text-align: left;">Generates real CSS classes and injects a stylesheet.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Pseudo-selectors</strong></td>
+<td style="text-align: left;">Cannot use (<code>:hover</code>, <code>:focus</code>).</td>
+<td style="text-align: left;"><strong>Yes</strong>, you can write <code>:hover { ... }</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Media Queries</strong></td>
+<td style="text-align: left;">Cannot use (<code>@media (...)</code>).</td>
+<td style="text-align: left;"><strong>Yes</strong>, you can write full media queries.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Performance</strong></td>
+<td style="text-align: left;">Can cause performance issues due to no caching.</td>
+<td style="text-align: left;">Styles are cached and reused for components of the same type.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Readability</strong></td>
+<td style="text-align: left;">CSS properties must be camelCased.</td>
+<td style="text-align: left;">You write standard CSS syntax.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>How to remember</strong>: Inline styles are for one-off, highly dynamic values (like a calculated <code>top</code> and <code>left</code> position). Styled Components are for defining the complete, static and dynamic styles of a component.</p>
+<h2 id="production-perspective_1">Production Perspective</h2>
+<p><strong>When professionals choose Styled Components</strong>:</p>
+<ul>
+<li>When building component libraries or design systems where co-location of logic and style is a primary goal.</li>
+<li>When the UI has many state-dependent styles (e.g., <code>disabled</code>, <code>active</code>, <code>error</code> states) that are elegantly handled by props.</li>
+<li>When teams prefer writing styles directly in their JavaScript/TypeScript files.</li>
+</ul>
+<p><strong>Trade-offs</strong>:</p>
+<ul>
+<li>✅ <strong>Advantage</strong>: Excellent developer experience through co-location.</li>
+<li>✅ <strong>Advantage</strong>: Dynamic styling based on props is clean and powerful.</li>
+<li>✅ <strong>Advantage</strong>: Removes the need for class name management entirely.</li>
+<li>⚠️ <strong>Cost</strong>: Has a runtime performance overhead. The library needs to parse styles and inject them on the client side. This is usually negligible but can be a factor in highly complex apps.</li>
+<li>⚠️ <strong>Cost</strong>: Adds to the application's bundle size (the library itself needs to be downloaded).</li>
+<li>⚠️ <strong>Cost</strong>: Can be incompatible with React Server Components out-of-the-box, a major consideration with React 19 (see Section 14.5).</li>
+</ul>
+<h2 id="emotion">Emotion</h2>
+<h2 id="learning-objective_2">Learning Objective</h2>
+<p>Understand the two primary ways to use the Emotion library—the <code>styled</code> API and the <code>css</code> prop—and recognize its similarities and differences with Styled Components.</p>
+<h2 id="why-this-matters_2">Why This Matters</h2>
+<p>Emotion is another major player in the CSS-in-JS space, offering a powerful and flexible alternative to Styled Components. It provides multiple APIs that can be tailored to different use cases, from creating reusable styled components to applying one-off styles without creating a new component. Understanding Emotion gives you a broader perspective on CSS-in-JS and its patterns.</p>
+<h2 id="discovery-phase_2">Discovery Phase</h2>
+<p>Emotion offers two popular ways to style your components. Let's explore both.</p>
+<p>First, install the necessary packages: <code>npm install @emotion/react @emotion/styled</code>.</p>
+<h3 id="approach-1-the-styled-api">Approach 1: The <code>styled</code> API</h3>
+<p>This API is virtually identical to Styled Components, making it easy to switch between them.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="c1">// 1. Import from @emotion/styled</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">styled</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@emotion/styled&quot;</span><span class="p">;</span>
+
+<span class="c1">// 2. The syntax is the same as Styled Components</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">Button</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">styled</span><span class="p">.</span><span class="nx">button</span><span class="sb">`</span>
+<span class="sb">background-color: #ff69b4; /_ Hot pink _/</span>
+<span class="sb">border: none;</span>
+<span class="sb">color: white;</span>
+<span class="sb">padding: 10px 20px;</span>
+<span class="sb">border-radius: 5px;</span>
+<span class="sb">cursor: pointer;</span>
+<span class="sb">font-size: 16px;</span>
+
+<span class="sb">&amp;:hover {</span>
+<span class="sb">background-color: #c71585; /_ Darker pink _/</span>
+<span class="sb">}</span>
+<span class="sb">`</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">Button</span><span class="p">&gt;</span><span class="nx">I</span><span class="err">&#39;</span><span class="nx">m</span><span class="w"> </span><span class="nx">an</span><span class="w"> </span><span class="nx">Emotion</span><span class="w"> </span><span class="nx">button</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">Button</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>As you can see, if you know Styled Components, you already know Emotion's <code>styled</code> API. It's a great way to build reusable, encapsulated components.</p>
+<h3 id="approach-2-the-css-prop-api">Approach 2: The <code>css</code> Prop API</h3>
+<p>This is where Emotion offers a distinct and powerful alternative. Instead of creating a named component like <code>Button</code>, you can apply styles directly to any element via a special <code>css</code> prop.</p>
+<p>To enable this, you need to add a special comment (a "pragma") at the top of your file.</p>
+<div class="codehilite"><pre><span></span><code><span class="err">/\*_ @jsxImportSource @emotion/react _/</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">css</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@emotion/react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">primaryColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;#007bff&#39;</span><span class="p">;</span>
+
+<span class="c1">// You can define styles as objects or tagged template literals</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">buttonStyle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">css</span><span class="sb">`  background-color: #6c757d;</span>
+<span class="sb">  border: none;</span>
+<span class="sb">  color: white;</span>
+<span class="sb">  padding: 10px 20px;</span>
+<span class="sb">  border-radius: 5px;</span>
+<span class="sb">  cursor: pointer;`</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">primaryButtonStyle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">css</span><span class="sb">`  background-color: </span><span class="si">${</span><span class="nx">primaryColor</span><span class="si">}</span><span class="sb">;</span>
+<span class="sb">  font-weight: bold;`</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">({</span><span class="w"> </span><span class="nx">isPrimary</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">{</span><span class="sr">/_ The css prop can take an array of style objects _/</span><span class="p">}</span>
+<span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">css</span><span class="o">=</span><span class="p">{[</span><span class="nx">buttonStyle</span><span class="p">,</span><span class="w"> </span><span class="nx">isPrimary</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nx">primaryButtonStyle</span><span class="p">]}&gt;</span>
+<span class="nx">Click</span><span class="w"> </span><span class="nx">me</span><span class="o">!</span>
+<span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Or you can use it for one-off styles */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">css</span><span class="o">=</span><span class="p">{</span><span class="nx">css</span><span class="sb">`</span>
+<span class="sb">        color: green;</span>
+<span class="sb">        font-size: 1.2rem;</span>
+<span class="sb">        border-left: 4px solid green;</span>
+<span class="sb">        padding-left: 8px;</span>
+<span class="sb">      `</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="nx">This</span><span class="w"> </span><span class="nx">paragraph</span><span class="w"> </span><span class="nx">has</span><span class="w"> </span><span class="nx">unique</span><span class="w"> </span><span class="nx">styles</span><span class="w"> </span><span class="nx">without</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">named</span><span class="w"> </span><span class="nx">component</span><span class="p">.</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+
+<span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Rendered Output</strong>:
+The code renders a button and a paragraph, each with their own unique, generated class names, just like the <code>styled</code> API.</p>
+<h2 id="deep-dive_2">Deep Dive</h2>
+<p>Let's compare the two approaches Emotion offers.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: left;"><code>styled</code> API (<code>styled.div</code>)</th>
+<th style="text-align: left;"><code>css</code> Prop API (<code>&lt;div css={...}&gt;</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Use Case</strong></td>
+<td style="text-align: left;">Best for creating reusable components that will be used in many places (e.g., <code>Button</code>, <code>Card</code>, <code>Input</code>).</td>
+<td style="text-align: left;">Best for one-off styles or applying variations to existing components without creating a new component type.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Syntax</strong></td>
+<td style="text-align: left;"><code>const MyComp = styled.div`...`</code></td>
+<td style="text-align: left;"><code>&lt;div css={css`...`}&gt;</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Abstraction</strong></td>
+<td style="text-align: left;">Forces you to create a named component, which is good for encapsulation.</td>
+<td style="text-align: left;">Less abstraction. Styles are applied directly where they are needed.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Flexibility</strong></td>
+<td style="text-align: left;">Less flexible for overrides.</td>
+<td style="text-align: left;">Highly flexible; you can easily compose styles from multiple sources in an array.</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>/** @jsxImportSource @emotion/react */</code> pragma is crucial for the <code>css</code> prop. It tells Babel (the JavaScript compiler used by Vite/Next.js) to use Emotion's version of the JSX transform, which knows how to handle the <code>css</code> prop and convert it into a <code>className</code> and a stylesheet.</p>
+<h3 id="common-confusion-styled-vs-css-prop-which-to-choose">Common Confusion: <code>styled</code> vs. <code>css</code> Prop - Which to choose?</h3>
+<p><strong>You might think</strong>: I have to pick one and stick with it.</p>
+<p><strong>Actually</strong>: The power of Emotion is that you can and should use both, depending on the situation.</p>
+<p><strong>Why the confusion happens</strong>: It's natural to look for a single "right way" to do things.</p>
+<p><strong>How to remember</strong>:</p>
+<ul>
+<li><strong>Is this a core, reusable piece of my design system?</strong> -&gt; Use <code>styled</code>. (e.g., <code>const PrimaryButton = styled.button\...\</code>)</li>
+<li><strong>Do I just need to tweak the margin on this one specific <code>div</code>?</strong> -&gt; Use the <code>css</code> prop. (e.g., <code>&lt;div css={{ marginTop: '16px' }}&gt;...&lt;/div&gt;</code>)</li>
+<li><strong>Do I need to apply a conditional override to a <code>PrimaryButton</code>?</strong> -&gt; Use the <code>css</code> prop on the styled component! (e.g., <code>&lt;PrimaryButton css={isWide &amp;&amp; { width: '100%' }} /&gt;</code>)</li>
+</ul>
+<h2 id="production-perspective_2">Production Perspective</h2>
+<p><strong>When professionals choose Emotion</strong>:</p>
+<ul>
+<li>For the same reasons as Styled Components, but often with a preference for the added flexibility of the <code>css</code> prop.</li>
+<li>Many popular component libraries, like Material-UI (MUI), are built with Emotion because the <code>css</code> prop provides an easy way for consumers of the library to override styles.</li>
+<li>It has a reputation for being slightly more performant and having a smaller bundle size than Styled Components in some benchmarks, though this can change between versions.</li>
+</ul>
+<p><strong>Trade-offs</strong>:</p>
+<ul>
+<li>The trade-offs are nearly identical to Styled Components: runtime overhead and potential issues with Server Components.</li>
+<li>Emotion's Babel plugin can compile many styles at build time, significantly reducing runtime cost and making it more compatible with modern React features. Configuring this plugin is a key optimization step for production apps using Emotion.</li>
+</ul>
+<h2 id="tailwind-css-with-react">Tailwind CSS with React</h2>
+<h2 id="learning-objective_3">Learning Objective</h2>
+<p>Learn how to style components using Tailwind CSS, a utility-first CSS framework, and understand its philosophy and advantages in building consistent UIs rapidly.</p>
+<h2 id="why-this-matters_3">Why This Matters</h2>
+<p>While CSS-in-JS co-locates styles with components, Tailwind CSS takes a different approach. It provides a massive set of pre-defined, low-level utility classes (like <code>flex</code>, <code>pt-4</code>, <code>text-center</code>) that you compose directly in your <code>className</code> prop. This prevents you from writing any custom CSS at all. It's an extremely popular and productive way to build modern UIs, enforcing consistency and speed.</p>
+<h2 id="discovery-phase_3">Discovery Phase</h2>
+<p>Let's build a responsive card component. With other methods, we'd write custom CSS. With Tailwind, we just use its utility classes.</p>
+<p>Assume you've set up Tailwind CSS in your project (which involves installing it and creating a <code>tailwind.config.js</code> file).</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// We&#39;re not importing any CSS files or styled functions.</span>
+<span class="c1">// All styles are applied via className.</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductCard</span><span class="p">({</span><span class="w"> </span><span class="nx">title</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="p">,</span><span class="w"> </span><span class="nx">imageUrl</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="c1">// The class string is long, but very descriptive of the styles.</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;max-w-sm rounded-lg overflow-hidden shadow-lg bg-white m-4&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">img</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;w-full&quot;</span><span class="w"> </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">imageUrl</span><span class="p">}</span><span class="w"> </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="sb">`Image of </span><span class="si">${</span><span class="nx">title</span><span class="si">}</span><span class="sb">`</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;px-6 py-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;font-bold text-xl mb-2 text-gray-800&quot;</span><span class="p">&gt;{</span><span class="nx">title</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-gray-700 text-base&quot;</span><span class="p">&gt;{</span><span class="nx">description</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;px-6 pt-4 pb-2&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">span</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="n">#photography</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">span</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="n">#travel</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Rendered Output</strong>:
+A beautifully styled card component, with shadows, padding, and typography, all without writing a single line of custom CSS.</p>
+<p>Let's break down a few of those classes:</p>
+<ul>
+<li><code>max-w-sm</code>: Sets <code>max-width</code> to a small size from the theme.</li>
+<li><code>rounded-lg</code>: Applies a large <code>border-radius</code>.</li>
+<li><code>shadow-lg</code>: Applies a large <code>box-shadow</code>.</li>
+<li><code>px-6</code>: Applies <code>padding-left</code> and <code>padding-right</code> of <code>1.5rem</code> (6 * 0.25rem).</li>
+<li><code>py-4</code>: Applies <code>padding-top</code> and <code>padding-bottom</code> of <code>1rem</code>.</li>
+<li><code>font-bold</code>: Sets <code>font-weight: 700</code>.</li>
+<li><code>text-xl</code>: Sets <code>font-size</code> to an extra-large size from the theme.</li>
+</ul>
+<p>You're not using arbitrary values; you're picking from a curated set of design tokens.</p>
+<h2 id="deep-dive_3">Deep Dive</h2>
+<h3 id="the-utility-first-philosophy">The Utility-First Philosophy</h3>
+<p>The core idea is to break down all CSS properties into small, single-purpose classes. Instead of creating a "semantic" class name like <code>.product-card</code> and then defining its styles, you build the look of the component by composing these utilities.</p>
+<h3 id="how-it-avoids-bloat">How it Avoids "Bloat"</h3>
+<p>A common concern is that these long class strings will make the final CSS file huge. This is solved by Tailwind's <strong>Just-In-Time (JIT) compiler</strong>. It scans all your files (<code>.js</code>, <code>.jsx</code>, <code>.html</code>, etc.) for class names, and it <strong>only</strong> generates the CSS for the utilities you actually use in your project. The final CSS bundle is typically very small.</p>
+<h3 id="abstraction-and-components">Abstraction and Components</h3>
+<p>While you apply utilities directly, you don't want to repeat long class strings everywhere. The "React way" is to encapsulate them in components.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Button.jsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">clsx</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;clsx&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Button</span><span class="p">({</span><span class="w"> </span><span class="nx">variant</span><span class="p">,</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">baseClasses</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;font-bold py-2 px-4 rounded&quot;</span><span class="p">;</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">variantClasses</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">primary</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;bg-blue-500 hover:bg-blue-700 text-white&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">secondary</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;bg-gray-500 hover:bg-gray-700 text-white&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">classes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">clsx</span><span class="p">(</span><span class="nx">baseClasses</span><span class="p">,</span><span class="w"> </span><span class="nx">variantClasses</span><span class="p">[</span><span class="nx">variant</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">classes</span><span class="p">}&gt;{</span><span class="nx">children</span><span class="p">}&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// Usage: &lt;Button variant=&quot;primary&quot;&gt;Click Me&lt;/Button&gt;</span>
+</code></pre></div>
+
+<p>Here, the <code>Button</code> component contains all the Tailwind logic. Consumers of the component just use the simple <code>variant</code> prop.</p>
+<h3 id="common-confusion-this-is-just-inline-styles-and-its-messy">Common Confusion: "This is just inline styles and it's messy!"</h3>
+<p><strong>You might think</strong>: This is no better than <code>&lt;div style={{ maxWidth: '...', boxShadow: '...' }}&gt;</code>. It makes my JSX unreadable.</p>
+<p><strong>Actually</strong>: It solves the biggest problems of inline styles and messy code.</p>
+<p><strong>Why the confusion happens</strong>: The visual density of classes in the JSX is high, which can be jarring at first.</p>
+<p><strong>How to remember the difference</strong>:</p>
+<ol>
+<li><strong>Constraints</strong>: Tailwind uses a predefined design system (<code>p-4</code> is always <code>1rem</code>). Inline styles let you use any magic number (<code>padding: '17.3px'</code>), leading to inconsistency.</li>
+<li><strong>Features</strong>: Tailwind classes can use media queries (<code>md:flex</code>), pseudo-selectors (<code>hover:bg-blue-700</code>), and other CSS features that inline styles cannot.</li>
+<li><strong>Readability</strong>: While long, the class names are descriptive. <code>flex items-center justify-between</code> is arguably more immediately understandable than deciphering a CSS file linked to a class named <code>.header-container</code>.</li>
+<li><strong>Abstraction</strong>: The "mess" is contained within a component file. As shown with the <code>Button</code> example, you abstract the utilities into a clean component API.</li>
+</ol>
+<h2 id="production-perspective_3">Production Perspective</h2>
+<p><strong>When professionals choose Tailwind CSS</strong>:</p>
+<ul>
+<li>For rapid application development and prototyping. The speed of building UIs is unmatched for many developers.</li>
+<li>To enforce a strict design system across a large team. It's hard to go "off-brand" when you can only use predefined tokens.</li>
+<li>For performance-critical applications. Since it's a build-time tool with a JIT compiler, it has <strong>zero runtime overhead</strong> and produces highly optimized CSS.</li>
+</ul>
+<p><strong>Trade-offs</strong>:</p>
+<ul>
+<li>✅ <strong>Advantage</strong>: Extremely fast development speed.</li>
+<li>✅ <strong>Advantage</strong>: Enforces UI consistency.</li>
+<li>✅ <strong>Advantage</strong>: Excellent performance and small bundle sizes.</li>
+<li>✅ <strong>Advantage</strong>: Mobile-first responsive design is built-in and intuitive (<code>md:...</code>).</li>
+<li>⚠️ <strong>Cost</strong>: The initial learning curve involves memorizing the utility class names.</li>
+<li>⚠️ <strong>Cost</strong>: Can lead to very long <code>className</code> strings in the JSX, which some developers find unappealing.</li>
+<li>⚠️ <strong>Cost</strong>: Less ideal for components that require highly complex or unique CSS that doesn't fit the utility model (e.g., intricate animations).</li>
+</ul>
+<h2 id="css-in-js-performance-considerations">CSS-in-JS Performance Considerations</h2>
+<h2 id="learning-objective_4">Learning Objective</h2>
+<p>Analyze the performance trade-offs of different styling solutions, specifically comparing "runtime" vs. "zero-runtime" (or build-time) CSS-in-JS.</p>
+<h2 id="why-this-matters_4">Why This Matters</h2>
+<p>How you style your components can have a real impact on your application's performance. Understanding the difference between approaches that do work in the browser versus those that do all the work during the build process is crucial for making informed architectural decisions, especially as React evolves with features like Server Components.</p>
+<h2 id="discovery-phase_4">Discovery Phase</h2>
+<p>Let's categorize the styling methods we've discussed into two buckets:</p>
+<p><strong>1. Zero-Runtime / Build-Time Solutions</strong>
+These solutions do all their work during the build process (<code>npm run build</code>). The output is static CSS files and simple class names.</p>
+<ul>
+<li><strong>Examples</strong>:</li>
+<li>Plain CSS / SASS</li>
+<li><strong>CSS Modules</strong></li>
+<li><strong>Tailwind CSS</strong></li>
+</ul>
+<p><strong>2. Runtime Solutions</strong>
+These solutions require a JavaScript library to be present in the browser. This library runs code as your components render to process styles, generate class names, and inject CSS into the DOM.</p>
+<ul>
+<li><strong>Examples</strong>:</li>
+<li><strong>Styled Components</strong></li>
+<li><strong>Emotion</strong> (when used without its build-time Babel plugin)</li>
+</ul>
+<p>Let's visualize the performance cost of a runtime library.</p>
+<p>Imagine a component that changes its color based on a prop.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Using a runtime CSS-in-JS library like Styled Components</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">styled</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;styled-components&quot;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">DynamicBox</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">styled</span><span class="p">.</span><span class="nx">div</span><span class="sb">`</span>
+<span class="sb">  width: 100px;</span>
+<span class="sb">  height: 100px;</span>
+<span class="sb">  background-color: </span><span class="si">${</span><span class="p">(</span><span class="nx">props</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">props</span><span class="p">.</span><span class="nx">color</span><span class="si">}</span><span class="sb">;</span>
+<span class="sb">`</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">color</span><span class="p">,</span><span class="w"> </span><span class="nx">setColor</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;tomato&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Every time the color changes and App re-renders...</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">color</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setColor</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">DynamicBox</span><span class="w"> </span><span class="na">color</span><span class="o">=</span><span class="p">{</span><span class="nx">color</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>What happens at runtime on each render</strong>:</p>
+<ol>
+<li>The <code>DynamicBox</code> component renders.</li>
+<li>The Styled Components library is invoked.</li>
+<li>It evaluates the template literal: <code>background-color: ${props =&gt; props.color}</code>.</li>
+<li>It gets the new color, e.g., <code>'blue'</code>.</li>
+<li>It generates a new unique class name for this specific style (e.g., <code>.xyz { background-color: blue; }</code>).</li>
+<li>It checks if this exact style has been injected into the DOM before.</li>
+<li>If not, it injects a new rule into a <code>&lt;style&gt;</code> tag in the document head.</li>
+<li>It passes the new class name to the <code>div</code>.</li>
+</ol>
+<p>This is a fast process, but it's not free. It's JavaScript work happening in the browser during the render cycle.</p>
+<p>Now contrast this with a zero-runtime approach using CSS variables.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Using CSS Modules (Zero-Runtime) + CSS Variables</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">styles</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./DynamicBox.module.css&#39;</span><span class="p">;</span>
+
+<span class="sr">/_ DynamicBox.module.css _/</span>
+<span class="p">.</span><span class="nx">box</span><span class="w"> </span><span class="p">{</span>
+<span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="mf">100</span><span class="nx">px</span><span class="p">;</span>
+<span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="mf">100</span><span class="nx">px</span><span class="p">;</span>
+<span class="sr">/_ The background color is now a CSS variable _/</span>
+<span class="nx">background</span><span class="o">-</span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="kd">var</span><span class="p">(</span><span class="o">--</span><span class="nx">box</span><span class="o">-</span><span class="nx">bg</span><span class="o">-</span><span class="nx">color</span><span class="p">,</span><span class="w"> </span><span class="nx">tomato</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">color</span><span class="p">,</span><span class="w"> </span><span class="nx">setColor</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;tomato&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// No CSS-in-JS library runs here.</span>
+<span class="w">  </span><span class="c1">// We are just passing an inline style to set a CSS variable.</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">color</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setColor</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">styles</span><span class="p">.</span><span class="nx">box</span><span class="p">}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="s2">&quot;--box-bg-color&quot;</span><span class="o">:</span><span class="w"> </span><span class="nx">color</span><span class="w"> </span><span class="p">}}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>In this version, there is <strong>no JavaScript library</strong> running to manage styles. The <code>styles.box</code> class is static. All we do is pass an inline style to update a CSS variable, which is a highly optimized, native browser feature. This is significantly faster.</p>
+<h2 id="deep-dive_4">Deep Dive</h2>
+<h3 id="the-core-trade-off-dx-vs-performance">The Core Trade-off: DX vs. Performance</h3>
+<ul>
+<li><strong>Runtime CSS-in-JS</strong> offers what many consider a superior Developer Experience (DX). The co-location and props-based styling are elegant. You pay for this with a larger bundle size (the library itself) and a small runtime performance cost.</li>
+<li><strong>Zero-Runtime Solutions</strong> offer the best possible performance. The browser receives static CSS and does what it does best: render it. The DX can be slightly more verbose (as seen with the CSS variable example), but the performance is unbeatable.</li>
+</ul>
+<h3 id="the-impact-of-react-19-and-server-components">The Impact of React 19 and Server Components</h3>
+<p>This is where the distinction becomes critical.</p>
+<p><strong>React Server Components (RSC) cannot use runtime CSS-in-JS libraries.</strong></p>
+<p>Why? Server Components run on the server and do not have access to the browser's DOM. They cannot inject <code>&lt;style&gt;</code> tags into the document head. Furthermore, they are not designed to run client-side JavaScript like a styling library.</p>
+<p>This means if you want to style a Server Component, you <strong>must</strong> use a zero-runtime solution:</p>
+<ul>
+<li>CSS Modules</li>
+<li>Tailwind CSS</li>
+<li>Plain CSS</li>
+<li>A CSS-in-JS library that can extract all styles to a static CSS file at build time (e.g., Emotion with its Babel plugin, or newer libraries like Panda CSS or StyleX).</li>
+</ul>
+<p>Runtime CSS-in-JS libraries can still be used, but they force your component to be a <strong>Client Component</strong> (using the <code>'use client'</code> directive), which may negate some of the performance benefits of using RSC in the first place.</p>
+<h2 id="production-perspective_4">Production Perspective</h2>
+<p>The industry is strongly shifting towards <strong>build-time / zero-runtime styling solutions</strong>.</p>
+<ul>
+<li><strong>Performance is paramount</strong>: As applications become more complex, shaving off every millisecond of JavaScript execution time matters.</li>
+<li><strong>The rise of RSC</strong>: The adoption of Server Components in frameworks like Next.js is forcing the ecosystem to adapt. Libraries that don't have a good build-time story are becoming less viable for modern full-stack React development.</li>
+<li><strong>New tools</strong>: A new generation of styling libraries like <strong>Panda CSS</strong> and Meta's <strong>StyleX</strong> are emerging. They aim to provide the great DX of CSS-in-JS (writing styles in your JS/TS files) but with a compiler that extracts everything to static CSS files at build time, giving you the best of both worlds.</li>
+</ul>
+<p><strong>Recommendation</strong>: For new projects in the React 19 era, strongly prefer a zero-runtime styling solution. Tailwind CSS and CSS Modules are excellent, battle-tested choices. If you love the CSS-in-JS authoring experience, investigate modern compiled libraries like Panda CSS or StyleX.</p>
+<h2 id="theming-and-design-systems">Theming and Design Systems</h2>
+<h2 id="learning-objective_5">Learning Objective</h2>
+<p>Implement a theming system to provide consistent design tokens (colors, spacing, fonts) across an entire application, and understand how this relates to building a design system.</p>
+<h2 id="why-this-matters_5">Why This Matters</h2>
+<p>A consistent user interface is a hallmark of a professional application. Hard-coding values like colors (<code>#007bff</code>) or spacing (<code>16px</code>) in dozens of components is a maintenance nightmare. A theming system centralizes these values, known as <strong>design tokens</strong>, in a single object. This makes your UI consistent, easy to update, and enables powerful features like dark mode.</p>
+<h2 id="discovery-phase_5">Discovery Phase</h2>
+<p>Most CSS-in-JS libraries come with a <code>&lt;ThemeProvider&gt;</code> component that makes this easy. Let's implement a simple theme with Styled Components that includes colors and spacing, and allows for a dark mode toggle.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">styled</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ThemeProvider</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;styled-components&quot;</span><span class="p">;</span>
+
+<span class="c1">// 1. Define your design tokens in theme objects</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">lightTheme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">colors</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">background</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;#FFFFFF&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;#1a202c&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">primary</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;#007bff&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">primaryHover</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;#0056b3&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nx">spacing</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">small</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;8px&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">medium</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;16px&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">large</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;24px&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">};</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">darkTheme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">colors</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">background</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;#1a202c&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;#FFFFFF&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">primary</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;#61dafb&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">primaryHover</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;#00a8d8&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nx">spacing</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Spacing is often the same across themes</span>
+<span class="w">    </span><span class="nx">small</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;8px&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">medium</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;16px&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">large</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;24px&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">};</span>
+
+<span class="c1">// 2. Create components that consume the theme</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">AppContainer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">styled</span><span class="p">.</span><span class="nx">div</span><span class="sb">`</span>
+<span class="sb">  background-color: </span><span class="si">${</span><span class="p">(</span><span class="nx">props</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">props</span><span class="p">.</span><span class="nx">theme</span><span class="p">.</span><span class="nx">colors</span><span class="p">.</span><span class="nx">background</span><span class="si">}</span><span class="sb">;</span>
+<span class="sb">  color: </span><span class="si">${</span><span class="p">(</span><span class="nx">props</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">props</span><span class="p">.</span><span class="nx">theme</span><span class="p">.</span><span class="nx">colors</span><span class="p">.</span><span class="nx">text</span><span class="si">}</span><span class="sb">;</span>
+<span class="sb">  min-height: 100vh;</span>
+<span class="sb">  padding: </span><span class="si">${</span><span class="p">(</span><span class="nx">props</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">props</span><span class="p">.</span><span class="nx">theme</span><span class="p">.</span><span class="nx">spacing</span><span class="p">.</span><span class="nx">medium</span><span class="si">}</span><span class="sb">;</span>
+<span class="sb">  transition: all 0.3s ease;</span>
+<span class="sb">`</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">ThemedButton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">styled</span><span class="p">.</span><span class="nx">button</span><span class="sb">`</span>
+<span class="sb">  background-color: </span><span class="si">${</span><span class="p">(</span><span class="nx">props</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">props</span><span class="p">.</span><span class="nx">theme</span><span class="p">.</span><span class="nx">colors</span><span class="p">.</span><span class="nx">primary</span><span class="si">}</span><span class="sb">;</span>
+<span class="sb">  color: white;</span>
+<span class="sb">  border: none;</span>
+<span class="sb">  padding: </span><span class="si">${</span><span class="p">(</span><span class="nx">props</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">props</span><span class="p">.</span><span class="nx">theme</span><span class="p">.</span><span class="nx">spacing</span><span class="p">.</span><span class="nx">small</span><span class="si">}</span><span class="sb"> </span><span class="si">${</span><span class="p">(</span><span class="nx">props</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span>
+<span class="w">      </span><span class="nx">props</span><span class="p">.</span><span class="nx">theme</span><span class="p">.</span><span class="nx">spacing</span><span class="p">.</span><span class="nx">medium</span><span class="si">}</span><span class="sb">;</span>
+<span class="sb">  border-radius: 4px;</span>
+<span class="sb">  cursor: pointer;</span>
+
+<span class="sb">  &amp;:hover {</span>
+<span class="sb">    background-color: </span><span class="si">${</span><span class="p">(</span><span class="nx">props</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">props</span><span class="p">.</span><span class="nx">theme</span><span class="p">.</span><span class="nx">colors</span><span class="p">.</span><span class="nx">primaryHover</span><span class="si">}</span><span class="sb">;</span>
+<span class="sb">  }</span>
+<span class="sb">`</span><span class="p">;</span>
+
+<span class="c1">// 3. The main application component</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isDarkMode</span><span class="p">,</span><span class="w"> </span><span class="nx">setIsDarkMode</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">toggleTheme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setIsDarkMode</span><span class="p">(</span><span class="o">!</span><span class="nx">isDarkMode</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Choose the theme object based on state</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">currentTheme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">isDarkMode</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">darkTheme</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="nx">lightTheme</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="c1">// 4. Wrap your app in the ThemeProvider and pass the theme object</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">ThemeProvider</span><span class="w"> </span><span class="na">theme</span><span class="o">=</span><span class="p">{</span><span class="nx">currentTheme</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">AppContainer</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Theming</span><span class="w"> </span><span class="nx">Example</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Click</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">button</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">toggle</span><span class="w"> </span><span class="nx">between</span><span class="w"> </span><span class="nx">light</span><span class="w"> </span><span class="nx">and</span><span class="w"> </span><span class="nx">dark</span><span class="w"> </span><span class="nx">mode</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">ThemedButton</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">toggleTheme</span><span class="p">}&gt;</span>
+<span class="w">          </span><span class="nx">Switch</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="p">{</span><span class="nx">isDarkMode</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;Light&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Dark&quot;</span><span class="p">}</span><span class="w"> </span><span class="nx">Mode</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">ThemedButton</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">AppContainer</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">ThemeProvider</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:</p>
+<ul>
+<li>The application loads with a white background (light theme).</li>
+<li>Clicking the "Switch to Dark Mode" button instantly changes the background to dark, the text to white, and the button color to the dark theme's primary color.</li>
+<li>All components that use <code>props.theme</code> update automatically.</li>
+</ul>
+<h2 id="deep-dive_5">Deep Dive</h2>
+<h3 id="how-themeprovider-works">How <code>ThemeProvider</code> Works</h3>
+<p><code>ThemeProvider</code> is just a specialized React Context Provider (see Chapter 11).</p>
+<ol>
+<li>It takes a <code>theme</code> object as a prop.</li>
+<li>It makes this <code>theme</code> object available to all <code>styled</code> components anywhere underneath it in the component tree.</li>
+<li>Styled Components automatically passes this <code>theme</code> object as a prop to your style functions, so you can access it via <code>props.theme</code>.</li>
+</ol>
+<h3 id="what-is-a-design-system">What is a Design System?</h3>
+<p>Theming is the technical implementation of a <strong>design system</strong>. A design system is the single source of truth for an organization's design. It's composed of:</p>
+<ul>
+<li><strong>Design Tokens</strong>: The raw values for color, spacing, typography, etc. (Our <code>theme</code> object).</li>
+<li><strong>Components</strong>: A reusable library of UI components (<code>ThemedButton</code>, <code>Card</code>, <code>Input</code>).</li>
+<li><strong>Guidelines</strong>: Documentation on how and when to use these tokens and components.</li>
+</ul>
+<p>By centralizing your design tokens in a theme, you've taken the first and most important step toward building a scalable design system. If your company decides to rebrand and change its primary color, you only need to change one line in your <code>theme</code> object, and the entire application updates instantly.</p>
+<h3 id="theming-with-zero-runtime-solutions">Theming with Zero-Runtime Solutions</h3>
+<p>How do you achieve theming with CSS Modules or Tailwind?</p>
+<ul>
+<li><strong>Tailwind CSS</strong>: Theming is built-in. Your <code>tailwind.config.js</code> file <em>is</em> your theme object. You define your colors, spacing, etc., there, and Tailwind generates utility classes based on them (e.g., <code>bg-primary</code>, <code>p-md</code>). Dark mode is handled with a <code>dark:</code> variant: <code>&lt;div className="bg-white dark:bg-slate-800"&gt;</code>.</li>
+<li><strong>CSS Modules</strong>: The standard approach is to use <strong>CSS Custom Properties (Variables)</strong>.</li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="c">/* global.css */</span>
+<span class="p">:</span><span class="nd">root</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nv">--color-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#007bff</span><span class="p">;</span>
+<span class="w">  </span><span class="nv">--color-background</span><span class="p">:</span><span class="w"> </span><span class="mh">#ffffff</span><span class="p">;</span>
+<span class="w">  </span><span class="nv">--color-text</span><span class="p">:</span><span class="w"> </span><span class="mh">#1a202c</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="o">[</span><span class="nt">data-theme</span><span class="o">=</span><span class="s2">&quot;dark&quot;</span><span class="o">]</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nv">--color-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#61dafb</span><span class="p">;</span>
+<span class="w">  </span><span class="nv">--color-background</span><span class="p">:</span><span class="w"> </span><span class="mh">#1a202c</span><span class="p">;</span>
+<span class="w">  </span><span class="nv">--color-text</span><span class="p">:</span><span class="w"> </span><span class="mh">#ffffff</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// Button.module.css</span>
+<span class="p">.</span><span class="nx">button</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">background</span><span class="o">-</span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="kd">var</span><span class="p">(</span><span class="o">--</span><span class="nx">color</span><span class="o">-</span><span class="nx">primary</span><span class="p">);</span>
+<span class="w">  </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="nx">white</span><span class="p">;</span><span class="w"> </span><span class="cm">/* Assuming button text is always white */</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>You would then toggle the <code>data-theme="dark"</code> attribute on a top-level element (e.g., <code>&lt;body&gt;</code>) to switch themes. This approach is extremely performant as it's a native browser feature.</p>
+<h2 id="production-perspective_5">Production Perspective</h2>
+<p>Theming is not a "nice-to-have"; it is an essential practice for any application that will be maintained long-term or built by a team.</p>
+<ul>
+<li><strong>Maintainability</strong>: Prevents "magic numbers" and inconsistent styling. A single source of truth for design tokens is critical.</li>
+<li><strong>Scalability</strong>: Allows new features and components to be built with perfect visual consistency.</li>
+<li><strong>Collaboration</strong>: Creates a shared language between designers and developers. Designers can provide a list of tokens, and developers can implement them in the theme object.</li>
+<li><strong>Features</strong>: Makes implementing features like dark/light mode, high-contrast themes, or brand-specific themes (in multi-tenant apps) trivial.</li>
+</ul>
+<h2 id="responsive-design-patterns">Responsive Design Patterns</h2>
+<h2 id="learning-objective_6">Learning Objective</h2>
+<p>Implement responsive designs that adapt to different screen sizes using the three major styling paradigms: CSS media queries, CSS-in-JS helpers, and Tailwind's responsive prefixes.</p>
+<h2 id="why-this-matters_6">Why This Matters</h2>
+<p>The web is accessed on a vast range of devices, from small phones to massive desktop monitors. Your application must provide a good user experience on all of them. Responsive design is the practice of building UIs that fluidly adapt to the user's screen size. Knowing how to implement this with your chosen styling tool is a fundamental skill.</p>
+<h2 id="discovery-phase_6">Discovery Phase</h2>
+<p>Let's build a simple layout component: a two-column grid that stacks vertically on small screens and sits side-by-side on larger screens. We'll implement it using three different methods.</p>
+<h3 id="method-1-css-modules-with-media-queries">Method 1: CSS Modules with Media Queries</h3>
+<p>This is the classic, standard CSS approach.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">/</span><span class="nt">_</span><span class="w"> </span><span class="nt">ResponsiveGrid</span><span class="p">.</span><span class="nc">module</span><span class="p">.</span><span class="nc">css</span><span class="w"> </span><span class="nt">_</span><span class="o">/</span>
+<span class="p">.</span><span class="nc">grid</span><span class="w"> </span><span class="p">{</span>
+<span class="k">display</span><span class="p">:</span><span class="w"> </span><span class="kc">flex</span><span class="p">;</span>
+<span class="k">flex-direction</span><span class="p">:</span><span class="w"> </span><span class="kc">column</span><span class="p">;</span><span class="w"> </span><span class="err">/_</span><span class="w"> </span><span class="n">Mobile-first</span><span class="p">:</span><span class="w"> </span><span class="kc">default</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">stacked</span><span class="w"> </span><span class="n">_</span><span class="o">/</span>
+<span class="k">gap</span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="kt">rem</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="o">/</span><span class="nt">_</span><span class="w"> </span><span class="nt">On</span><span class="w"> </span><span class="nt">screens</span><span class="w"> </span><span class="nt">768px</span><span class="w"> </span><span class="nt">wide</span><span class="w"> </span><span class="nt">or</span><span class="w"> </span><span class="nt">wider</span><span class="o">,</span><span class="w"> </span><span class="nt">switch</span><span class="w"> </span><span class="nt">to</span><span class="w"> </span><span class="nt">a</span><span class="w"> </span><span class="nt">row</span><span class="w"> </span><span class="nt">layout</span><span class="w"> </span><span class="nt">_</span><span class="o">/</span>
+<span class="p">@</span><span class="k">media</span><span class="w"> </span><span class="o">(</span><span class="nt">min-width</span><span class="o">:</span><span class="w"> </span><span class="nt">768px</span><span class="o">)</span><span class="w"> </span><span class="p">{</span>
+<span class="p">.</span><span class="nc">grid</span><span class="w"> </span><span class="p">{</span>
+<span class="k">flex-direction</span><span class="p">:</span><span class="w"> </span><span class="kc">row</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">col</span><span class="w"> </span><span class="p">{</span>
+<span class="k">background-color</span><span class="p">:</span><span class="w"> </span><span class="kc">lightblue</span><span class="p">;</span>
+<span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="kt">rem</span><span class="p">;</span>
+<span class="k">border-radius</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="kt">px</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">styles</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./ResponsiveGrid.module.css&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ResponsiveGrid</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">styles</span><span class="p">.</span><span class="nx">grid</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">styles</span><span class="p">.</span><span class="nx">col</span><span class="p">}&gt;</span><span class="nx">Column</span><span class="w"> </span><span class="mf">1</span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">styles</span><span class="p">.</span><span class="nx">col</span><span class="p">}&gt;</span><span class="nx">Column</span><span class="w"> </span><span class="mf">2</span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is simple, effective, and uses standard CSS features. The "mobile-first" approach means we define the base styles for mobile and use <code>min-width</code> media queries to add styles for larger screens.</p>
+<h3 id="method-2-css-in-js-emotionstyled-components">Method 2: CSS-in-JS (Emotion/Styled Components)</h3>
+<p>CSS-in-JS libraries let you embed media queries directly into your style definitions.</p>
+<div class="codehilite"><pre><span></span><code><span class="err">/\*_ @jsxImportSource @emotion/react _/</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">css</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@emotion/react&#39;</span><span class="p">;</span>
+
+<span class="c1">// It&#39;s a best practice to define breakpoints in a theme or constants file</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">breakpoints</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="nx">medium</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;768px&#39;</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">gridStyles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">css</span><span class="sb">`</span>
+<span class="sb">display: flex;</span>
+<span class="sb">flex-direction: column; /_ Mobile-first _/</span>
+<span class="sb">gap: 1rem;</span>
+
+<span class="sb">@media (min-width: </span><span class="si">${</span><span class="nx">breakpoints</span><span class="p">.</span><span class="nx">medium</span><span class="si">}</span><span class="sb">) {</span>
+<span class="sb">flex-direction: row;</span>
+<span class="sb">}</span>
+<span class="sb">`</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">colStyles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">css</span><span class="sb">`  background-color: lightcoral;</span>
+<span class="sb">  padding: 1rem;</span>
+<span class="sb">  border-radius: 4px;`</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ResponsiveGridEmotion</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">css</span><span class="o">=</span><span class="p">{</span><span class="nx">gridStyles</span><span class="p">}&gt;</span>
+<span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">css</span><span class="o">=</span><span class="p">{</span><span class="nx">colStyles</span><span class="p">}&gt;</span><span class="nx">Column</span><span class="w"> </span><span class="mf">1</span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">css</span><span class="o">=</span><span class="p">{</span><span class="nx">colStyles</span><span class="p">}&gt;</span><span class="nx">Column</span><span class="w"> </span><span class="mf">2</span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This achieves the same result, but keeps the responsive logic co-located with the component. Using a <code>breakpoints</code> object from a theme makes the media queries consistent.</p>
+<h3 id="method-3-tailwind-css">Method 3: Tailwind CSS</h3>
+<p>Tailwind makes responsive design exceptionally fast by using responsive prefixes.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ResponsiveGridTailwind</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="c1">// 1. Default classes apply to mobile (flex-col)</span>
+<span class="w">    </span><span class="c1">// 2. Prefixed classes (md:...) apply at that breakpoint and up</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex flex-col md:flex-row gap-4&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-lightgreen-300 p-4 rounded&quot;</span><span class="p">&gt;</span><span class="nx">Column</span><span class="w"> </span><span class="mf">1</span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-lightgreen-300 p-4 rounded&quot;</span><span class="p">&gt;</span><span class="nx">Column</span><span class="w"> </span><span class="mf">2</span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior (for all three methods)</strong>:</p>
+<ul>
+<li><strong>On a narrow screen (e.g., a phone)</strong>: The two columns will be stacked vertically.</li>
+<li><strong>On a wider screen (e.g., a tablet or desktop)</strong>: The columns will sit side-by-side in a row.</li>
+</ul>
+<h2 id="deep-dive_6">Deep Dive</h2>
+<p>Let's compare the approaches.</p>
+<ul>
+<li><strong>CSS Modules</strong>: Relies on standard, well-understood CSS. The logic is in a separate file, which can be a pro (separation of concerns) or a con (context switching).</li>
+<li><strong>CSS-in-JS</strong>: Co-locates the responsive logic with the component. It's very explicit and powerful, allowing you to use props within media queries for highly dynamic responsive styles.</li>
+<li><strong>Tailwind CSS</strong>: By far the fastest for development. The <code>md:flex-row</code> syntax means "use <code>flex-direction: row</code> on medium screens and up". Tailwind comes with default breakpoints (<code>sm</code>, <code>md</code>, <code>lg</code>, <code>xl</code>) which you can customize in your <code>tailwind.config.js</code>. This utility-based approach makes building complex responsive layouts feel like snapping Lego bricks together.</li>
+</ul>
+<h3 id="the-mobile-first-approach">The Mobile-First Approach</h3>
+<p>All three examples follow the <strong>mobile-first</strong> methodology. This is a best practice in modern web development.</p>
+<ol>
+<li>Write the base CSS for the smallest screen size first. This is typically a simpler, single-column layout.</li>
+<li>Use <code>min-width</code> media queries (or responsive prefixes in Tailwind) to add complexity as the screen gets larger.</li>
+</ol>
+<p>This approach generally leads to simpler CSS and better performance on mobile devices, as they don't have to parse complex layout rules they don't need.</p>
+<h2 id="production-perspective_6">Production Perspective</h2>
+<p>All three patterns are used extensively in production.</p>
+<ul>
+<li><strong>Tailwind's DX is often a deciding factor</strong> for teams that prioritize development speed. The ability to quickly prototype and build responsive layouts without leaving the JSX file is a massive productivity boost.</li>
+<li><strong>CSS-in-JS is excellent for component libraries</strong> where the responsive behavior might need to be highly dynamic and configurable via props.</li>
+<li><strong>CSS Modules are a solid, reliable choice</strong> for teams that prefer a more traditional separation of concerns and want to avoid any specific framework dependencies beyond the build tool.</li>
+</ul>
+<p>The choice often comes down to team preference and the project's architectural goals. However, the conciseness and speed of Tailwind's responsive prefixes have made it an increasingly popular choice for new projects.</p>
+<h2 id="animation-libraries">Animation Libraries</h2>
+<h2 id="learning-objective_7">Learning Objective</h2>
+<p>Learn how to add complex, stateful animations to a React application using a dedicated library like Framer Motion, focusing on enter/exit animations.</p>
+<h2 id="why-this-matters_7">Why This Matters</h2>
+<p>Subtle animations and transitions can dramatically improve the user experience, making your application feel more polished and intuitive. While simple CSS transitions (<code>:hover</code>) are great for basic effects, they fall short for more complex scenarios, like animating a component as it is added to or removed from the DOM. React animation libraries handle the complexity of these stateful animations for you.</p>
+<h2 id="discovery-phase_7">Discovery Phase</h2>
+<p>Framer Motion is one of the most popular and powerful animation libraries for React. Its declarative API feels very natural to React developers. Let's build a simple example: a list where items fade in when added and fade out when removed.</p>
+<p>First, install the library: <code>npm install framer-motion</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="c1">// 1. Import motion components and AnimatePresence</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">motion</span><span class="p">,</span><span class="w"> </span><span class="nx">AnimatePresence</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;framer-motion&quot;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">initialItems</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Item 1&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Item 2&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="mf">3</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Item 3&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="p">];</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">AnimatedList</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">items</span><span class="p">,</span><span class="w"> </span><span class="nx">setItems</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="nx">initialItems</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">nextId</span><span class="p">,</span><span class="w"> </span><span class="nx">setNextId</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">4</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">addItem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setItems</span><span class="p">([...</span><span class="nx">items</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="nx">nextId</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="sb">`Item </span><span class="si">${</span><span class="nx">nextId</span><span class="si">}</span><span class="sb">`</span><span class="w"> </span><span class="p">}]);</span>
+<span class="w">    </span><span class="nx">setNextId</span><span class="p">(</span><span class="nx">nextId</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">removeItem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">id</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setItems</span><span class="p">(</span><span class="nx">items</span><span class="p">.</span><span class="nx">filter</span><span class="p">((</span><span class="nx">item</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">item</span><span class="p">.</span><span class="nx">id</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="nx">id</span><span class="p">));</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">addItem</span><span class="p">}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">marginBottom</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1rem&quot;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">        </span><span class="nx">Add</span><span class="w"> </span><span class="nx">Item</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="sr">/_ 2. Wrap the list of items in AnimatePresence _/</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">AnimatePresence</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">items</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">item</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="c1">// 3. Replace `li` with `motion.li` and add animation props</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">motion</span><span class="p">.</span><span class="na">li</span>
+<span class="w">              </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">item</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span>
+<span class="w">              </span><span class="na">initial</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">opacity</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="nx">x</span><span class="o">:</span><span class="w"> </span><span class="o">-</span><span class="mf">50</span><span class="w"> </span><span class="p">}}</span><span class="w"> </span><span class="err">//</span><span class="w"> </span><span class="na">Starting</span><span class="w"> </span><span class="na">state</span>
+<span class="w">              </span><span class="na">animate</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">opacity</span><span class="o">:</span><span class="w"> </span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="nx">x</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="p">}}</span><span class="w"> </span><span class="err">//</span><span class="w"> </span><span class="na">End</span><span class="w"> </span><span class="na">state</span>
+<span class="w">              </span><span class="na">exit</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">opacity</span><span class="o">:</span><span class="w"> </span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="nx">x</span><span class="o">:</span><span class="w"> </span><span class="mf">50</span><span class="p">,</span><span class="w"> </span><span class="nx">transition</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">duration</span><span class="o">:</span><span class="w"> </span><span class="mf">0.2</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}}</span><span class="w"> </span><span class="err">//</span><span class="w"> </span><span class="na">State</span><span class="w"> </span><span class="na">when</span><span class="w"> </span><span class="na">removed</span>
+<span class="w">              </span><span class="na">layout</span><span class="w"> </span><span class="err">//</span><span class="w"> </span><span class="na">This</span><span class="w"> </span><span class="na">animates</span><span class="w"> </span><span class="na">the</span><span class="w"> </span><span class="na">re</span><span class="err">-</span><span class="na">ordering</span><span class="w"> </span><span class="na">of</span><span class="w"> </span><span class="na">other</span><span class="w"> </span><span class="na">items</span><span class="err">!</span>
+<span class="w">              </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span>
+<span class="w">                </span><span class="nx">listStyle</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;none&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">marginBottom</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;0.5rem&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">background</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;#eee&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;0.5rem&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;flex&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nx">justifyContent</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;space-between&quot;</span><span class="p">,</span>
+<span class="w">              </span><span class="p">}}</span>
+<span class="w">            </span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">{</span><span class="nx">item</span><span class="p">.</span><span class="nx">text</span><span class="p">}</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">removeItem</span><span class="p">(</span><span class="nx">item</span><span class="p">.</span><span class="nx">id</span><span class="p">)}&gt;</span><span class="nx">x</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">motion</span><span class="p">.</span><span class="na">li</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">))}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">AnimatePresence</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:</p>
+<ul>
+<li><strong>Add Item</strong>: When you click "Add Item", a new list item appears, fading in and sliding in from the left.</li>
+<li><strong>Remove Item</strong>: When you click the "x" on an item, it fades out and slides to the right before being removed from the DOM.</li>
+<li><strong>Re-ordering</strong>: As an item is removed, the other items below it smoothly animate into their new positions.</li>
+</ul>
+<p>This complex behavior is achieved with just a few declarative props. Doing this manually with CSS and <code>useState</code> would be incredibly difficult.</p>
+<h2 id="deep-dive_7">Deep Dive</h2>
+<p>Let's break down the key concepts from Framer Motion:</p>
+<ol>
+<li><strong><code>motion</code> components</strong>: To animate an element, you prepend <code>motion.</code> to its tag name (e.g., <code>div</code> becomes <code>motion.div</code>). These components accept special animation props.</li>
+<li><strong><code>initial</code>, <code>animate</code>, <code>exit</code> props</strong>: This is the core of Framer Motion's declarative API.<ul>
+<li><code>initial</code>: Defines the state of the component <em>before</em> it enters the screen.</li>
+<li><code>animate</code>: Defines the state the component should animate <em>to</em> once it has mounted.</li>
+<li><code>exit</code>: Defines the state the component should animate <em>to</em> before it is unmounted. This only works for components inside <code>&lt;AnimatePresence&gt;</code>.</li>
+</ul>
+</li>
+<li><strong><code>&lt;AnimatePresence&gt;</code></strong>: This special component is the key to exit animations. It tracks the children you give it. When a child is removed from the list, <code>AnimatePresence</code> doesn't immediately remove it from the DOM. Instead, it keeps it on screen long enough to play the <code>exit</code> animation, and only removes it once the animation is complete.</li>
+<li><strong><code>layout</code> prop</strong>: This is an incredibly powerful one-word prop. It automatically enables shared layout animations. When an item is removed from our list, the other items have to change their position. The <code>layout</code> prop detects this change and automatically animates them from their old position to their new one, creating the smooth re-shuffling effect.</li>
+</ol>
+<h3 id="why-not-just-use-css">Why Not Just Use CSS?</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Task</th>
+<th style="text-align: left;">CSS Transitions/Animations</th>
+<th style="text-align: left;">Framer Motion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Hover effects</strong></td>
+<td style="text-align: left;">Excellent, simple to use.</td>
+<td style="text-align: left;">Also easy, but might be overkill.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Enter animations</strong></td>
+<td style="text-align: left;">Possible, but can be tricky to trigger on mount.</td>
+<td style="text-align: left;">Trivial with <code>initial</code> and <code>animate</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Exit animations</strong></td>
+<td style="text-align: left;"><strong>Very difficult</strong>. Requires complex state management in React to keep the element in the DOM after it's removed from state.</td>
+<td style="text-align: left;">Trivial with <code>&lt;AnimatePresence&gt;</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Physics-based animations</strong></td>
+<td style="text-align: left;">Not possible.</td>
+<td style="text-align: left;">Built-in with <code>transition={{ type: 'spring' }}</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Orchestrating complex sequences</strong></td>
+<td style="text-align: left;">Difficult, relies on delays.</td>
+<td style="text-align: left;">Easy with variants and orchestration props like <code>staggerChildren</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>How to remember</strong>: Use CSS transitions for simple, self-contained state changes (<code>:hover</code>, <code>.active</code>). Reach for an animation library when your animation is tied to the component's lifecycle (mounting/unmounting) or complex state.</p>
+<h2 id="production-perspective_7">Production Perspective</h2>
+<ul>
+<li><strong>User Experience</strong>: Well-crafted animations guide the user's attention and provide feedback, making the UI feel more responsive and alive.</li>
+<li><strong>Performance</strong>: Modern animation libraries like Framer Motion are highly performant. They often use hardware-accelerated CSS transforms (<code>transform</code> and <code>opacity</code>) under the hood and are optimized to avoid triggering expensive layout recalculations in the browser.</li>
+<li><strong>Library Choice</strong>:</li>
+<li><strong>Framer Motion</strong>: The go-to for most React projects. Its API is intuitive, powerful, and covers 99% of use cases.</li>
+<li><strong>React Spring</strong>: An alternative that uses a physics-based approach. It's great for animations that need to feel more "natural" or interruptible.</li>
+<li><strong>AutoAnimate</strong>: A newer, simpler library that provides <code>AnimatePresence</code>-like functionality with a single hook. It's less powerful but much easier for simple enter/exit animations.</li>
+</ul>
+<p>In production, teams choose a library that fits the complexity of their animation needs and the team's familiarity with its API. For most, Framer Motion is the standard choice.</p>
+<h2 id="web-components-integration">Web Components Integration</h2>
+<h2 id="learning-objective_8">Learning Objective</h2>
+<p>Understand how to use and style standard Web Components within a React application, focusing on the concepts of the Shadow DOM and CSS Custom Properties.</p>
+<h2 id="why-this-matters_8">Why This Matters</h2>
+<p>Web Components are a set of browser standards that allow you to create truly encapsulated, framework-agnostic components. As more companies build their design systems with Web Components to share them across different frameworks (React, Vue, Angular), knowing how to correctly use and style them within your React app is becoming an increasingly important skill.</p>
+<h2 id="discovery-phase_8">Discovery Phase</h2>
+<p>Let's imagine we're using Google's <code>&lt;model-viewer&gt;</code> web component, which lets you display 3D models. React can render web components just like any other HTML tag, but passing data and styling works a bit differently.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useRef</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// You would typically load the web component&#39;s script in your main index.html</span>
+<span class="c1">// &lt;script type=&quot;module&quot; src=&quot;https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js&quot;&gt;&lt;/script&gt;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ModelViewerComponent</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">modelRef</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// For complex properties (objects/arrays), you often need a ref and an effect.</span>
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">modelRef</span><span class="p">.</span><span class="nx">current</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// Some web components expose JavaScript properties/methods</span>
+<span class="w">      </span><span class="c1">// modelRef.current.cameraOrbit = &#39;0deg 75deg 2m&#39;;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;2px solid #ccc&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1rem&quot;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">My</span><span class="w"> </span><span class="mf">3</span><span class="nx">D</span><span class="w"> </span><span class="nx">Model</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="sr">/_ 1. Render the web component using its tag name _/</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">model</span><span class="err">-</span><span class="na">viewer</span>
+<span class="w">        </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">modelRef</span><span class="p">}</span>
+<span class="w">        </span><span class="err">//</span><span class="w"> </span><span class="na">2.</span><span class="w"> </span><span class="na">Simple</span><span class="w"> </span><span class="na">props</span><span class="w"> </span><span class="err">(</span><span class="na">strings</span><span class="err">,</span><span class="w"> </span><span class="na">numbers</span><span class="err">,</span><span class="w"> </span><span class="na">booleans</span><span class="err">)</span><span class="w"> </span><span class="na">are</span><span class="w"> </span><span class="na">passed</span><span class="w"> </span><span class="na">as</span><span class="w"> </span><span class="na">attributes</span>
+<span class="w">        </span><span class="na">src</span><span class="o">=</span><span class="s">&quot;/path/to/model.glb&quot;</span>
+<span class="w">        </span><span class="na">alt</span><span class="o">=</span><span class="s">&quot;A 3D model&quot;</span>
+<span class="w">        </span><span class="na">auto</span><span class="err">-</span><span class="na">rotate</span>
+<span class="w">        </span><span class="na">camera</span><span class="err">-</span><span class="na">controls</span>
+<span class="w">        </span><span class="err">//</span><span class="w"> </span><span class="na">3.</span><span class="w"> </span><span class="na">Styling</span><span class="w"> </span><span class="na">is</span><span class="w"> </span><span class="na">done</span><span class="w"> </span><span class="na">via</span><span class="w"> </span><span class="na">CSS</span><span class="w"> </span><span class="na">Custom</span><span class="w"> </span><span class="na">Properties</span><span class="w"> </span><span class="err">(</span><span class="na">variables</span><span class="err">)</span>
+<span class="w">        </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span>
+<span class="w">          </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;100%&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;400px&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="s2">&quot;--mv-progress-bar-color&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;#007bff&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// This is the key part</span>
+<span class="w">        </span><span class="p">}}</span>
+<span class="w">      </span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;progress-bar&quot;</span><span class="w"> </span><span class="na">slot</span><span class="o">=</span><span class="s">&quot;progress-bar&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">model</span><span class="p">-</span><span class="na">viewer</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Rendered Output</strong>:
+A container with a 3D model viewer inside. The loading progress bar for the model will be blue, not its default color, because we overrode it with a CSS Custom Property.</p>
+<h2 id="deep-dive_8">Deep Dive</h2>
+<h3 id="react-and-web-components">React and Web Components</h3>
+<p>React has good support for Web Components, but there are a few things to keep in mind:</p>
+<ol>
+<li><strong>Rendering</strong>: You use the kebab-case tag name (e.g., <code>model-viewer</code>) directly in your JSX.</li>
+<li><strong>Props/Attributes</strong>: React can pass primitive data (strings, numbers) as attributes. For complex data like objects or arrays, you often need to use a <code>ref</code> and set the property directly on the DOM element in a <code>useEffect</code> hook, as web component properties don't always map cleanly to attributes.</li>
+<li><strong>Events</strong>: Web components emit standard DOM events. You can listen to them with <code>addEventListener</code> in a <code>useEffect</code> hook.</li>
+</ol>
+<h3 id="styling-and-the-shadow-dom">Styling and the Shadow DOM</h3>
+<p>The biggest difference is styling. Most web components use the <strong>Shadow DOM</strong> to encapsulate their internal structure and styles. This means the CSS from your main application <strong>will not</strong> penetrate the web component's boundary. You can't write a CSS rule like <code>model-viewer h2 { color: red; }</code> and expect it to work.</p>
+<p>This encapsulation is a feature, not a bug! It prevents you from accidentally breaking the component's internal layout. So how do you style them? Web component authors provide specific APIs for styling:</p>
+<ol>
+<li>
+<p><strong>CSS Custom Properties (Most Common)</strong>: This is the primary way to theme a web component. The component's internal CSS will use variables like <code>var(--mv-progress-bar-color, #defaultColor)</code>. By setting that variable on the component from the outside (like we did in the <code>style</code> prop), you can change its internal styles. You must look at the component's documentation to see which custom properties it exposes.</p>
+</li>
+<li>
+<p><strong><code>::part</code> Pseudo-element</strong>: Some web components expose certain internal elements using a <code>part</code> attribute (e.g., <code>&lt;button part="my-button"&gt;</code>). You can then style this specific part from your global CSS using the <code>::part</code> pseudo-element:
+    <code>css
+    model-viewer::part(progress-bar) {
+      height: 10px;
+      background-color: green;
+    }</code>
+    This is less common than custom properties but very powerful when available.</p>
+</li>
+</ol>
+<h3 id="react-19-improvements">React 19 Improvements</h3>
+<p>React 19 improves support for Web Components, making the integration feel more natural. While the core concepts of styling via custom properties remain the same, React 19 will have better handling of properties vs. attributes, aiming to reduce the need for <code>useEffect</code> for property setting in many cases.</p>
+<h2 id="production-perspective_8">Production Perspective</h2>
+<ul>
+<li><strong>Framework Agnostic</strong>: The main reason teams build with Web Components is to create a single component library that can be used across their entire organization, regardless of whether a team is using React, Vue, Svelte, or plain HTML.</li>
+<li><strong>Design Systems</strong>: Companies like Adobe (Spectrum), Salesforce (Lightning), and Microsoft (Fluent UI) are increasingly shipping their design systems as Web Components.</li>
+<li><strong>Interoperability is Key</strong>: As a React developer, you won't always be working in a pure-React ecosystem. Knowing how to correctly consume and interact with a standard Web Component is a crucial skill for interoperability. Always start by reading the component's documentation to understand its specific API for props, events, and styling.</li>
+</ul>
+<h2 id="module-synthesis">Module Synthesis 📋</h2>
+<h2 id="module-synthesis-choosing-your-styling-strategy">Module Synthesis: Choosing Your Styling Strategy</h2>
+<p>In this chapter, we explored the rich and diverse landscape of styling in React. We've seen that there is no single "right way" to style your application; instead, there is a spectrum of tools, each with its own philosophy, trade-offs, and ideal use cases.</p>
+<p>We began with <strong>CSS Modules</strong>, a simple yet powerful solution that brings the safety of locally scoped styles to traditional CSS, offering unbeatable performance with zero runtime cost.</p>
+<p>Then we dove into the world of CSS-in-JS with <strong>Styled Components</strong> and <strong>Emotion</strong>, which champion the co-location of styles and logic. This approach provides an elegant developer experience for creating dynamic, prop-driven styles directly within your component files.</p>
+<p>We contrasted this with <strong>Tailwind CSS</strong>, a utility-first framework that challenges the very idea of writing custom CSS. By composing from a constrained set of utility classes, Tailwind enables incredible development speed and enforces design system consistency.</p>
+<p>Crucially, we analyzed the <strong>performance implications</strong> of these choices, drawing a clear line between zero-runtime (build-time) and runtime solutions. This distinction is more important than ever in the era of React 19, as <strong>Server Components</strong> push the ecosystem towards build-time approaches for maximum performance.</p>
+<p>Finally, we covered cross-cutting concerns essential for any large-scale application:</p>
+<ul>
+<li><strong>Theming</strong>: Centralizing design tokens to ensure consistency and enable features like dark mode.</li>
+<li><strong>Responsive Design</strong>: Ensuring your UI looks great on all devices.</li>
+<li><strong>Animation</strong>: Bringing your application to life with libraries like Framer Motion.</li>
+<li><strong>Web Components</strong>: Interacting with framework-agnostic components.</li>
+</ul>
+<h2 id="looking-ahead">Looking Ahead</h2>
+<p>The styling choices you make are not isolated. They directly influence your application's performance, maintainability, and developer experience.</p>
+<ul>
+<li>In <strong>Chapter 15: Performance Optimization</strong>, we will see how choices like runtime CSS-in-JS can impact your app's metrics and how to profile and mitigate these costs.</li>
+<li>In <strong>Chapter 17: Server-Side Rendering and Frameworks</strong>, the preference for zero-runtime styling solutions will become even more apparent as we dive deeper into architectures that leverage the server.</li>
+</ul>
+<p>You are now equipped to make an informed decision about which styling strategy best fits your project's needs and your team's philosophy.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-10-25 16:27:48 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

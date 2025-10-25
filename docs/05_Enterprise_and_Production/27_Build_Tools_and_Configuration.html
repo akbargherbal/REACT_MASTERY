@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>27_Build_Tools_and_Configuration</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">05_Enterprise_and_Production</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-27-build-tools-and-configuration">Chapter 27: Build Tools and Configuration</h1>
+<h2 id="vite-with-react-19">Vite with React 19</h2>
+<h2 id="learning-objective">Learning Objective</h2>
+<p>Understand why Vite is the modern standard for React development, how it works, and how to configure it for a React 19 project.</p>
+<h2 id="why-this-matters">Why This Matters</h2>
+<p>Your build tool is the engine of your development experience. For years, Webpack was the de-facto standard, but its approach of bundling your entire application before serving it led to slow startup times and sluggish updates (Hot Module Replacement). Vite (pronounced "veet," French for "fast") revolutionized this by leveraging native browser features (ES Modules) to provide an instant-on development server and lightning-fast updates, dramatically improving developer productivity.</p>
+<h2 id="discovery-phase">Discovery Phase</h2>
+<p>Let's look at a minimal Vite configuration for a React project. The entire setup is often just a few lines.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// vite.config.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">defineConfig</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;vite&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">react</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@vitejs/plugin-react&quot;</span><span class="p">;</span>
+
+<span class="c1">// https://vitejs.dev/config/</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">defineConfig</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">plugins</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="nx">react</span><span class="p">()],</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p>This small file is incredibly powerful. The <code>@vitejs/plugin-react</code> plugin handles all the complex transformations needed for React, including JSX transpilation and, crucially for React 19, integrating the new React Compiler.</p>
+<p>The core magic of Vite lies in its two distinct modes:</p>
+<ol>
+<li><strong>Development (<code>vite</code> command)</strong>: Vite's dev server uses native ES Modules (ESM). When your browser requests a file (like <code>App.tsx</code>), Vite transforms and serves just that single file. It doesn't bundle your entire app upfront. This is why it starts almost instantly, no matter how large your project gets.</li>
+<li><strong>Production (<code>vite build</code> command)</strong>: For production, Vite uses Rollup, a mature and highly optimized bundler, to perform traditional bundling, tree-shaking, and minification, creating a small and efficient set of static files for deployment.</li>
+</ol>
+<p>This dual-mode approach gives you the best of both worlds: a blazing-fast development experience and a highly optimized production output.</p>
+<h2 id="deep-dive">Deep Dive</h2>
+<p>Let's trace what happens when you run <code>vite</code> and load your app in the browser.</p>
+<ol>
+<li>The browser requests <code>index.html</code>.</li>
+<li>Vite serves <code>index.html</code>, which contains <code>&lt;script type="module" src="/src/main.tsx"&gt;&lt;/script&gt;</code>. The <code>type="module"</code> is key.</li>
+<li>The browser sees this and makes a request for <code>/src/main.tsx</code>.</li>
+<li>Vite intercepts this request, transpiles <code>main.tsx</code> into JavaScript on-the-fly (stripping types, converting JSX), and serves it back to the browser.</li>
+<li><code>main.tsx</code> contains imports like <code>import App from './App.tsx'</code>. The browser sees these and makes further requests for each imported module.</li>
+<li>Vite serves each requested module individually, creating a graph of dependencies in the browser itself.</li>
+</ol>
+<p>This "on-demand" nature means that if you have a 1000-component application but only work on one component, only that component and its direct dependencies are processed.</p>
+<h3 id="hot-module-replacement-hmr">Hot Module Replacement (HMR)</h3>
+<p>Vite's HMR is also extremely efficient. When you edit a component, Vite only needs to invalidate and re-serve that single module. The browser, via a WebSocket connection, swaps out the old module for the new one without a full page reload, often preserving the component's state.</p>
+<h3 id="react-19-compiler-integration">React 19 Compiler Integration</h3>
+<p>The <code>@vitejs/plugin-react</code> (version 5+) will automatically detect you're using React 19 and enable the React Compiler by default. You don't need to do anything extra. The plugin configures Babel to run the compiler during the build process, giving you automatic memoization.</p>
+<h3 id="common-confusion-is-vite-just-a-dev-server">Common Confusion: Is Vite just a dev server?</h3>
+<p><strong>You might think</strong>: Vite is only for development, and I need another tool like Webpack for my production build.</p>
+<p><strong>Actually</strong>: Vite is a complete build tool. Its <code>vite build</code> command produces a production-ready, highly optimized bundle using Rollup under the hood.</p>
+<p><strong>Why the confusion happens</strong>: Vite's marketing heavily emphasizes its revolutionary dev server, but its production build capabilities are just as robust and often produce smaller, faster bundles than older tools.</p>
+<p><strong>How to remember</strong>: <code>vite</code> (dev server) uses native ESM for speed. <code>vite build</code> (production) uses Rollup for optimization.</p>
+<h3 id="production-perspective">Production Perspective</h3>
+<p><strong>When professionals choose this</strong>:</p>
+<ul>
+<li>For virtually all new React projects started today. Vite is the officially recommended build tool on the new React docs.</li>
+<li>When developer experience and fast feedback loops are a priority.</li>
+<li>For building SPAs, libraries, and even server-rendered apps (with plugins like <code>vite-plugin-ssr</code>).</li>
+</ul>
+<p><strong>Trade-offs</strong>:</p>
+<ul>
+<li>✅ <strong>Advantage</strong>: <strong>Instant Server Start</strong>. No waiting for bundling.</li>
+<li>✅ <strong>Advantage</strong>: <strong>Lightning-Fast HMR</strong>. Sub-second updates.</li>
+<li>✅ <strong>Advantage</strong>: <strong>Optimized Builds</strong>. Rollup provides excellent tree-shaking and performance.</li>
+<li>✅ <strong>Advantage</strong>: <strong>Rich Plugin Ecosystem</strong>. Extensible for almost any need.</li>
+<li>⚠️ <strong>Cost</strong>: <strong>Browser Compatibility</strong>. The ESM-based dev server requires a modern browser that supports native ES Modules (all evergreen browsers do). This is not a concern for production builds.</li>
+</ul>
+<h2 id="webpack-configuration">Webpack Configuration</h2>
+<h2 id="learning-objective_1">Learning Objective</h2>
+<p>Understand the core concepts of Webpack for maintaining legacy projects or when its advanced customization is required.</p>
+<h2 id="why-this-matters_1">Why This Matters</h2>
+<p>While Vite has become the new standard, a vast number of existing enterprise React applications are built with Webpack. As a professional developer, you will inevitably encounter, maintain, or debug a Webpack-based project. Understanding its core concepts is an essential skill for navigating the existing ecosystem.</p>
+<h2 id="discovery-phase_1">Discovery Phase</h2>
+<p>Webpack operates on the principle of building a dependency graph. It starts from a single "entry" point, finds all of its dependencies (imports), processes them through "loaders," and bundles them into one or more "output" files. This process is orchestrated by a <code>webpack.config.js</code> file.</p>
+<p>The four core concepts of Webpack are:</p>
+<ol>
+<li><strong>Entry</strong>: The starting point of your application (e.g., <code>./src/index.js</code>).</li>
+<li><strong>Output</strong>: Where to save the final bundled JavaScript file(s) (e.g., <code>./dist/bundle.js</code>).</li>
+<li><strong>Loaders</strong>: Rules that tell Webpack how to process different types of files before adding them to the dependency graph. For example, <code>babel-loader</code> teaches Webpack how to read JSX, and <code>css-loader</code> teaches it how to handle <code>@import</code> in CSS files.</li>
+<li><strong>Plugins</strong>: Tools that perform actions on the bundled code <em>after</em> it has been processed by loaders. For example, <code>HtmlWebpackPlugin</code> generates an <code>index.html</code> file and automatically injects your bundled script into it.</li>
+</ol>
+<h2 id="deep-dive_1">Deep Dive</h2>
+<p>Let's look at a minimal <code>webpack.config.js</code> for a modern React 19 and TypeScript project. This is significantly more verbose than a Vite config, which highlights why Vite's developer experience is preferred.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// webpack.config.js</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s2">&quot;path&quot;</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">HtmlWebpackPlugin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s2">&quot;html-webpack-plugin&quot;</span><span class="p">);</span>
+
+<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// 1. Entry</span>
+<span class="w">  </span><span class="nx">entry</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;./src/index.tsx&quot;</span><span class="p">,</span>
+
+<span class="w">  </span><span class="c1">// 2. Output</span>
+<span class="w">  </span><span class="nx">output</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">path</span><span class="o">:</span><span class="w"> </span><span class="nx">path</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">__dirname</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;dist&quot;</span><span class="p">),</span>
+<span class="w">    </span><span class="nx">filename</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;bundle.js&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">clean</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="c1">// Clean the dist folder before each build</span>
+<span class="w">  </span><span class="p">},</span>
+
+<span class="w">  </span><span class="c1">// Module rules for loaders</span>
+<span class="w">  </span><span class="nx">module</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">rules</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// For .ts and .tsx files</span>
+<span class="w">        </span><span class="nx">test</span><span class="o">:</span><span class="w"> </span><span class="sr">/\.(ts|tsx)$/</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">exclude</span><span class="o">:</span><span class="w"> </span><span class="sr">/node_modules/</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">use</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="c1">// 3. Loader</span>
+<span class="w">          </span><span class="nx">loader</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;babel-loader&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">options</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">presets</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">              </span><span class="s2">&quot;@babel/preset-env&quot;</span><span class="p">,</span>
+<span class="w">              </span><span class="p">[</span><span class="s2">&quot;@babel/preset-react&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">runtime</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;automatic&quot;</span><span class="w"> </span><span class="p">}],</span><span class="w"> </span><span class="c1">// Handles JSX</span>
+<span class="w">              </span><span class="s2">&quot;@babel/preset-typescript&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// Handles TypeScript</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="c1">// React 19 Compiler would be enabled here as a Babel plugin</span>
+<span class="w">            </span><span class="c1">// plugins: [[&quot;babel-plugin-react-compiler&quot;, {}]]</span>
+<span class="w">          </span><span class="p">},</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// For .css files</span>
+<span class="w">        </span><span class="nx">test</span><span class="o">:</span><span class="w"> </span><span class="sr">/\.css$/</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">use</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;style-loader&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;css-loader&quot;</span><span class="p">],</span><span class="w"> </span><span class="c1">// style-loader injects CSS into the DOM</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">  </span><span class="p">},</span>
+
+<span class="w">  </span><span class="c1">// Resolve file extensions</span>
+<span class="w">  </span><span class="nx">resolve</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">extensions</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;.tsx&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;.ts&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;.js&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="p">},</span>
+
+<span class="w">  </span><span class="c1">// 4. Plugins</span>
+<span class="w">  </span><span class="nx">plugins</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="ow">new</span><span class="w"> </span><span class="nx">HtmlWebpackPlugin</span><span class="p">({</span>
+<span class="w">      </span><span class="nx">template</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;./public/index.html&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// Use this file as a template</span>
+<span class="w">    </span><span class="p">}),</span>
+<span class="w">  </span><span class="p">],</span>
+
+<span class="w">  </span><span class="c1">// Dev server configuration</span>
+<span class="w">  </span><span class="nx">devServer</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">static</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">directory</span><span class="o">:</span><span class="w"> </span><span class="nx">path</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="nx">__dirname</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;public&quot;</span><span class="p">),</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nx">compress</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">port</span><span class="o">:</span><span class="w"> </span><span class="mf">3000</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">hot</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="c1">// Enable Hot Module Replacement</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="common-confusion-loaders-vs-plugins">Common Confusion: Loaders vs. Plugins</h3>
+<p><strong>You might think</strong>: Loaders and plugins both transform code, so they're basically the same.</p>
+<p><strong>Actually</strong>: They operate at different stages of the build process.</p>
+<ul>
+<li><strong>Loaders</strong> work at the individual file level <em>as Webpack is building the dependency graph</em>. They answer the question, "How should I process this <code>.tsx</code> file?" or "What do I do with this <code>.css</code> file?".</li>
+<li><strong>Plugins</strong> work on the entire bundle or chunks of the bundle <em>after the graph is built</em>. They answer questions like, "How do I create the final <code>index.html</code> file?" or "How do I extract all CSS into a separate file?".</li>
+</ul>
+<p><strong>How to remember</strong>: <strong>L</strong>oaders work on <strong>L</strong>one files. <strong>P</strong>lugins work on the entire <strong>P</strong>ackage.</p>
+<h3 id="production-perspective_1">Production Perspective</h3>
+<p><strong>When professionals use this</strong>:</p>
+<ul>
+<li>When maintaining or extending legacy applications built with Webpack or Create React App (which uses Webpack).</li>
+<li>In complex scenarios requiring fine-grained control over the build process that might not be easily achievable with Vite's higher-level abstractions.</li>
+<li>For implementing advanced strategies like Module Federation, which originated as a Webpack plugin.</li>
+</ul>
+<p><strong>Trade-offs</strong>:</p>
+<ul>
+<li>✅ <strong>Advantage</strong>: <strong>Extreme Configurability</strong>. You can control every aspect of the build pipeline, making it powerful for unique or complex requirements.</li>
+<li>✅ <strong>Advantage</strong>: <strong>Mature Ecosystem</strong>. A vast ecosystem of loaders and plugins exists for almost any task.</li>
+<li>⚠️ <strong>Cost</strong>: <strong>Complexity</strong>. Configuration is verbose and can be difficult to debug.</li>
+<li>⚠️ <strong>Cost</strong>: <strong>Performance</strong>. The "bundle-everything" approach for development is inherently slower than Vite's on-demand model, especially for large projects.</li>
+</ul>
+<h2 id="environment-variables">Environment Variables</h2>
+<h2 id="learning-objective_2">Learning Objective</h2>
+<p>Manage environment-specific configurations like API keys and feature flags safely and effectively using environment variables.</p>
+<h2 id="why-this-matters_2">Why This Matters</h2>
+<p>Your application needs different configurations for different environments. Your local machine might connect to a <code>localhost</code> API, your staging environment to a <code>staging.api.com</code>, and production to the live <code>api.com</code>. Hardcoding these values directly into your components is a terrible practice. It's insecure (you might accidentally commit secret keys to Git) and inflexible (every environment change requires a code change). Environment variables solve this by externalizing configuration from your code.</p>
+<h2 id="discovery-phase_2">Discovery Phase</h2>
+<p>Let's look at the problem. A developer hardcodes an API endpoint in their component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/DataFetcher.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">DataFetcher</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">data</span><span class="p">,</span><span class="w"> </span><span class="nx">setData</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// PROBLEM: This URL is hardcoded.</span>
+<span class="w">    </span><span class="c1">// This will break in staging and production.</span>
+<span class="w">    </span><span class="nx">fetch</span><span class="p">(</span><span class="s2">&quot;http://localhost:8080/api/data&quot;</span><span class="p">)</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">res</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">setData</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="c1">// ... render data</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;{</span><span class="nb">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">data</span><span class="p">)}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>To deploy this, another developer would have to find this line and change it. This is not scalable or secure. The solution is to use an environment variable.</p>
+<h2 id="deep-dive_2">Deep Dive</h2>
+<p>Modern build tools like Vite and Create React App have built-in support for environment variables through <code>.env</code> files.</p>
+<h3 id="vites-approach">Vite's Approach</h3>
+<ol>
+<li>
+<p><strong>Create <code>.env</code> files</strong>: In your project's root directory, you can create files like:</p>
+<ul>
+<li><code>.env</code>: Default values for all environments.</li>
+<li><code>.env.development</code>: Values that override <code>.env</code> in development.</li>
+<li><code>.env.production</code>: Values that override <code>.env</code> in production.</li>
+<li><code>.env.local</code>: For local, private secrets (like API keys). This file should be in your <code>.gitignore</code> and is not committed to source control. It overrides all other <code>.env</code> files.</li>
+</ul>
+</li>
+<li>
+<p><strong>Define Variables</strong>: Inside these files, you define variables. For security, Vite requires that any variable you want to expose to your client-side code <strong>must be prefixed with <code>VITE_</code></strong>.</p>
+</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1"># .env.development</span>
+<span class="na">VITE_API_BASE_URL</span><span class="o">=</span><span class="s">&quot;http://localhost:8080/api&quot;</span>
+
+<span class="c1"># .env.production</span>
+<span class="na">VITE_API_BASE_URL</span><span class="o">=</span><span class="s">&quot;https://api.my-app.com/api&quot;</span>
+</code></pre></div>
+
+<ol>
+<li><strong>Access in Code</strong>: You can access these variables in your application code via the <code>import.meta.env</code> object.</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/DataFetcher.tsx (Corrected)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// This value will be replaced by the build tool at compile time.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">API_URL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="k">import</span><span class="p">.</span><span class="nx">meta</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">VITE_API_BASE_URL</span><span class="si">}</span><span class="sb">/data`</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">DataFetcher</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">data</span><span class="p">,</span><span class="w"> </span><span class="nx">setData</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Now the URL is configured correctly for the environment.</span>
+<span class="w">    </span><span class="nx">fetch</span><span class="p">(</span><span class="nx">API_URL</span><span class="p">)</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">res</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">setData</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;{</span><span class="nb">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">data</span><span class="p">)}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="create-react-app-webpack-approach">Create React App / Webpack Approach</h3>
+<p>The process is very similar, but the prefix and access method are different:</p>
+<ul>
+<li>Variables must be prefixed with <code>REACT_APP_</code>.</li>
+<li>They are accessed via <code>process.env.REACT_APP_...</code>.</li>
+</ul>
+<h3 id="common-confusion-exposing-server-side-secrets">Common Confusion: Exposing Server-Side Secrets</h3>
+<p><strong>You might think</strong>: I can put my database password or a private server API key in my <code>.env</code> file.</p>
+<p><strong>Actually</strong>: <strong>NEVER DO THIS.</strong> Any environment variable prefixed with <code>VITE_</code> or <code>REACT_APP_</code> is embedded into your client-side JavaScript bundle at build time. Anyone can view your application's source code in their browser and see these "secrets" in plain text.</p>
+<p><strong>How to remember</strong>: The <code>VITE_</code> / <code>REACT_APP_</code> prefix means "public." These variables are for non-sensitive, public configuration like API URLs, public keys for services like Stripe or Google Maps, or feature flags. True secrets belong on your backend server, which is never exposed to the client.</p>
+<h3 id="production-perspective_2">Production Perspective</h3>
+<p><strong>When professionals choose this</strong>:</p>
+<ul>
+<li>Always. Environment variables are the standard, non-negotiable way to handle configuration in modern web development.</li>
+<li>In CI/CD pipelines, build servers are configured to inject the correct production environment variables during the build step. These secrets are stored securely in the CI/CD provider's settings (e.g., GitHub Secrets, Vercel Environment Variables) and are never checked into the Git repository.</li>
+<li>For more advanced secret management in large organizations, tools like HashiCorp Vault, AWS Secrets Manager, or Doppler are used to centrally manage and securely inject secrets at build or runtime.</li>
+</ul>
+<h2 id="build-optimization-with-compiler">Build Optimization with Compiler</h2>
+<h2 id="learning-objective_3">Learning Objective</h2>
+<p>Understand how the React 19 Compiler automates build-time optimizations that were previously manual, leading to simpler code and better performance.</p>
+<h2 id="why-this-matters_3">Why This Matters</h2>
+<p>For years, optimizing React applications meant manually wrapping functions in <code>useCallback</code> and values in <code>useMemo</code> to prevent unnecessary re-renders. This added significant cognitive overhead, cluttered components with boilerplate, and was easy to get wrong. The React 19 Compiler is a paradigm shift: it makes React applications "fast by default" by performing these optimizations automatically at build time.</p>
+<h2 id="discovery-phase_3">Discovery Phase</h2>
+<p>Let's look at a classic performance problem. A child component re-renders unnecessarily because its parent passes it a new function on every render.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Before the Compiler: Manual Optimization</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useCallback</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">memo</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// A memoized child component that only re-renders if its props change.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">ExpensiveButton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">memo</span><span class="p">(({</span><span class="w"> </span><span class="nx">onClick</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Rendering ExpensiveButton...&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">onClick</span><span class="p">}&gt;</span><span class="nx">Click</span><span class="w"> </span><span class="nx">me</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">});</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// PROBLEM: A new `handleClick` function is created on every render of App.</span>
+<span class="w">  </span><span class="c1">// This breaks the memoization of ExpensiveButton.</span>
+<span class="w">  </span><span class="c1">// const handleClick = () =&gt; { console.log(&#39;Button clicked&#39;); };</span>
+
+<span class="w">  </span><span class="c1">// SOLUTION: Manually wrap the function in `useCallback`.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleClick</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useCallback</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Button clicked&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// The dependency array must be managed manually.</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCount</span><span class="p">((</span><span class="nx">c</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">c</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span><span class="nx">Increment</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ExpensiveButton</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleClick</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Without <code>useCallback</code>, clicking the "Increment" button would cause <code>App</code> to re-render, creating a new <code>handleClick</code> function instance. This new instance would be passed as a prop to <code>ExpensiveButton</code>, causing it to re-render as well, even though its behavior hasn't changed. <code>useCallback</code> solves this by memoizing the function, but it's manual and error-prone.</p>
+<h2 id="deep-dive_3">Deep Dive</h2>
+<p>The React Compiler is a Babel plugin that runs as part of your build process (e.g., when you run <code>vite build</code>). It statically analyzes your React components and automatically applies memoization where it determines it would be beneficial.</p>
+<p>Here is the same component, written as you would with the React 19 Compiler enabled:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// With the React 19 Compiler: Automatic Optimization</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">memo</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// The child component remains the same.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">ExpensiveButton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">memo</span><span class="p">(({</span><span class="w"> </span><span class="nx">onClick</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Rendering ExpensiveButton...&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">onClick</span><span class="p">}&gt;</span><span class="nx">Click</span><span class="w"> </span><span class="nx">me</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">});</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// No `useCallback` needed!</span>
+<span class="w">  </span><span class="c1">// The compiler understands that this function does not depend on `count`</span>
+<span class="w">  </span><span class="c1">// and will automatically memoize it.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleClick</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Button clicked&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCount</span><span class="p">((</span><span class="nx">c</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">c</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span><span class="nx">Increment</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ExpensiveButton</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleClick</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>The code is simpler, cleaner, and more intuitive. You write your code in the most straightforward way, and the compiler handles the optimization. It's smart enough to analyze dependencies, so if <code>handleClick</code> did depend on some state or prop, the compiler would memoize it correctly based on that dependency, just as you would have done manually with a dependency array.</p>
+<h3 id="how-to-enable-it">How to Enable It</h3>
+<p>You don't need to do anything special. Modern toolchains will enable it for you:</p>
+<ul>
+<li><strong>Vite</strong>: The <code>@vitejs/plugin-react</code> plugin enables the compiler automatically when React 19 is detected.</li>
+<li><strong>Next.js</strong>: The Next.js compiler will have this integrated.</li>
+<li><strong>Manual Setup</strong>: For custom Webpack setups, you would add <code>babel-plugin-react-compiler</code> to your Babel configuration.</li>
+</ul>
+<h3 id="legacy-pattern-notice">Legacy Pattern Notice</h3>
+<p><strong>Pre-React 19</strong>: <code>useMemo</code> and <code>useCallback</code> were essential tools for performance optimization.</p>
+<p><strong>React 19+</strong>: These hooks are no longer needed for the vast majority of performance optimization cases. The compiler handles it better and more reliably. You can and should remove most of them from your application code. They still have niche uses, for example, when you need to guarantee referential stability for a dependency in <code>useEffect</code> or when interfacing with a third-party library that relies on stable function references.</p>
+<h3 id="production-perspective_3">Production Perspective</h3>
+<p><strong>When professionals choose this</strong>:</p>
+<ul>
+<li>It will become the default for all new React 19 projects. The benefits are too significant to ignore.</li>
+<li>Teams will progressively remove manual memoization (<code>useMemo</code>, <code>useCallback</code>, <code>React.memo</code>) from their codebases as they adopt the compiler, simplifying the code and often improving performance beyond what was possible manually.</li>
+</ul>
+<p><strong>Trade-offs</strong>:</p>
+<ul>
+<li>✅ <strong>Advantage</strong>: <strong>Better Performance by Default</strong>. Eliminates a huge class of common performance issues.</li>
+<li>✅ <strong>Advantage</strong>: <strong>Simplified Code</strong>. Components are cleaner, more readable, and easier to maintain.</li>
+<li>✅ <strong>Advantage</strong>: <strong>Lower Cognitive Load</strong>. Developers can focus on business logic instead of memorizing the rules of React's render cycle.</li>
+<li>⚠️ <strong>Cost</strong>: <strong>It's a Compiler</strong>. Like any compiler, it has rules. You need to write "compiler-friendly" code. The good news is that this generally means writing simple, standard JavaScript and React code. The compiler will provide warnings if you write code that it cannot safely optimize.</li>
+</ul>
+<h2 id="module-federation">Module Federation</h2>
+<h2 id="learning-objective_4">Learning Objective</h2>
+<p>Understand how Module Federation enables micro-frontends by allowing separately deployed applications to share code at runtime.</p>
+<h2 id="why-this-matters_4">Why This Matters</h2>
+<p>In large organizations, it's common for different teams to own different parts of a large web application (e.g., the "Search" team, the "Checkout" team, the "Account" team). A traditional monolithic front-end makes it difficult for these teams to work and deploy independently. Module Federation is a revolutionary feature, popularized by Webpack 5, that allows multiple, separate builds to form a single application at runtime. This is the primary technology enabling the "micro-frontend" architecture.</p>
+<h2 id="discovery-phase_4">Discovery Phase</h2>
+<p>Imagine a large e-commerce dashboard application.</p>
+<ul>
+<li><strong>Team A</strong> builds the main application shell (the "host").</li>
+<li><strong>Team B</strong> builds a sophisticated "Product Search" widget.</li>
+<li><strong>Team C</strong> builds a "Promotions" widget.</li>
+</ul>
+<p>Without Module Federation, the only way to share the search and promotions widgets is to publish them as npm packages. The host application would then install them. This creates a tight coupling: every time Team B updates the search widget, they have to publish a new version, and Team A has to update their dependencies and redeploy the entire host application.</p>
+<p>Module Federation breaks this coupling. Team B can deploy their "Product Search" widget independently. The host application can load the <em>latest deployed version</em> of the widget at runtime, without needing a rebuild or redeployment of its own.</p>
+<h2 id="deep-dive_4">Deep Dive</h2>
+<p>Module Federation introduces a few key concepts:</p>
+<ul>
+<li><strong>Host</strong>: An application that consumes modules from other applications (remotes).</li>
+<li><strong>Remote</strong>: An application that exposes modules to be consumed by other applications (hosts). An application can be both a host and a remote.</li>
+<li><strong>Exposed Module</strong>: A specific component, function, or piece of code that a remote makes available (e.g., <code>./Header</code>).</li>
+<li><strong>Shared Dependencies</strong>: Libraries that can be shared between the host and remotes (e.g., <code>react</code>, <code>react-dom</code>) so they are only downloaded once.</li>
+</ul>
+<p>Here is a conceptual look at the Webpack configuration.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// remote-app (e.g., the search widget) webpack.config.js</span>
+<span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ModuleFederationPlugin</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s2">&quot;webpack&quot;</span><span class="p">).</span><span class="nx">container</span><span class="p">;</span>
+
+<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... other webpack config</span>
+<span class="w">  </span><span class="nx">plugins</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="ow">new</span><span class="w"> </span><span class="nx">ModuleFederationPlugin</span><span class="p">({</span>
+<span class="w">      </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;remoteApp&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">filename</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;remoteEntry.js&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// The manifest file the host will fetch</span>
+<span class="w">      </span><span class="nx">exposes</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Alias: Path to the component</span>
+<span class="w">        </span><span class="s2">&quot;./SearchWidget&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;./src/components/SearchWidget&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nx">shared</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;react&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;react-dom&quot;</span><span class="p">],</span><span class="w"> </span><span class="c1">// Share these libraries</span>
+<span class="w">    </span><span class="p">}),</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="p">};</span>
+
+<span class="c1">// host-app (the main shell) webpack.config.js</span>
+<span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ModuleFederationPlugin</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s2">&quot;webpack&quot;</span><span class="p">).</span><span class="nx">container</span><span class="p">;</span>
+
+<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... other webpack config</span>
+<span class="w">  </span><span class="nx">plugins</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="ow">new</span><span class="w"> </span><span class="nx">ModuleFederationPlugin</span><span class="p">({</span>
+<span class="w">      </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;hostApp&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">remotes</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Alias: &#39;name@URL_to_remoteEntry.js&#39;</span>
+<span class="w">        </span><span class="nx">remoteApp</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;remoteApp@http://localhost:3001/remoteEntry.js&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nx">shared</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;react&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;react-dom&quot;</span><span class="p">],</span>
+<span class="w">    </span><span class="p">}),</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>Now, the host application can dynamically import and render the <code>SearchWidget</code> from the remote application.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// In host-app&#39;s code</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Suspense</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// The import path &#39;remoteApp/SearchWidget&#39; matches the config.</span>
+<span class="c1">// Webpack knows this is a federated module and will handle the dynamic loading.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">RemoteSearchWidget</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">lazy</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">import</span><span class="p">(</span><span class="s2">&quot;remoteApp/SearchWidget&quot;</span><span class="p">));</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">My</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">nav</span><span class="p">&gt;...&lt;/</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Suspense</span><span class="w"> </span><span class="na">fallback</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">Search</span><span class="p">...&lt;/</span><span class="nt">div</span><span class="p">&gt;}&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">RemoteSearchWidget</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">Suspense</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>When a user visits the host app, their browser will fetch the <code>remoteEntry.js</code> file from the remote app's server, discover where to get the <code>SearchWidget</code> code, and load it on demand.</p>
+<h3 id="common-confusion-module-federation-vs-iframes">Common Confusion: Module Federation vs. iframes</h3>
+<p><strong>You might think</strong>: This sounds like just embedding another webpage in an <code>iframe</code>.</p>
+<p><strong>Actually</strong>: It's fundamentally different. An <code>iframe</code> creates a completely separate, sandboxed browsing context. Communication between the parent page and the iframe is difficult and limited. A federated component is a <em>true React component</em> that renders directly into the host's React tree. It can share state via props and context, participate in the same component lifecycle, and be styled by the host's CSS. It creates a seamless user experience, whereas an iframe creates a disjointed one.</p>
+<h3 id="production-perspective_4">Production Perspective</h3>
+<p><strong>When professionals choose this</strong>:</p>
+<ul>
+<li>For very large applications developed by multiple autonomous teams that require independent deployment schedules.</li>
+<li>To create a unified user experience from a suite of otherwise separate applications.</li>
+<li>To enable gradual modernization of a legacy application by progressively replacing parts of it with new, federated micro-frontends.</li>
+</ul>
+<p><strong>Trade-offs</strong>:</p>
+<ul>
+<li>✅ <strong>Advantage</strong>: <strong>Team Autonomy &amp; Independent Deployments</strong>. This is the primary benefit.</li>
+<li>✅ <strong>Advantage</strong>: <strong>Resilience</strong>. An error in one micro-frontend doesn't necessarily bring down the entire application.</li>
+<li>✅ <strong>Advantage</strong>: <strong>Technology Diversity</strong>. Different teams could potentially use different frameworks (though sharing dependencies becomes harder).</li>
+<li>⚠️ <strong>Cost</strong>: <strong>Complexity</strong>. The setup is complex, and debugging can be challenging. You need robust tooling and a clear strategy for managing shared dependencies and versions.</li>
+<li>⚠️ <strong>Cost</strong>: <strong>Runtime Dependencies</strong>. The application is now a distributed system. If a remote application is down, the parts of the host application that depend on it will fail. This requires careful error handling (e.g., with Error Boundaries).</li>
+</ul>
+<h2 id="cicd-integration">CI/CD Integration</h2>
+<h2 id="learning-objective_5">Learning Objective</h2>
+<p>Set up a basic Continuous Integration and Continuous Deployment (CI/CD) pipeline for a React application using GitHub Actions.</p>
+<h2 id="why-this-matters_5">Why This Matters</h2>
+<p>In a professional environment, you don't build your application on your laptop and then manually upload the files to a server. This process is slow, error-prone, and not reproducible. CI/CD is the practice of automating your development workflow.</p>
+<ul>
+<li><strong>Continuous Integration (CI)</strong>: Automatically building and testing your code every time a change is pushed to the repository. This ensures that new code integrates correctly with the existing codebase.</li>
+<li><strong>Continuous Deployment (CD)</strong>: Automatically deploying your application to a production or staging environment after it successfully passes the CI stage.</li>
+</ul>
+<p>Automating this pipeline ensures every change is validated, leading to higher quality software delivered faster.</p>
+<h2 id="discovery-phase_5">Discovery Phase</h2>
+<p>Let's contrast the manual process with an automated one.</p>
+<p><strong>Manual Process</strong>:</p>
+<ol>
+<li>A developer finishes a feature on their branch.</li>
+<li>They merge it into the <code>main</code> branch.</li>
+<li>They remember to run the tests: <code>npm test</code>.</li>
+<li>They build the project: <code>npm run build</code>.</li>
+<li>They connect to a server via FTP/SSH.</li>
+<li>They upload the contents of the <code>dist</code> folder.</li>
+<li>They pray they didn't forget a step or upload to the wrong place.</li>
+</ol>
+<p><strong>Automated CI/CD Process</strong>:</p>
+<ol>
+<li>A developer merges a pull request into the <code>main</code> branch.</li>
+<li>A CI/CD service (like GitHub Actions) automatically detects the push.</li>
+<li>It spins up a clean virtual machine, checks out the code, installs dependencies, runs linting, runs tests, and builds the project.</li>
+<li>If all steps pass, it automatically deploys the build output to a hosting provider like Vercel or Netlify.</li>
+<li>The developer gets a notification that the deployment was successful.</li>
+</ol>
+<h2 id="deep-dive_5">Deep Dive</h2>
+<p>We can define this automated workflow in a YAML file using GitHub Actions. This file lives in your repository at <code>.github/workflows/main.yml</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="err">#</span><span class="w"> </span><span class="p">.</span><span class="nx">github</span><span class="o">/</span><span class="nx">workflows</span><span class="o">/</span><span class="nx">main</span><span class="p">.</span><span class="nx">yml</span>
+
+<span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="nx">Deploy</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">Production</span>
+
+<span class="err">#</span><span class="w"> </span><span class="mf">1.</span><span class="w"> </span><span class="nx">Trigger</span><span class="o">:</span><span class="w"> </span><span class="nx">Run</span><span class="w"> </span><span class="k">this</span><span class="w"> </span><span class="nx">workflow</span><span class="w"> </span><span class="nx">on</span><span class="w"> </span><span class="nx">every</span><span class="w"> </span><span class="nx">push</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="s1">&#39;main&#39;</span><span class="w"> </span><span class="nx">branch</span>
+<span class="nx">on</span><span class="o">:</span>
+<span class="w">  </span><span class="nx">push</span><span class="o">:</span>
+<span class="w">    </span><span class="nx">branches</span><span class="o">:</span>
+<span class="w">      </span><span class="o">-</span><span class="w"> </span><span class="nx">main</span>
+
+<span class="nx">jobs</span><span class="o">:</span>
+<span class="w">  </span><span class="nx">build</span><span class="o">-</span><span class="nx">and</span><span class="o">-</span><span class="nx">deploy</span><span class="o">:</span>
+<span class="w">    </span><span class="nx">runs</span><span class="o">-</span><span class="nx">on</span><span class="o">:</span><span class="w"> </span><span class="nx">ubuntu</span><span class="o">-</span><span class="nx">latest</span><span class="w"> </span><span class="err">#</span><span class="w"> </span><span class="nx">Use</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">Linux</span><span class="w"> </span><span class="nx">virtual</span><span class="w"> </span><span class="nx">machine</span>
+
+<span class="w">    </span><span class="nx">steps</span><span class="o">:</span>
+<span class="w">      </span><span class="err">#</span><span class="w"> </span><span class="mf">2.</span><span class="w"> </span><span class="nx">Checkout</span><span class="o">:</span><span class="w"> </span><span class="nx">Get</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">code</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">repository</span>
+<span class="w">      </span><span class="o">-</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="nx">Checkout</span><span class="w"> </span><span class="nx">code</span>
+<span class="w">        </span><span class="nx">uses</span><span class="o">:</span><span class="w"> </span><span class="nx">actions</span><span class="o">/</span><span class="nx">checkout</span><span class="err">@</span><span class="nx">v4</span>
+
+<span class="w">      </span><span class="err">#</span><span class="w"> </span><span class="mf">3.</span><span class="w"> </span><span class="nx">Setup</span><span class="w"> </span><span class="nx">Node</span><span class="p">.</span><span class="nx">js</span><span class="o">:</span><span class="w"> </span><span class="nx">Install</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">specific</span><span class="w"> </span><span class="nx">version</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">Node</span><span class="p">.</span><span class="nx">js</span>
+<span class="w">      </span><span class="o">-</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="nx">Setup</span><span class="w"> </span><span class="nx">Node</span><span class="p">.</span><span class="nx">js</span>
+<span class="w">        </span><span class="nx">uses</span><span class="o">:</span><span class="w"> </span><span class="nx">actions</span><span class="o">/</span><span class="nx">setup</span><span class="o">-</span><span class="nx">node</span><span class="err">@</span><span class="nx">v4</span>
+<span class="w">        </span><span class="kd">with</span><span class="o">:</span>
+<span class="w">          </span><span class="nx">node</span><span class="o">-</span><span class="nx">version</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;20&#39;</span>
+<span class="w">          </span><span class="nx">cache</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;npm&#39;</span><span class="w"> </span><span class="err">#</span><span class="w"> </span><span class="nx">Cache</span><span class="w"> </span><span class="nx">npm</span><span class="w"> </span><span class="nx">dependencies</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nx">faster</span><span class="w"> </span><span class="nx">installs</span>
+
+<span class="w">      </span><span class="err">#</span><span class="w"> </span><span class="mf">4.</span><span class="w"> </span><span class="nx">Install</span><span class="w"> </span><span class="nx">Dependencies</span><span class="o">:</span><span class="w"> </span><span class="nx">Use</span><span class="w"> </span><span class="sb">`npm ci`</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">clean</span><span class="p">,</span><span class="w"> </span><span class="nx">deterministic</span><span class="w"> </span><span class="nx">install</span>
+<span class="w">      </span><span class="o">-</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="nx">Install</span><span class="w"> </span><span class="nx">dependencies</span>
+<span class="w">        </span><span class="nx">run</span><span class="o">:</span><span class="w"> </span><span class="nx">npm</span><span class="w"> </span><span class="nx">ci</span>
+
+<span class="w">      </span><span class="err">#</span><span class="w"> </span><span class="mf">5.</span><span class="w"> </span><span class="nx">Lint</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="nx">Test</span><span class="o">:</span><span class="w"> </span><span class="nx">Run</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="nx">analysis</span><span class="w"> </span><span class="nx">and</span><span class="w"> </span><span class="nx">automated</span><span class="w"> </span><span class="nx">tests</span>
+<span class="w">      </span><span class="o">-</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="nx">Run</span><span class="w"> </span><span class="nx">linter</span>
+<span class="w">        </span><span class="nx">run</span><span class="o">:</span><span class="w"> </span><span class="nx">npm</span><span class="w"> </span><span class="nx">run</span><span class="w"> </span><span class="nx">lint</span>
+<span class="w">      </span><span class="o">-</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="nx">Run</span><span class="w"> </span><span class="nx">tests</span>
+<span class="w">        </span><span class="nx">run</span><span class="o">:</span><span class="w"> </span><span class="nx">npm</span><span class="w"> </span><span class="nx">test</span>
+
+<span class="w">      </span><span class="err">#</span><span class="w"> </span><span class="mf">6.</span><span class="w"> </span><span class="nx">Build</span><span class="o">:</span><span class="w"> </span><span class="nx">Create</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">production</span><span class="o">-</span><span class="nx">ready</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="nx">files</span>
+<span class="w">      </span><span class="o">-</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="nx">Build</span><span class="w"> </span><span class="nx">application</span>
+<span class="w">        </span><span class="nx">run</span><span class="o">:</span><span class="w"> </span><span class="nx">npm</span><span class="w"> </span><span class="nx">run</span><span class="w"> </span><span class="nx">build</span>
+<span class="w">        </span><span class="err">#</span><span class="w"> </span><span class="nx">This</span><span class="w"> </span><span class="nx">will</span><span class="w"> </span><span class="nx">create</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="sb">`dist`</span><span class="w"> </span><span class="nx">folder</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">runner</span><span class="s1">&#39;s file system</span>
+
+<span class="s1">      # 7. Deploy: Example of deploying to Vercel</span>
+<span class="s1">      # This step would be different for other providers (Netlify, AWS, etc.)</span>
+<span class="s1">      # It uses secrets to securely authenticate with the hosting provider.</span>
+<span class="s1">      - name: Deploy to Vercel</span>
+<span class="s1">        uses: amondnet/vercel-action@v20</span>
+<span class="s1">        with:</span>
+<span class="s1">          vercel-token: ${{ secrets.VERCEL_TOKEN }}</span>
+<span class="s1">          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}</span>
+<span class="s1">          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}</span>
+<span class="s1">          vercel-args: &#39;</span><span class="o">--</span><span class="nx">prod</span><span class="err">&#39;</span>
+</code></pre></div>
+
+<h3 id="breakdown-of-the-workflow">Breakdown of the Workflow:</h3>
+<ul>
+<li><strong><code>on</code></strong>: Defines the trigger. Here, it's any push to the <code>main</code> branch.</li>
+<li><strong><code>jobs</code></strong>: A workflow is made up of one or more jobs. This workflow has one job called <code>build-and-deploy</code>.</li>
+<li><strong><code>runs-on</code></strong>: Specifies the type of virtual machine to run the job on.</li>
+<li><strong><code>steps</code></strong>: A job is a sequence of steps.</li>
+<li><code>uses</code>: Specifies an "action," which is a reusable piece of code (e.g., <code>actions/checkout</code> to get your code).</li>
+<li><code>run</code>: Executes a command-line command.</li>
+<li><strong><code>secrets</code></strong>: The deployment step uses <code>secrets.VERCEL_TOKEN</code>. These are encrypted variables you configure in your GitHub repository settings, ensuring you never commit sensitive keys to your code.</li>
+</ul>
+<h3 id="production-perspective_5">Production Perspective</h3>
+<p><strong>When professionals choose this</strong>:</p>
+<ul>
+<li>For every project, without exception. CI/CD is a foundational practice of modern software development.</li>
+<li>The complexity of the pipeline scales with the project. A simple project might have the workflow above. A large enterprise project might have multiple workflows for pull requests (running tests), staging deployments, and production releases, with additional steps for security scans, bundle size analysis, and integration tests.</li>
+</ul>
+<p><strong>Trade-offs</strong>:</p>
+<ul>
+<li>✅ <strong>Advantage</strong>: <strong>Consistency &amp; Reliability</strong>. The process is the same every single time, eliminating human error.</li>
+<li>✅ <strong>Advantage</strong>: <strong>Speed</strong>. Automation allows teams to deploy multiple times a day, getting features and fixes to users faster.</li>
+<li>✅ <strong>Advantage</strong>: <strong>Safety Net</strong>. The automated test suite acts as a gatekeeper, preventing buggy code from reaching production.</li>
+<li>⚠️ <strong>Cost</strong>: <strong>Initial Setup</strong>. There is a learning curve to writing workflow files and configuring your deployment environment.</li>
+<li>⚠️ <strong>Cost</strong>: <strong>Maintenance</strong>. As your project evolves, your CI/CD pipeline may need to be updated (e.g., changing Node versions, adding new testing steps).</li>
+</ul>
+<h2 id="docker-for-react-applications">Docker for React Applications</h2>
+<h2 id="learning-objective_6">Learning Objective</h2>
+<p>Containerize a React application using Docker to create consistent, portable, and isolated development and deployment environments.</p>
+<h2 id="why-this-matters_6">Why This Matters</h2>
+<p>"But it works on my machine!" is one of the most common and frustrating problems in software development. A project might work for one developer but fail for another due to differences in their operating system, Node.js version, or globally installed packages. Docker solves this by packaging your application, along with all its dependencies and its runtime environment, into a standardized unit called a <strong>container</strong>. This container can run on any machine that has Docker installed, guaranteeing consistency from development to production.</p>
+<h2 id="discovery-phase_6">Discovery Phase</h2>
+<p>Imagine a new developer joins your team. Their setup process might look like this:</p>
+<ol>
+<li>Install the correct version of Node.js (and hope it doesn't conflict with their other projects).</li>
+<li>Install a specific package manager (e.g., <code>pnpm</code>).</li>
+<li>Clone the repository.</li>
+<li>Run <code>npm install</code>.</li>
+<li>Try to run the app, but it fails because of a missing OS-level dependency.</li>
+</ol>
+<p>With Docker, the setup process is:</p>
+<ol>
+<li>Install Docker.</li>
+<li>Clone the repository.</li>
+<li>Run <code>docker-compose up</code>.</li>
+</ol>
+<p>The application and its entire environment are defined as code in a <code>Dockerfile</code>, making onboarding and setup trivial.</p>
+<h2 id="deep-dive_6">Deep Dive</h2>
+<p>The best practice for containerizing a front-end application is to use a <strong>multi-stage build</strong>. This creates a small, secure, and optimized final image for production.</p>
+<ul>
+<li><strong>Stage 1 (The "Builder")</strong>: This stage uses a full Node.js image. It has all the tools needed to install dependencies and build your React application (<code>npm</code>, <code>node</code>, etc.). Its only job is to create the static assets in the <code>/dist</code> folder.</li>
+<li><strong>Stage 2 (The "Runner")</strong>: This stage uses a very lightweight web server image, like Nginx. It does <em>not</em> contain Node.js or your source code. It simply copies the <code>/dist</code> folder from the "Builder" stage and serves it.</li>
+</ul>
+<p>This pattern ensures your final production container is as small and secure as possible.</p>
+<p>Here's what a <code>Dockerfile</code> for a Vite-based React app looks like using this pattern:</p>
+<div class="codehilite"><pre><span></span><code><span class="err">#</span><span class="w"> </span><span class="nx">Dockerfile</span>
+
+<span class="err">#</span><span class="w"> </span><span class="o">---</span><span class="w"> </span><span class="nx">Stage</span><span class="w"> </span><span class="mf">1</span><span class="o">:</span><span class="w"> </span><span class="nx">The</span><span class="w"> </span><span class="nx">Builder</span><span class="w"> </span><span class="o">---</span>
+<span class="err">#</span><span class="w"> </span><span class="nx">Use</span><span class="w"> </span><span class="nx">an</span><span class="w"> </span><span class="nx">official</span><span class="w"> </span><span class="nx">Node</span><span class="p">.</span><span class="nx">js</span><span class="w"> </span><span class="nx">image</span><span class="p">.</span><span class="w"> </span><span class="nx">The</span><span class="w"> </span><span class="s1">&#39;as builder&#39;</span><span class="w"> </span><span class="nx">names</span><span class="w"> </span><span class="k">this</span><span class="w"> </span><span class="nx">stage</span><span class="p">.</span>
+<span class="nx">FROM</span><span class="w"> </span><span class="nx">node</span><span class="o">:</span><span class="mf">20</span><span class="o">-</span><span class="nx">alpine</span><span class="w"> </span><span class="nx">AS</span><span class="w"> </span><span class="nx">builder</span>
+
+<span class="err">#</span><span class="w"> </span><span class="nb">Set</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">working</span><span class="w"> </span><span class="nx">directory</span><span class="w"> </span><span class="nx">inside</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">container</span>
+<span class="nx">WORKDIR</span><span class="w"> </span><span class="o">/</span><span class="nx">app</span>
+
+<span class="err">#</span><span class="w"> </span><span class="nx">Copy</span><span class="w"> </span><span class="kr">package</span><span class="p">.</span><span class="nx">json</span><span class="w"> </span><span class="nx">and</span><span class="w"> </span><span class="nx">lock</span><span class="w"> </span><span class="nx">file</span><span class="w"> </span><span class="nx">first</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">leverage</span><span class="w"> </span><span class="nx">Docker</span><span class="s1">&#39;s layer caching</span>
+<span class="s1">COPY package*.json ./</span>
+<span class="s1">RUN npm ci</span>
+
+<span class="s1"># Copy the rest of your application&#39;</span><span class="nx">s</span><span class="w"> </span><span class="nx">source</span><span class="w"> </span><span class="nx">code</span>
+<span class="nx">COPY</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="p">.</span>
+
+<span class="err">#</span><span class="w"> </span><span class="nx">Run</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">build</span><span class="w"> </span><span class="nx">command</span>
+<span class="nx">RUN</span><span class="w"> </span><span class="nx">npm</span><span class="w"> </span><span class="nx">run</span><span class="w"> </span><span class="nx">build</span>
+
+<span class="err">#</span><span class="w"> </span><span class="nx">At</span><span class="w"> </span><span class="k">this</span><span class="w"> </span><span class="nx">point</span><span class="p">,</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="o">/</span><span class="nx">app</span><span class="o">/</span><span class="nx">dist</span><span class="w"> </span><span class="nx">folder</span><span class="w"> </span><span class="nx">contains</span><span class="w"> </span><span class="nx">our</span><span class="w"> </span><span class="nx">production</span><span class="w"> </span><span class="nx">assets</span><span class="p">.</span>
+
+<span class="err">#</span><span class="w"> </span><span class="o">---</span><span class="w"> </span><span class="nx">Stage</span><span class="w"> </span><span class="mf">2</span><span class="o">:</span><span class="w"> </span><span class="nx">The</span><span class="w"> </span><span class="nx">Runner</span><span class="w"> </span><span class="o">---</span>
+<span class="err">#</span><span class="w"> </span><span class="nx">Use</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">lightweight</span><span class="w"> </span><span class="nx">Nginx</span><span class="w"> </span><span class="nx">image</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">serve</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="nx">files</span>
+<span class="nx">FROM</span><span class="w"> </span><span class="nx">nginx</span><span class="o">:</span><span class="mf">1.25</span><span class="o">-</span><span class="nx">alpine</span>
+
+<span class="err">#</span><span class="w"> </span><span class="nx">Copy</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">built</span><span class="w"> </span><span class="nx">assets</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="s1">&#39;builder&#39;</span><span class="w"> </span><span class="nx">stage</span>
+<span class="nx">COPY</span><span class="w"> </span><span class="o">--</span><span class="kr">from</span><span class="o">=</span><span class="nx">builder</span><span class="w"> </span><span class="o">/</span><span class="nx">app</span><span class="o">/</span><span class="nx">dist</span><span class="w"> </span><span class="o">/</span><span class="nx">usr</span><span class="o">/</span><span class="nx">share</span><span class="o">/</span><span class="nx">nginx</span><span class="o">/</span><span class="nx">html</span>
+
+<span class="err">#</span><span class="w"> </span><span class="nx">Nginx</span><span class="w"> </span><span class="nx">needs</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">configuration</span><span class="w"> </span><span class="nx">file</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">handle</span><span class="w"> </span><span class="nx">SPA</span><span class="w"> </span><span class="nx">routing</span>
+<span class="err">#</span><span class="w"> </span><span class="nx">Copy</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">custom</span><span class="w"> </span><span class="nx">nginx</span><span class="p">.</span><span class="nx">conf</span><span class="w"> </span><span class="nx">file</span>
+<span class="nx">COPY</span><span class="w"> </span><span class="nx">nginx</span><span class="p">.</span><span class="nx">conf</span><span class="w"> </span><span class="o">/</span><span class="nx">etc</span><span class="o">/</span><span class="nx">nginx</span><span class="o">/</span><span class="nx">conf</span><span class="p">.</span><span class="nx">d</span><span class="o">/</span><span class="k">default</span><span class="p">.</span><span class="nx">conf</span>
+
+<span class="err">#</span><span class="w"> </span><span class="nx">Expose</span><span class="w"> </span><span class="nx">port</span><span class="w"> </span><span class="mf">80</span><span class="w"> </span><span class="p">(</span><span class="nx">the</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">Nginx</span><span class="w"> </span><span class="nx">port</span><span class="p">)</span>
+<span class="nx">EXPOSE</span><span class="w"> </span><span class="mf">80</span>
+
+<span class="err">#</span><span class="w"> </span><span class="nx">The</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">command</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">Nginx</span><span class="w"> </span><span class="nx">image</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">start</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">server</span>
+<span class="nx">CMD</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;nginx&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;-g&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;daemon off;&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+<p>You also need a simple <code>nginx.conf</code> to make sure all routes in your single-page app are directed to <code>index.html</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># nginx.conf</span>
+<span class="k">server</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span>
+
+<span class="w">  </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kn">root</span><span class="w">   </span><span class="s">/usr/share/nginx/html</span><span class="p">;</span>
+<span class="w">    </span><span class="kn">index</span><span class="w">  </span><span class="s">index.html</span><span class="w"> </span><span class="s">index.htm</span><span class="p">;</span>
+<span class="w">    </span><span class="c1"># If a file is not found, fall back to index.html</span>
+<span class="w">    </span><span class="kn">try_files</span><span class="w"> </span><span class="nv">$uri</span><span class="w"> </span><span class="nv">$uri/</span><span class="w"> </span><span class="s">/index.html</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="building-and-running-the-container">Building and Running the Container</h3>
+<p>With these files in your project root, you can build and run your application:</p>
+<ol>
+<li><strong>Build the image</strong>: <code>docker build -t my-react-app .</code></li>
+<li><strong>Run the container</strong>: <code>docker run -p 8080:80 my-react-app</code></li>
+</ol>
+<p>This command runs your container and maps port 8080 on your local machine to port 80 inside the container. You can now visit <code>http://localhost:8080</code> to see your app.</p>
+<h3 id="production-perspective_6">Production Perspective</h3>
+<p><strong>When professionals choose this</strong>:</p>
+<ul>
+<li>As a standard practice for most web applications to ensure environment parity between development, staging, and production.</li>
+<li>When deploying to container orchestration platforms like Kubernetes or Amazon ECS, which are the modern standard for scalable cloud hosting.</li>
+<li>To simplify local development for complex applications that have multiple services (e.g., a front-end, a backend, a database), which can be managed together with <code>docker-compose</code>.</li>
+</ul>
+<p><strong>Trade-offs</strong>:</p>
+<ul>
+<li>✅ <strong>Advantage</strong>: <strong>Consistency &amp; Portability</strong>. Solves the "it works on my machine" problem forever.</li>
+<li>✅ <strong>Advantage</strong>: <strong>Isolation</strong>. Dependencies for one project don't conflict with others.</li>
+<li>✅ <strong>Advantage</strong>: <strong>Scalability</strong>. Containers are the building blocks of modern, scalable cloud infrastructure.</li>
+<li>⚠️ <strong>Cost</strong>: <strong>Learning Curve</strong>. Docker has its own concepts and commands that developers need to learn.</li>
+<li>⚠️ <strong>Cost</strong>: <strong>Resource Usage</strong>. Running Docker containers consumes more disk space and memory than running the app natively, though this is usually negligible on modern hardware.</li>
+</ul>
+<h2 id="deployment-strategies">Deployment Strategies</h2>
+<h2 id="learning-objective_7">Learning Objective</h2>
+<p>Compare different deployment strategies for modern React applications, including static hosting, server-side rendering, and edge computing.</p>
+<h2 id="why-this-matters_7">Why This Matters</h2>
+<p>The way you deploy your React application has a profound impact on its performance, cost, SEO, and user experience. A simple client-side rendered portfolio site has very different needs from a dynamic, data-heavy e-commerce platform. Choosing the right deployment strategy is a critical architectural decision.</p>
+<h2 id="discovery-phase_7">Discovery Phase</h2>
+<p>The output of a standard <code>vite build</code> or <code>npm run build</code> on a client-side React application is a <code>dist</code> (or <code>build</code>) folder containing static files: <code>index.html</code>, some JavaScript bundles, and some CSS files. The simplest way to "deploy" this is to put these files on a web server. This leads to our first and most common strategy.</p>
+<h2 id="deep-dive_7">Deep Dive</h2>
+<h3 id="1-static-site-hosting-for-spas">1. Static Site Hosting (for SPAs)</h3>
+<ul>
+<li><strong>What it is</strong>: You upload your static <code>dist</code> folder to a service that specializes in hosting static files. This service then distributes your files across a global Content Delivery Network (CDN).</li>
+<li><strong>How it works</strong>: When a user requests your site, they are served the files from the CDN server geographically closest to them, resulting in very low latency. All rendering and data fetching happens in the user's browser (client-side rendering).</li>
+<li><strong>Providers</strong>: Vercel, Netlify, AWS S3 + CloudFront, GitHub Pages, Cloudflare Pages.</li>
+<li><strong>Best for</strong>: Dashboards, admin panels, portfolio sites, applications behind a login where SEO is not a concern.</li>
+<li><strong>Pros</strong>:</li>
+<li><strong>Extremely Fast</strong>: Global CDN delivery.</li>
+<li><strong>Cheap &amp; Scalable</strong>: You pay for bandwidth, which is inexpensive, and it scales automatically to handle massive traffic spikes.</li>
+<li><strong>Simple</strong>: The "drag and drop your <code>dist</code> folder" model of deployment.</li>
+<li><strong>Cons</strong>:</li>
+<li><strong>Poor SEO</strong>: Search engine crawlers may only see a blank HTML page with a <code>&lt;script&gt;</code> tag, though this is improving.</li>
+<li><strong>Slower Time to First Content</strong>: The user has to download the entire JS bundle, execute it, and then fetch data before seeing anything meaningful.</li>
+</ul>
+<h3 id="2-server-side-rendering-ssr-with-a-framework">2. Server-Side Rendering (SSR) with a Framework</h3>
+<ul>
+<li><strong>What it is</strong>: You use a full-stack React framework like Next.js or Remix. When a user requests a page, a Node.js server renders the React components into a complete HTML string and sends that to the browser.</li>
+<li><strong>How it works</strong>: The user receives a fully-formed HTML page immediately, resulting in a very fast perceived load time. The React application then "hydrates" on the client, attaching event listeners and making the page interactive.</li>
+<li><strong>Providers</strong>: You can host a Node.js server anywhere (Vercel, Netlify, AWS EC2, Heroku, DigitalOcean).</li>
+<li><strong>Best for</strong>: E-commerce sites, marketing websites, blogs, news sites—any application where SEO and initial page load performance are critical.</li>
+<li><strong>Pros</strong>:</li>
+<li><strong>Excellent SEO</strong>: Search engines get fully rendered HTML.</li>
+<li><strong>Fast First Contentful Paint (FCP)</strong>: Users see content almost instantly.</li>
+<li><strong>Data Fetching on Server</strong>: Can hide API keys and reduce the amount of work the client has to do.</li>
+<li><strong>Cons</strong>:</li>
+<li><strong>Higher Cost &amp; Complexity</strong>: You are now running and maintaining a server, which is more expensive and complex than static hosting.</li>
+<li><strong>Slower Time to Interactive (TTI)</strong>: Users can see the page but may not be able to interact with it until the client-side JavaScript has downloaded and executed.</li>
+</ul>
+<h3 id="3-edge-computing-the-hybrid-approach">3. Edge Computing (The Hybrid Approach)</h3>
+<ul>
+<li><strong>What it is</strong>: A modern evolution of SSR. Instead of running your server in a single location (e.g., a specific AWS region), your server-side rendering logic is deployed to a global network of "edge" servers, just like a CDN.</li>
+<li><strong>How it works</strong>: When a user in London requests a page, the SSR logic runs on a server in or near London. A user in Tokyo gets the same page rendered from a server in Tokyo. This combines the low latency of a CDN with the dynamic power of a server. React Server Components in Next.js 13+ are a prime example of this architecture.</li>
+<li><strong>Providers</strong>: Vercel Edge Functions, Cloudflare Workers, Netlify Edge Functions.</li>
+<li><strong>Best for</strong>: Performance-critical applications that need to be both dynamic and globally fast.</li>
+<li><strong>Pros</strong>:</li>
+<li><strong>The best of both worlds</strong>: The SEO and FCP benefits of SSR, plus the global low-latency of a CDN.</li>
+<li>Enables powerful patterns like streaming UI with Suspense.</li>
+<li><strong>Cons</strong>:</li>
+<li><strong>Newer Technology</strong>: The ecosystem is still evolving, and there can be limitations on what you can do in an edge environment (e.g., no full Node.js API access).</li>
+<li>Can be more complex to reason about and debug.</li>
+</ul>
+<h3 id="production-perspective_7">Production Perspective</h3>
+<p><strong>How professionals choose</strong>:</p>
+<ul>
+<li><strong>Start with Static Hosting</strong>: For any application that can be a Single Page Application (SPA), static hosting on a platform like Vercel or Netlify is the default choice. It's simple, fast, and cost-effective.</li>
+<li><strong>Reach for an SSR Framework (Next.js) when needed</strong>: If SEO becomes a primary business requirement or the initial load performance of your SPA is too slow, migrate to a framework like Next.js.</li>
+<li><strong>Leverage the Edge by default with modern frameworks</strong>: Modern versions of Next.js and Remix are "edge-first," meaning you get the benefits of this powerful deployment model automatically when using platforms that support it.</li>
+</ul>
+<h2 id="module-synthesis">Module Synthesis 📋</h2>
+<h2 id="module-synthesis-the-engine-of-production">Module Synthesis: The Engine of Production</h2>
+<p>This chapter moved beyond writing code to focus on the machinery that powers modern React development and deployment. We've explored the critical tools and configurations that transform your source code into a performant, reliable, and scalable production application.</p>
+<p>We began by contrasting the old and new guards of build tools: <strong>Webpack</strong>, the powerful and configurable workhorse of the past, and <strong>Vite</strong>, the fast, modern standard that prioritizes developer experience. We saw how the <strong>React 19 Compiler</strong> is poised to revolutionize optimization by automating what was once a tedious manual process, making our code simpler and our apps faster.</p>
+<p>From there, we delved into the practicalities of building real-world applications. We learned to manage <strong>Environment Variables</strong> to keep our configuration secure and flexible. We then explored architectural patterns for massive applications with <strong>Module Federation</strong>, enabling the micro-frontend architectures used by large, independent teams.</p>
+<p>Finally, we covered the full lifecycle of shipping code. We automated our workflow with <strong>CI/CD pipelines</strong> using GitHub Actions, ensuring every change is tested and deployed reliably. We learned how to use <strong>Docker</strong> to containerize our application, solving the "it works on my machine" problem and guaranteeing consistency across all environments. To cap it off, we compared the core <strong>Deployment Strategies</strong>—from simple static hosting to server-side rendering and the cutting-edge performance of the edge—giving you a framework for choosing the right architecture for your project's needs.</p>
+<h3 id="looking-ahead">Looking Ahead</h3>
+<p>You are now equipped not just to write a React application, but to build, test, and deploy it like a professional. You understand the "why" behind your <code>vite.config.ts</code>, the importance of your CI pipeline, and the trade-offs of your deployment target.</p>
+<p>In the next chapters, we will focus on ensuring the application you deploy is not just functional, but also secure and accessible to all users—two critical aspects of enterprise-grade software development.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-10-25 16:27:49 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

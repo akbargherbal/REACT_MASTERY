@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>03_JSX_and_Component_Basics</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">01_Foundations</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-3-jsx-and-component-basics">Chapter 3: JSX and Component Basics</h1>
+<h2 id="what-is-jsx">What is JSX?</h2>
+<h2 id="learning-objective">Learning Objective</h2>
+<p>Define JSX and explain its relationship to <code>React.createElement</code>, understanding that it is syntactic sugar, not HTML.</p>
+<h2 id="why-this-matters">Why This Matters</h2>
+<p>JSX is the syntax you'll use to write 99% of your React UI code. It looks like HTML, which makes it feel familiar, but it's actually a powerful JavaScript extension. Understanding that JSX is just a convenient syntax for calling a function (<code>React.createElement</code>) is the key to unlocking its full potential and debugging it effectively. It's the bridge between the JavaScript logic you write and the UI elements React creates.</p>
+<h2 id="discovery-phase-it-looks-like-html-but-its-not">Discovery Phase: It Looks Like HTML, But It's Not</h2>
+<p>Let's start with a simple JSX expression.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">greeting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Hello</span><span class="p">,</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="nx">Developer</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;;</span>
+</code></pre></div>
+
+<p>This looks like you're assigning a piece of HTML to a JavaScript variable, which is normally impossible. If you tried to run this code directly in a browser console, it would throw a syntax error.</p>
+<p>So what's happening? Your build tool (Vite) uses a compiler called Babel to transform this JSX into standard, browser-compatible JavaScript <em>before</em> it ever reaches the browser.</p>
+<p>JSX is <strong>syntactic sugar</strong>. It provides a concise and readable way to describe your UI's structure.</p>
+<h2 id="deep-dive-jsx-compiles-to-reactcreateelement">Deep Dive: JSX Compiles to <code>React.createElement</code></h2>
+<p>Under the hood, every JSX tag is transformed into a JavaScript function call: <code>React.createElement()</code>.</p>
+<p>Let's look at the "before" and "after" of the compilation process.</p>
+<p><strong>This is the JSX you write:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">element</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;profile&quot;</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Alice</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">img</span><span class="w"> </span><span class="na">src</span><span class="o">=</span><span class="s">&quot;avatar.png&quot;</span><span class="w"> </span><span class="na">alt</span><span class="o">=</span><span class="s">&quot;User Avatar&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">  </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">);</span>
+</code></pre></div>
+
+<p><strong>This is what Babel compiles it into (simplified):</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">element</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">createElement</span><span class="p">(</span>
+<span class="w">  </span><span class="s2">&quot;div&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">className</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;profile&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="nx">React</span><span class="p">.</span><span class="nx">createElement</span><span class="p">(</span><span class="s2">&quot;h2&quot;</span><span class="p">,</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Alice&quot;</span><span class="p">),</span>
+<span class="w">  </span><span class="nx">React</span><span class="p">.</span><span class="nx">createElement</span><span class="p">(</span><span class="s2">&quot;img&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">src</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;avatar.png&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">alt</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;User Avatar&quot;</span><span class="w"> </span><span class="p">}),</span>
+<span class="p">);</span>
+</code></pre></div>
+
+<p>The <code>React.createElement</code> function takes three main arguments:</p>
+<ol>
+<li><strong><code>type</code></strong>: The tag name as a string (<code>'div'</code>) or a React component (<code>UserProfile</code>).</li>
+<li><strong><code>props</code></strong>: An object containing all the attributes you passed (<code>{ className: 'profile' }</code>).</li>
+<li><strong><code>...children</code></strong>: The content inside the tag. This can be a string, or more <code>React.createElement</code> calls for nested tags.</li>
+</ol>
+<p>This is why you used to have to <code>import React from 'react';</code> at the top of every file that used JSX. Even though you weren't using the <code>React</code> variable directly, the compiled code was. Modern build tools often handle this automatically, but it's essential to understand the underlying mechanism.</p>
+<h3 id="common-confusion-jsx-is-just-html-inside-javascript">Common Confusion: JSX is just HTML inside JavaScript</h3>
+<p><strong>You might think</strong>: I'm writing HTML, so all my HTML knowledge applies directly.</p>
+<p><strong>Actually</strong>: You are writing an XML-like syntax that will be converted into JavaScript objects. This has important implications.</p>
+<p><strong>Why the confusion happens</strong>: The syntax is intentionally designed to look like HTML for familiarity.</p>
+<p><strong>How to remember</strong>: Think of JSX tags as "function calls in disguise." This helps explain why:</p>
+<ul>
+<li>You can assign JSX to variables (<code>const element = &lt;div /&gt;</code>).</li>
+<li>You can return JSX from functions (<code>function MyComponent() { return &lt;div /&gt;; }</code>).</li>
+<li>You must use JavaScript property names like <code>className</code> instead of the HTML attribute <code>class</code>, because <code>class</code> is a reserved keyword in JavaScript.</li>
+</ul>
+<h2 id="jsx-syntax-rules-and-expressions">JSX Syntax Rules and Expressions</h2>
+<h2 id="learning-objective_1">Learning Objective</h2>
+<p>Apply the core syntax rules of JSX, including returning a single root element, using camelCase for attributes, and embedding JavaScript expressions with curly braces.</p>
+<h2 id="why-this-matters_1">Why This Matters</h2>
+<p>JSX has a few simple rules that, once learned, become second nature. Following them is essential for writing valid React components. Mastering these rules, especially how to embed JavaScript expressions, is what turns JSX from a static templating language into a dynamic tool for building interactive UIs.</p>
+<h2 id="deep-dive-the-three-core-rules-of-jsx">Deep Dive: The Three Core Rules of JSX</h2>
+<h3 id="rule-1-return-a-single-root-element">Rule 1: Return a Single Root Element</h3>
+<p>A React component must return a single "chunk" of JSX. You cannot return two adjacent elements.</p>
+<p><strong>❌ This is invalid:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Error: JSX expressions must have one parent element.</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Alice</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">React</span><span class="w"> </span><span class="nx">Developer</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>✅ The Fix: Wrap them in a parent element.</strong>
+You can use a <code>&lt;div&gt;</code> or any other HTML element as a wrapper.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Alice</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">React</span><span class="w"> </span><span class="nx">Developer</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>But what if you don't want to add an extra <code>&lt;div&gt;</code> to your DOM just for the sake of the rule? This is where <strong>Fragments</strong> come in. A Fragment is a special React component that lets you group a list of children without adding extra nodes to the DOM.</p>
+<p><strong>✅ The Best Fix: Use a Fragment.</strong>
+The syntax is an empty tag: <code>&lt;&gt; ...</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Fragment</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Optional, &lt;&gt; is shorthand</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Alice</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">React</span><span class="w"> </span><span class="nx">Developer</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>When this component renders, only the <code>&lt;h2&gt;</code> and <code>&lt;p&gt;</code> will be added to the DOM. The Fragment itself disappears.</p>
+<h3 id="rule-2-use-camelcase-for-attributes">Rule 2: Use camelCase for Attributes</h3>
+<p>Because JSX is JavaScript, it has to follow JavaScript's naming conventions. HTML attributes that contain a hyphen, like <code>class</code> or <code>for</code>, are converted to camelCase.</p>
+<ul>
+<li><code>class</code> becomes <code>className</code></li>
+<li><code>for</code> (on a <code>&lt;label&gt;</code>) becomes <code>htmlFor</code></li>
+<li><code>onclick</code> becomes <code>onClick</code></li>
+<li><code>tabindex</code> becomes <code>tabIndex</code></li>
+</ul>
+<p><strong>❌ Invalid HTML-style attributes:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// This will give you a warning in the console.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">element</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">class</span><span class="o">=</span><span class="s">&quot;profile&quot;</span><span class="w"> </span><span class="na">onclick</span><span class="o">=</span><span class="s">&quot;myFunction()&quot;</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="nx">Click</span><span class="w"> </span><span class="nx">me</span>
+<span class="w">  </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">);</span>
+</code></pre></div>
+
+<p><strong>✅ Correct JSX-style props:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">handleClick</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">alert</span><span class="p">(</span><span class="s2">&quot;Clicked!&quot;</span><span class="p">);</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">element</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;profile&quot;</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleClick</span><span class="p">}&gt;</span>
+<span class="w">    </span><span class="nx">Click</span><span class="w"> </span><span class="nx">me</span>
+<span class="w">  </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">);</span>
+</code></pre></div>
+
+<p><strong>Why?</strong> <code>class</code> and <code>for</code> are reserved keywords in JavaScript. Other attributes are converted to camelCase for consistency.</p>
+<h3 id="rule-3-use-curly-braces-for-expressions">Rule 3: Use Curly Braces <code>{}</code> for Expressions</h3>
+<p>This is the most powerful feature of JSX. You can embed any valid JavaScript expression inside curly braces <code>{}</code>. This is how you make your UI dynamic.</p>
+<p>An <strong>expression</strong> is any piece of code that evaluates to a value. Examples include:</p>
+<ul>
+<li>Variables: <code>{userName}</code></li>
+<li>Function calls: <code>{formatDate(user.date)}</code></li>
+<li>Math operations: <code>{2 + 2}</code></li>
+<li>Ternary operators: <code>{isLoggedIn ? &lt;Profile /&gt; : &lt;Login /&gt;}</code></li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">Greeting</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">userName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Alice&quot;</span><span class="p">;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">userAge</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">30</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* 1. Displaying a variable */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Hello</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="nx">userName</span><span class="p">}</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* 2. Using a math expression */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Next</span><span class="w"> </span><span class="nx">year</span><span class="p">,</span><span class="w"> </span><span class="nx">you</span><span class="w"> </span><span class="nx">will</span><span class="w"> </span><span class="nx">be</span><span class="w"> </span><span class="p">{</span><span class="nx">userAge</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">}.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* 3. Passing an object to a style prop */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Note the double curlies: {{...}}. The outer {} is for the JSX expression, */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* and the inner {} is for the JavaScript object literal. */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;blue&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">fontSize</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;16px&quot;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">        </span><span class="nx">This</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">styled</span><span class="w"> </span><span class="nx">paragraph</span><span class="p">.</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>You cannot put JavaScript <strong>statements</strong> (like <code>if</code>, <code>for</code>, <code>switch</code>) inside the curly braces. You can, however, use expressions that achieve the same result, like the ternary operator, which we'll cover in the conditional rendering section.</p>
+<h2 id="creating-your-first-components">Creating Your First Components</h2>
+<h2 id="learning-objective_2">Learning Objective</h2>
+<p>Define a simple function component, export it using ES modules, and import and render it within another component.</p>
+<h2 id="why-this-matters_2">Why This Matters</h2>
+<p>Components are the fundamental building blocks of React applications. Learning the pattern of creating a component in its own file, exporting it, and then composing it into a larger view is the core workflow you will use to build every single feature. This modular approach is what makes React projects scalable and maintainable.</p>
+<h2 id="discovery-phase-from-a-single-file-to-a-component-tree">Discovery Phase: From a Single File to a Component Tree</h2>
+<p>In Chapter 1, we built a simple counter inside <code>App.jsx</code>. But in a real application, you wouldn't put everything in one file. Let's create a separate, reusable <code>Greeting</code> component.</p>
+<p>Our goal is to change this:
+<strong><code>App.jsx</code> (before)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">our</span><span class="w"> </span><span class="nx">app</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>To this:
+<strong><code>Greeting.jsx</code> (new file)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">Greeting</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">our</span><span class="w"> </span><span class="nx">app</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong><code>App.jsx</code> (after)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">Greeting</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./Greeting.jsx&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">Greeting</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h2 id="deep-dive-the-component-creation-workflow">Deep Dive: The Component Creation Workflow</h2>
+<p>Let's follow the steps to create and use a new component.</p>
+<h3 id="step-1-create-the-component-file">Step 1: Create the Component File</h3>
+<p>In your <code>src</code> directory, create a new folder called <code>components</code>. Inside <code>components</code>, create a new file named <code>WelcomeMessage.jsx</code>.</p>
+<p><strong>File Naming Convention</strong>: Component file names should always be <strong>PascalCase</strong> (e.g., <code>WelcomeMessage</code>, <code>UserProfile</code>, <code>Button</code>). This is a strong convention in the React community.</p>
+<h3 id="step-2-define-the-component-function">Step 2: Define the Component Function</h3>
+<p>Inside <code>WelcomeMessage.jsx</code>, write a JavaScript function that returns some JSX.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/WelcomeMessage.jsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// A component is just a function that returns JSX.</span>
+<span class="c1">// The function name should also be PascalCase.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">WelcomeMessage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">Dashboard</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Here</span><span class="w"> </span><span class="nx">are</span><span class="w"> </span><span class="nx">your</span><span class="w"> </span><span class="nx">latest</span><span class="w"> </span><span class="nx">updates</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="step-3-export-the-component">Step 3: Export the Component</h3>
+<p>To make this component available to other parts of our application, we need to export it. The standard practice is to use a <code>default export</code> for the main component in a file.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/WelcomeMessage.jsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">WelcomeMessage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... JSX from above</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">Dashboard</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Here</span><span class="w"> </span><span class="nx">are</span><span class="w"> </span><span class="nx">your</span><span class="w"> </span><span class="nx">latest</span><span class="w"> </span><span class="nx">updates</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Use a default export</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">WelcomeMessage</span><span class="p">;</span>
+</code></pre></div>
+
+<h3 id="step-4-import-and-use-the-component">Step 4: Import and Use the Component</h3>
+<p>Now, let's go to <code>src/App.jsx</code>. We can import our new component and render it just like an HTML tag.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/App.jsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="c1">// Import our component. The path is relative to the current file.</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">WelcomeMessage</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./components/WelcomeMessage.jsx&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="s2">&quot;./App.css&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Assuming you have some styles</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">header</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">My</span><span class="w"> </span><span class="nx">Application</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">header</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Use the component like an HTML tag. It must be self-closing or have a closing tag. */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">WelcomeMessage</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">App</span><span class="p">;</span>
+</code></pre></div>
+
+<p><strong>Rendered Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code>My Application
+Welcome to the Dashboard!
+Here are your latest updates.
+</code></pre></div>
+
+<p>That's it! You've successfully created a separate, reusable component and composed it into your main application. This simple pattern is the foundation for building UIs of any complexity.</p>
+<h2 id="props-passing-data-to-components">Props: Passing Data to Components</h2>
+<h2 id="learning-objective_3">Learning Objective</h2>
+<p>Pass data to components using props and use that data to render dynamic content.</p>
+<h2 id="why-this-matters_3">Why This Matters</h2>
+<p>Static components aren't very useful. You need a way to make them dynamic and reusable. <strong>Props</strong> (short for properties) are how you pass data from a parent component to a child component. They are the mechanism that allows a single <code>UserProfile</code> component to display information for thousands of different users. Mastering props is fundamental to building a data-driven application.</p>
+<h2 id="discovery-phase-from-hardcoded-to-dynamic">Discovery Phase: From Hardcoded to Dynamic</h2>
+<p>Our <code>WelcomeMessage</code> component from the last section is static. It will always display the same text. What if we want to greet a specific user by name?</p>
+<p><strong>Current Component:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Greeting.jsx</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">Greeting</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Hello</span><span class="p">,</span><span class="w"> </span><span class="nx">user</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is not reusable. We want to be able to do this:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// In App.jsx</span>
+<span class="p">&lt;</span><span class="nt">Greeting</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;Alice&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="p">&lt;</span><span class="nt">Greeting</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;Bob&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+</code></pre></div>
+
+<p>And have it render "Hello, Alice!" and "Hello, Bob!". The <code>name</code> attribute we're passing here is a <strong>prop</strong>.</p>
+<h2 id="deep-dive-the-flow-of-props">Deep Dive: The Flow of Props</h2>
+<p>Props are passed down from parent to child in a one-way data flow. Think of them as the arguments to your component function.</p>
+<h3 id="step-1-passing-props-to-the-component">Step 1: Passing Props to the Component</h3>
+<p>In the parent component (<code>App.jsx</code>), you add props to your component tag just like you would add attributes to an HTML tag.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/App.jsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Greeting</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./components/Greeting&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">loggedInUser</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Charlie&quot;</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Passing a string literal as a prop */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Greeting</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;Alice&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Passing a number prop (using curly braces for the expression) */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Greeting</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;Bob&quot;</span><span class="w"> </span><span class="na">unreadMessages</span><span class="o">=</span><span class="p">{</span><span class="mf">10</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Passing a variable as a prop */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Greeting</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="p">{</span><span class="nx">loggedInUser</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="step-2-receiving-props-in-the-component">Step 2: Receiving Props in the Component</h3>
+<p>React collects all the props you pass into a single object and passes it as the first argument to your component function. By convention, this object is called <code>props</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Greeting.jsx</span>
+
+<span class="c1">// The `props` object for the first usage (&lt;Greeting name=&quot;Alice&quot; /&gt;)</span>
+<span class="c1">// will look like this: { name: &#39;Alice&#39; }</span>
+
+<span class="c1">// For the second usage, it will be: { name: &#39;Bob&#39;, unreadMessages: 10 }</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">Greeting</span><span class="p">(</span><span class="nx">props</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">props</span><span class="p">);</span><span class="w"> </span><span class="c1">// Log this to see what you get!</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="nx">Hello</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="nx">props</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span><span class="o">!</span><span class="p">{</span><span class="cm">/* We can conditionally render based on props */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">props</span><span class="p">.</span><span class="nx">unreadMessages</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">        </span><span class="sb">` You have </span><span class="si">${</span><span class="nx">props</span><span class="p">.</span><span class="nx">unreadMessages</span><span class="si">}</span><span class="sb"> unread messages.`</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">Greeting</span><span class="p">;</span>
+</code></pre></div>
+
+<h3 id="best-practice-destructuring-props">Best Practice: Destructuring Props</h3>
+<p>Accessing <code>props.name</code> and <code>props.unreadMessages</code> works, but it can get repetitive. As we learned in Chapter 2, we can use destructuring to unpack the props object directly in the function signature. This is the standard, modern way to handle props.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Greeting.jsx</span>
+
+<span class="c1">// Destructure the props you expect to receive</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">Greeting</span><span class="p">({</span><span class="w"> </span><span class="nx">name</span><span class="p">,</span><span class="w"> </span><span class="nx">unreadMessages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// We can also set default values for props that might not be passed.</span>
+<span class="w">  </span><span class="c1">// Now, `unreadMessages` will be 0 if it&#39;s not provided.</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="nx">Hello</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="nx">name</span><span class="p">}</span><span class="o">!</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">unreadMessages</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="sb">` You have </span><span class="si">${</span><span class="nx">unreadMessages</span><span class="si">}</span><span class="sb"> unread messages.`</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">Greeting</span><span class="p">;</span>
+</code></pre></div>
+
+<p><strong>Rendered Output for the <code>App</code> component above</strong>:</p>
+<div class="codehilite"><pre><span></span><code>Hello, Alice!
+Hello, Bob! You have 10 unread messages.
+Hello, Charlie!
+</code></pre></div>
+
+<h3 id="production-perspective-props-are-read-only">Production Perspective: Props are Read-Only</h3>
+<p><strong>CRITICAL RULE</strong>: A component must never modify its own props. Props are owned by the parent component that passes them down. This principle is called "purity." A component should always return the same JSX for the same set of props.</p>
+<p><strong>❌ DO NOT DO THIS:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">BadComponent</span><span class="p">({</span><span class="w"> </span><span class="nx">name</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Something else&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// 🛑 MUTATING PROPS!</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>If a component needs to change a value in response to user interaction, it must use <strong>state</strong>, which we will cover in the next chapter. Think of props as configuration that comes from the outside, and state as the component's own internal, managed memory.</p>
+<h2 id="refs-as-props-no-more-forwardref">🆕 Refs as Props (No More forwardRef)</h2>
+<h2 id="learning-objective_4">Learning Objective</h2>
+<p>Understand how to pass <code>ref</code>s to custom components in React 19 to enable parent components to interact with their children's DOM nodes.</p>
+<h2 id="why-this-matters_4">Why This Matters</h2>
+<p>Sometimes, a parent component needs to interact directly with a DOM element inside a child component. Common examples include focusing an input field, triggering an animation, or measuring an element's size. In the past, this required a cumbersome wrapper called <code>forwardRef</code>. React 19 simplifies this dramatically by treating <code>ref</code> just like any other prop, making your code cleaner and more intuitive.</p>
+<h2 id="discovery-phase-the-focus-problem">Discovery Phase: The Focus Problem</h2>
+<p>Imagine you're building a form. When the page loads, you want to automatically focus the first input field.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useEffect</span><span class="p">,</span><span class="w"> </span><span class="nx">useRef</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">inputRef</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// On component mount, focus the input</span>
+<span class="w">    </span><span class="nx">inputRef</span><span class="p">.</span><span class="nx">current</span><span class="p">.</span><span class="nx">focus</span><span class="p">();</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">My</span><span class="w"> </span><span class="nx">Form</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">inputRef</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Focus me on load&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This works perfectly with a standard HTML <code>&lt;input&gt;</code>. The <code>useRef</code> hook gives us an object (<code>inputRef</code>) with a <code>.current</code> property. We pass this <code>ref</code> to the input element, and React ensures that <code>inputRef.current</code> will point to the actual DOM node of that input.</p>
+<p>But what if we created a custom <code>MyInput</code> component to encapsulate styles and logic?</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// This will NOT work as you might expect</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useEffect</span><span class="p">,</span><span class="w"> </span><span class="nx">useRef</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">MyInput</span><span class="p">(</span><span class="nx">props</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// This component doesn&#39;t know what to do with the `ref` prop</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="p">{</span><span class="na">...props</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;my-custom-input&quot;</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">inputRef</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// This will fail because `inputRef.current` will be null</span>
+<span class="w">    </span><span class="nx">inputRef</span><span class="p">.</span><span class="nx">current</span><span class="p">.</span><span class="nx">focus</span><span class="p">();</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="c1">// You can&#39;t just pass a ref to a custom component like this in older React</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">MyInput</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">inputRef</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Focus me on load&quot;</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>By default, custom components don't know how to accept a <code>ref</code> and forward it to an underlying DOM element. Trying to do this would result in an error or a <code>ref</code> with a <code>null</code> value.</p>
+<h3 id="legacy-pattern-notice">Legacy Pattern Notice</h3>
+<p><strong>Pre-React 19</strong>: To solve this, you had to wrap your component in a higher-order component called <code>React.forwardRef</code>. The code was verbose:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">forwardRef</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">MyInput</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">forwardRef</span><span class="p">((</span><span class="nx">props</span><span class="p">,</span><span class="w"> </span><span class="nx">ref</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">ref</span><span class="p">}</span><span class="w"> </span><span class="p">{</span><span class="na">...props</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p>This pattern was confusing for beginners and added boilerplate.</p>
+<h2 id="deep-dive-ref-as-a-prop-in-react-19">Deep Dive: <code>ref</code> as a Prop in React 19</h2>
+<p>React 19 makes this incredibly simple. <strong><code>ref</code> is now just a regular prop.</strong> You can accept it in your component's props and pass it along.</p>
+<p>Let's fix our <code>MyInput</code> component the modern way.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useEffect</span><span class="p">,</span><span class="w"> </span><span class="nx">useRef</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// 1. Accept `ref` as a prop, just like any other prop.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">MyInput</span><span class="p">({</span><span class="w"> </span><span class="nx">ref</span><span class="p">,</span><span class="w"> </span><span class="p">...</span><span class="nx">props</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// 2. Pass the received `ref` to the underlying DOM element.</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">ref</span><span class="p">}</span><span class="w"> </span><span class="p">{</span><span class="na">...props</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;my-custom-input&quot;</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">inputRef</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Now this works perfectly!</span>
+<span class="w">    </span><span class="c1">// `inputRef.current` will be the actual &lt;input&gt; DOM node.</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">inputRef</span><span class="p">.</span><span class="nx">current</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">inputRef</span><span class="p">.</span><span class="nx">current</span><span class="p">.</span><span class="nx">focus</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">My</span><span class="w"> </span><span class="nx">Form</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">MyInput</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">inputRef</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Focus me on load&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>What changed?</strong> Absolutely nothing in the <code>App</code> component. The change is entirely in <code>MyInput</code>. We simply destructured <code>ref</code> from the props and passed it to the <code>&lt;input&gt;</code>. No <code>forwardRef</code> wrapper is needed.</p>
+<p>This makes creating reusable components that need to expose their DOM nodes (like custom inputs, buttons, or video players) much more straightforward. It aligns <code>ref</code> with the way all other props work, reducing cognitive load and boilerplate.</p>
+<h2 id="composing-components">Composing Components</h2>
+<h2 id="learning-objective_5">Learning Objective</h2>
+<p>Build complex UIs by nesting components and use the special <code>children</code> prop to create generic container components.</p>
+<h2 id="why-this-matters_5">Why This Matters</h2>
+<p>You don't build a house brick by brick; you build walls from bricks, then a house from walls. Similarly, in React, you don't build complex UIs from individual <code>&lt;div&gt;</code>s and <code>&lt;span&gt;</code>s. You build them by composing small, specialized components into larger, more complex ones. This is the heart of React's scalability and reusability.</p>
+<h2 id="discovery-phase-building-a-userprofile">Discovery Phase: Building a <code>UserProfile</code></h2>
+<p>Let's build a <code>UserProfile</code> card. We could put all the JSX in one big component.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;profile-card&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;avatar-container&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">img</span><span class="w"> </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">}</span><span class="w"> </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;avatar&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;user-info&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">bio</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This works, but it's not very reusable. The avatar logic is tightly coupled with the user info logic. A better approach is to break it down.</p>
+<h2 id="deep-dive-composition-in-action">Deep Dive: Composition in Action</h2>
+<p>Let's create two smaller components: <code>Avatar</code> and <code>UserInfo</code>.</p>
+<p><strong><code>Avatar.jsx</code></strong></p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">Avatar</span><span class="p">({</span><span class="w"> </span><span class="nx">src</span><span class="p">,</span><span class="w"> </span><span class="nx">alt</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">img</span><span class="w"> </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">src</span><span class="p">}</span><span class="w"> </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="nx">alt</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;avatar&quot;</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong><code>UserInfo.jsx</code></strong></p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">UserInfo</span><span class="p">({</span><span class="w"> </span><span class="nx">name</span><span class="p">,</span><span class="w"> </span><span class="nx">bio</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;user-info&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">bio</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, we can <strong>compose</strong> them inside <code>UserProfile</code>. The <code>UserProfile</code> component's job is now simply to arrange its children.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Assume Avatar and UserInfo are imported</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;profile-card&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Avatar</span><span class="w"> </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">}</span><span class="w"> </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">UserInfo</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span><span class="w"> </span><span class="na">bio</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">bio</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is much cleaner, more reusable, and easier to debug.</p>
+<h3 id="the-special-children-prop">The Special <code>children</code> Prop</h3>
+<p>What if we want to create a generic "box" or "card" component that can wrap <em>any</em> content? This is where the special <code>children</code> prop comes in.</p>
+<p>Whatever you put <em>between</em> the opening and closing tags of your component is passed as the <code>children</code> prop.</p>
+<p>Let's create a <code>Card</code> component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Card.jsx</span>
+
+<span class="c1">// 1. Accept `children` as a prop.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">Card</span><span class="p">({</span><span class="w"> </span><span class="nx">children</span><span class="p">,</span><span class="w"> </span><span class="nx">title</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;card&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">title</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h2</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;card-title&quot;</span><span class="p">&gt;{</span><span class="nx">title</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;card-content&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* 2. Render the `children` prop here. */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">children</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">Card</span><span class="p">;</span>
+</code></pre></div>
+
+<p>Now we can use this <code>Card</code> to wrap anything we want.</p>
+<p><strong><code>App.jsx</code></strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">Card</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./components/Card&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">UserProfile</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;./components/UserProfile&quot;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="cm">/* ... user data ... */</span>
+<span class="p">};</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Example 1: Wrapping a UserProfile */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Card</span><span class="w"> </span><span class="na">title</span><span class="o">=</span><span class="s">&quot;User Profile&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">UserProfile</span><span class="w"> </span><span class="na">user</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">Card</span><span class="p">&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Example 2: Wrapping simple text and elements */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Card</span><span class="w"> </span><span class="na">title</span><span class="o">=</span><span class="s">&quot;About&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">This</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">generic</span><span class="w"> </span><span class="nx">card</span><span class="w"> </span><span class="nx">component</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="p">&gt;</span><span class="nx">Learn</span><span class="w"> </span><span class="nx">More</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">Card</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>The <code>children</code> prop is a cornerstone of composition in React. It allows you to create highly reusable layout components like modals, sidebars, and panels, separating the "frame" from the "picture" inside it.</p>
+<h2 id="conditional-rendering">Conditional Rendering</h2>
+<h2 id="learning-objective_6">Learning Objective</h2>
+<p>Render JSX conditionally using ternary operators, the <code>&amp;&amp;</code> operator, and <code>if</code> statements.</p>
+<h2 id="why-this-matters_6">Why This Matters</h2>
+<p>Your application's UI is rarely static. It needs to change based on the state of your data. Is the user logged in? Is the data still loading? Is a shopping cart empty? Conditional rendering is the technique you'll use to show, hide, or change components to reflect the current state of your application.</p>
+<h2 id="discovery-phase-the-loading-problem">Discovery Phase: The Loading Problem</h2>
+<p>Imagine you're fetching data from an API. While the data is loading, you want to show a "Loading..." message. Once it arrives, you want to show the data.</p>
+<p>You might instinctively want to write an <code>if</code> statement inside your JSX, but that's not allowed.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">DataDisplay</span><span class="p">({</span><span class="w"> </span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* 🛑 Syntax Error: `if` statements are not expressions */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">isLoading</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Data</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">data</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>We need to use JavaScript <strong>expressions</strong> that can be evaluated inside the <code>{}</code>. Let's explore the three main patterns for doing this.</p>
+<h2 id="deep-dive-patterns-for-conditional-rendering">Deep Dive: Patterns for Conditional Rendering</h2>
+<h3 id="pattern-1-ternary-operator-for-if-else">Pattern 1: Ternary Operator (<code>? :</code>) for If-Else</h3>
+<p>The ternary operator is the most common way to handle simple if-else logic directly inside your JSX. It's concise and works perfectly because it's an expression.</p>
+<p><strong>Syntax</strong>: <code>condition ? expressionIfTrue : expressionIfFalse</code></p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">DataDisplay</span><span class="p">({</span><span class="w"> </span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;{</span><span class="nx">isLoading</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Data</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">data</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">AuthButton</span><span class="p">({</span><span class="w"> </span><span class="nx">isLoggedIn</span><span class="p">,</span><span class="w"> </span><span class="nx">onLogin</span><span class="p">,</span><span class="w"> </span><span class="nx">onLogout</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">isLoggedIn</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">onLogout</span><span class="p">}&gt;</span><span class="nx">Log</span><span class="w"> </span><span class="nx">Out</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">onLogin</span><span class="p">}&gt;</span><span class="nx">Log</span><span class="w"> </span><span class="nx">In</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="pattern-2-logical-and-for-if-then">Pattern 2: Logical AND (<code>&amp;&amp;</code>) for If-Then</h3>
+<p>Sometimes you want to render something <em>only if</em> a condition is true, and render nothing otherwise. The <code>&amp;&amp;</code> operator is perfect for this.</p>
+<p>In JavaScript, <code>true &amp;&amp; expression</code> always evaluates to <code>expression</code>, and <code>false &amp;&amp; expression</code> always evaluates to <code>false</code>. React doesn't render <code>true</code>, <code>false</code>, <code>null</code>, or <code>undefined</code>, so this works perfectly.</p>
+<p><strong>Syntax</strong>: <code>condition &amp;&amp; &lt;Component /&gt;</code></p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">Mailbox</span><span class="p">({</span><span class="w"> </span><span class="nx">unreadMessages</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">messageCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">unreadMessages</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Hello</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* If messageCount &gt; 0, the expression becomes the &lt;h2&gt;. */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* If messageCount is 0, the expression becomes 0, which React doesn&#39;t render. */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">messageCount</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">You</span><span class="w"> </span><span class="nx">have</span><span class="w"> </span><span class="p">{</span><span class="nx">messageCount</span><span class="p">}</span><span class="w"> </span><span class="nx">unread</span><span class="w"> </span><span class="nx">messages</span><span class="p">.&lt;/</span><span class="nt">h2</span><span class="p">&gt;}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="pattern-3-if-statements-outside-jsx">Pattern 3: <code>if</code> Statements (Outside JSX)</h3>
+<p>For more complex logic, trying to cram everything into a ternary operator can make your JSX unreadable. In these cases, it's better to prepare your JSX in variables before the <code>return</code> statement. This allows you to use standard <code>if/else</code> or <code>switch</code> statements.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">UserStatus</span><span class="p">({</span><span class="w"> </span><span class="nx">status</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">let</span><span class="w"> </span><span class="nx">content</span><span class="p">;</span><span class="w"> </span><span class="c1">// Declare a variable to hold the JSX</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;loading&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">content</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">your</span><span class="w"> </span><span class="nx">profile</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;error&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">content</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="ne">Error</span><span class="w"> </span><span class="nx">loading</span><span class="w"> </span><span class="nx">data</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;success&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">content</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="w"> </span><span class="nx">back</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">content</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span><span class="w"> </span><span class="c1">// Render nothing</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;{</span><span class="nx">content</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="production-perspective">Production Perspective</h3>
+<ul>
+<li><strong>Use ternaries for simple, opposing choices</strong> (e.g., <code>LoginButton</code> vs. <code>LogoutButton</code>).</li>
+<li><strong>Use <code>&amp;&amp;</code> for optional elements</strong> (e.g., showing a notification badge only when there are notifications).</li>
+<li><strong>Use <code>if</code> statements when logic is complex</strong> or when nested ternaries would hurt readability. Readability is key. Don't be afraid to be more verbose if it makes the component's logic clearer.</li>
+</ul>
+<h2 id="lists-and-keys">Lists and Keys</h2>
+<h2 id="learning-objective_7">Learning Objective</h2>
+<p>Render dynamic lists of components using the <code>.map()</code> method and understand the critical importance of the <code>key</code> prop for performance and state management.</p>
+<h2 id="why-this-matters_7">Why This Matters</h2>
+<p>Displaying lists of data is one of the most common tasks in web development. React makes this easy with the <code>.map()</code> method, but it has one crucial requirement: the <code>key</code> prop. Forgetting or misusing keys is one of the most common sources of bugs and performance issues for new React developers. Understanding <em>why</em> keys are necessary will help you build stable and efficient applications.</p>
+<h2 id="discovery-phase-rendering-a-list">Discovery Phase: Rendering a List</h2>
+<p>As we saw in Chapter 2, we can use <code>.map()</code> to transform an array of data into an array of JSX elements.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">products</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;p1&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Laptop&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;p2&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Mouse&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;p3&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Keyboard&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="p">];</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">ProductList</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">listItems</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">products</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">product</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="c1">// &lt;li&gt;{product.name}&lt;/li&gt; // If you do this...</span>
+<span class="w">    </span><span class="c1">// You will get a warning in the console!</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">));</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;{</span><span class="nx">listItems</span><span class="p">}&lt;/</span><span class="nt">ul</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>If you run the code without the <code>key</code> prop, it will render correctly, but you'll see this warning in your console: <code>Warning: Each child in a list should have a unique "key" prop.</code></p>
+<p>This warning is not just a suggestion; it's pointing to a potential problem.</p>
+<h2 id="deep-dive-why-keys-are-essential">Deep Dive: Why Keys are Essential</h2>
+<p>React uses a process called <strong>reconciliation</strong> to update the UI efficiently. When you re-render a component with a new list, React compares the new list of elements with the previous one and figures out the minimum number of changes needed to update the DOM (adding, removing, or re-ordering elements).</p>
+<p><strong>Keys are like name tags for list items.</strong> They give each element a stable identity across renders. This is how React can tell if an item was re-ordered, added, or removed.</p>
+<p>Imagine this list:</p>
+<ol>
+<li><code>&lt;li&gt;Alice&lt;/li&gt;</code></li>
+<li><code>&lt;li&gt;Bob&lt;/li&gt;</code></li>
+</ol>
+<p>Now, we add Charlie to the beginning:</p>
+<ol>
+<li><code>&lt;li&gt;Charlie&lt;/li&gt;</code></li>
+<li><code>&lt;li&gt;Alice&lt;/li&gt;</code></li>
+<li><code>&lt;li&gt;Bob&lt;/li&gt;</code></li>
+</ol>
+<p><strong>Without keys</strong>, React compares the lists by position. It sees:</p>
+<ul>
+<li>Position 1: <code>&lt;li&gt;Alice&lt;/li&gt;</code> changed to <code>&lt;li&gt;Charlie&lt;/li&gt;</code>. (It thinks you modified Alice).</li>
+<li>Position 2: <code>&lt;li&gt;Bob&lt;/li&gt;</code> changed to <code>&lt;li&gt;Alice&lt;/li&gt;</code>. (It thinks you modified Bob).</li>
+<li>Position 3: A new <code>&lt;li&gt;Bob&lt;/li&gt;</code> was added.
+  This is very inefficient and can lead to bugs, especially if the list items have their own state.</li>
+</ul>
+<p><strong>With stable keys (like user IDs)</strong>, React sees:</p>
+<ul>
+<li><code>key="charlie"</code>: A new element was added.</li>
+<li><code>key="alice"</code>: This element just moved.</li>
+<li><code>key="bob"</code>: This element also just moved.
+  This is much more efficient and preserves the state of the existing items.</li>
+</ul>
+<h3 id="rules-for-keys">Rules for Keys</h3>
+<ol>
+<li><strong>Keys must be unique among siblings.</strong> They don't need to be globally unique, just unique within that specific list.</li>
+<li><strong>Keys must be stable.</strong> They should not change between renders. A key should be tied to the data item itself.</li>
+<li><strong>Do not use the array index as a key (<code>.map((item, index) =&gt; &lt;li key={index}&gt;...)</code>).</strong> This is an anti-pattern. If the array is re-ordered (e.g., an item is added to the beginning), the indexes will change, defeating the purpose of the key and leading to the same problems as having no key.</li>
+</ol>
+<h3 id="common-confusion-but-using-the-index-works">Common Confusion: "But using the index works!"</h3>
+<p><strong>You might think</strong>: My list renders fine with <code>key={index}</code>, and the warning goes away. So it's okay, right?</p>
+<p><strong>Actually</strong>: It only <em>seems</em> okay for static lists that never change order. The moment you add, remove, or re-order items, you can introduce subtle and hard-to-debug state management bugs.</p>
+<p><strong>Why the confusion happens</strong>: It silences the warning, giving a false sense of security.</p>
+<p><strong>How to remember</strong>: <strong>A key should identify the data, not the position.</strong> Always use a stable ID from your data, like a database ID, a unique product SKU, or a timestamp. If you don't have a stable ID, you should generate one (e.g., with a library like <code>uuid</code>) when the data is created. Using the index is a last resort and a sign that your data structure might be flawed.</p>
+<h2 id="component-composition-patterns">Component Composition Patterns</h2>
+<h2 id="learning-objective_8">Learning Objective</h2>
+<p>Recognize and apply common composition patterns like Containment and Specialization to build flexible and reusable components.</p>
+<h2 id="why-this-matters_8">Why This Matters</h2>
+<p>Learning to create individual components is the first step. Learning how to combine them effectively is the next. These patterns are established solutions to common problems in UI development. Understanding them gives you a powerful vocabulary and toolkit for structuring your applications in a way that is maintainable, flexible, and easy to reason about.</p>
+<h2 id="deep-dive-two-foundational-patterns">Deep Dive: Two Foundational Patterns</h2>
+<h3 id="pattern-1-containment-generic-boxes">Pattern 1: Containment (Generic Boxes)</h3>
+<p>We've already seen this pattern with the <code>children</code> prop. <strong>Containment</strong> is about creating components that act as generic wrappers or containers. They don't know what their children will be ahead of time.</p>
+<p>Our <code>Card</code> component from section 3.6 is a perfect example of containment. Another classic example is a <code>Sidebar</code> or <code>Modal</code> component.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">Modal</span><span class="p">({</span><span class="w"> </span><span class="nx">title</span><span class="p">,</span><span class="w"> </span><span class="nx">children</span><span class="p">,</span><span class="w"> </span><span class="nx">onClose</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;modal-backdrop&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;modal-content&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;modal-header&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">title</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">onClose</span><span class="p">}&gt;</span><span class="o">&amp;</span><span class="nx">times</span><span class="p">;&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;modal-body&quot;</span><span class="p">&gt;{</span><span class="nx">children</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Usage:</span>
+<span class="c1">// &lt;Modal title=&quot;Confirm Deletion&quot; onClose={handleClose}&gt;</span>
+<span class="c1">//   &lt;p&gt;Are you sure you want to delete this item?&lt;/p&gt;</span>
+<span class="c1">//   &lt;button&gt;Yes, Delete&lt;/button&gt;</span>
+<span class="c1">//   &lt;button onClick={handleClose}&gt;Cancel&lt;/button&gt;</span>
+<span class="c1">// &lt;/Modal&gt;</span>
+</code></pre></div>
+
+<p>The <code>Modal</code> component provides the frame, the title, and the close button, but the actual content of the modal is passed in by the parent. This makes <code>Modal</code> incredibly reusable.</p>
+<h3 id="pattern-2-specialization-specific-versions-of-generic-components">Pattern 2: Specialization (Specific Versions of Generic Components)</h3>
+<p><strong>Specialization</strong> is about creating a more specific component that renders a more generic one and configures it with specific props. It's a way of saying "this new component is a special case of that other one."</p>
+<p>Imagine we have a generic <code>Dialog</code> component. We might find ourselves frequently creating dialogs for welcoming new users. We can create a specialized <code>WelcomeDialog</code> component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Generic Component</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">Dialog</span><span class="p">({</span><span class="w"> </span><span class="nx">title</span><span class="p">,</span><span class="w"> </span><span class="nx">message</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;dialog&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">title</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Specialized Component</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">WelcomeDialog</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// It renders the more generic Dialog and provides the specific props.</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">Dialog</span><span class="w"> </span><span class="na">title</span><span class="o">=</span><span class="s">&quot;Welcome!&quot;</span><span class="w"> </span><span class="na">message</span><span class="o">=</span><span class="s">&quot;Thank you for visiting our spacecraft!&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Usage:</span>
+<span class="c1">// &lt;WelcomeDialog /&gt;</span>
+</code></pre></div>
+
+<p>This pattern is great for reducing repetition and creating a consistent UI. If you need a <code>WarningDialog</code> or a <code>SuccessDialog</code>, you can create them in the same way, all while reusing the same underlying <code>Dialog</code> component.</p>
+<h3 id="advanced-pattern-passing-components-as-props">Advanced Pattern: Passing Components as Props</h3>
+<p>Sometimes, a component needs to render other components in multiple places. You can use the <code>children</code> prop for the main content area, but what about other "slots"? You can achieve this by passing components themselves as props.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// A generic SplitPane component with two &quot;slots&quot;: left and right.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">SplitPane</span><span class="p">({</span><span class="w"> </span><span class="nx">left</span><span class="p">,</span><span class="w"> </span><span class="nx">right</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;split-pane&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;split-pane-left&quot;</span><span class="p">&gt;{</span><span class="nx">left</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;split-pane-right&quot;</span><span class="p">&gt;{</span><span class="nx">right</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// A component to display contacts</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">Contacts</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;contacts&quot;</span><span class="p">&gt;...</span><span class="nx">contacts</span><span class="p">...&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// A component to display a chat window</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">Chat</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;chat&quot;</span><span class="p">&gt;...</span><span class="nx">chat</span><span class="w"> </span><span class="nx">messages</span><span class="p">...&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// Now, we can compose them together.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">SplitPane</span><span class="w"> </span><span class="na">left</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Contacts</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="na">right</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Chat</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This pattern provides maximum flexibility, allowing a parent component to have full control over the content of multiple "slots" within its child. You'll see this pattern used in advanced layout and UI library components.</p>
+<h2 id="module-synthesis">Module Synthesis 📋</h2>
+<h2 id="module-3-synthesis">Module 3 Synthesis</h2>
+<p>In this module, we dove into the core of how React renders UIs. We demystified <strong>JSX</strong>, revealing it as powerful syntactic sugar for <code>React.createElement</code> function calls. We learned the three essential rules of JSX: return a single root element (often with a <code>&lt;&gt;Fragment</code>), use <code>camelCase</code> for props, and embed dynamic JavaScript <code>{expressions}</code>.</p>
+<p>We established the fundamental workflow of a React developer: creating a component in its own file, exporting it, and importing it to <strong>compose</strong> it into a larger UI. We saw that components are just functions, and we pass data to them via a read-only object called <strong>props</strong>. This one-way data flow is a central concept in React.</p>
+<p>We explored how to make our UIs dynamic through <strong>conditional rendering</strong> patterns (ternaries and <code>&amp;&amp;</code>) and how to efficiently render lists of data using <code>.map()</code> with stable, unique <strong>keys</strong>. Finally, we saw how React 19 simplifies passing <strong>refs as props</strong>, removing the need for <code>forwardRef</code> and making component APIs more consistent.</p>
+<p>We concluded by naming the powerful <strong>composition patterns</strong> of Containment (using <code>children</code>) and Specialization, which provide a mental framework for building flexible and maintainable component hierarchies.</p>
+<h2 id="looking-ahead-to-chapter-4">Looking Ahead to Chapter 4</h2>
+<p>Our components can now display dynamic data passed down from their parents, but they can't yet react to user input or manage their own "memory." They are stateless. In the next chapter, <strong>State and Event Handling</strong>, we will introduce the <code>useState</code> hook. This will unlock the other half of React's power: interactivity. We'll learn how to handle user events like clicks and input changes, how to manage a component's internal state, and the crucial concept of "lifting state up" to share information between components.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-10-25 16:27:47 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>04_State_and_Event_Handling</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">01_Foundations</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-4-state-and-event-handling">Chapter 4: State and Event Handling</h1>
+<h2 id="understanding-state-in-react">Understanding State in React</h2>
+<h2 id="learning-objective">Learning Objective</h2>
+<p>Differentiate between props and state, and identify when a component needs state to manage its own data over time.</p>
+<h2 id="why-this-matters">Why This Matters</h2>
+<p>If props are how components receive information, state is how they remember things. State is the heart of interactivity in any React application. It's the component's own private memory. Understanding the fundamental difference between props (data from the outside) and state (memory on the inside) is the most critical step to building components that can respond to user interaction.</p>
+<h2 id="discovery-phase-a-button-that-doesnt-remember">Discovery Phase: A Button That Doesn't Remember</h2>
+<p>Let's build a simple "Like" button component. Our goal is for the button to change its text from "Like" to "Liked!" when clicked. A first attempt might involve trying to use props.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// This component does NOT work as intended.</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">LikeButton</span><span class="p">({</span><span class="w"> </span><span class="nx">isLiked</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">let</span><span class="w"> </span><span class="nx">buttonText</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">isLiked</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;Liked!&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Like&quot;</span><span class="p">;</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleClick</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// We want to change `isLiked` to true here, but how?</span>
+<span class="w">    </span><span class="c1">// Props are read-only, so we can&#39;t do `isLiked = true;`</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Button clicked, but nothing will change visually.&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleClick</span><span class="p">}&gt;{</span><span class="nx">buttonText</span><span class="p">}&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// Usage in App.jsx</span>
+<span class="c1">// &lt;LikeButton isLiked={false} /&gt;</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">[Like]</span>
+<span class="na">(Click)</span>
+<span class="na">→ [Like] (The text does not change)</span>
+</code></pre></div>
+
+<p>This component has a problem: it has no memory. When <code>handleClick</code> is called, it has no way to "remember" that it was clicked for the next render. We can't change the <code>isLiked</code> prop because props are read-only; they are controlled by the parent component.</p>
+<p>To solve this, the component needs its own internal memory. This is what <strong>state</strong> is for.</p>
+<h2 id="deep-dive-props-vs-state">Deep Dive: Props vs. State</h2>
+<p>Let's formally define the two.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Concept</th>
+<th style="text-align: left;">Props (Properties)</th>
+<th style="text-align: left;">State</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Purpose</strong></td>
+<td style="text-align: left;">To pass data from a parent to a child.</td>
+<td style="text-align: left;">To manage a component's own internal data.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Ownership</strong></td>
+<td style="text-align: left;">Owned and controlled by the <strong>parent</strong> component.</td>
+<td style="text-align: left;">Owned and controlled by the <strong>component itself</strong>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Mutability</strong></td>
+<td style="text-align: left;"><strong>Read-only</strong>. A component must not change its props.</td>
+<td style="text-align: left;"><strong>Mutable</strong>. Can be updated by the component.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Analogy</strong></td>
+<td style="text-align: left;">Arguments passed to a function.</td>
+<td style="text-align: left;">Variables declared inside a function.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>A simple analogy</strong>:</p>
+<ul>
+<li><strong>Props</strong> are like your name and date of birth on your driver's license. They are given to you by an external authority (the government/parent component) and you can't change them yourself.</li>
+<li><strong>State</strong> is like your current mood or whether you are hungry. It's internal to you, it changes over time based on events, and you manage it yourself.</li>
+</ul>
+<p>A component needs state when some data associated with it changes over time in response to user interaction or other events. Ask yourself: "Does this data need to be remembered by the component across renders?" If the answer is yes, it needs to be state.</p>
+<h2 id="the-usestate-hook">The useState Hook</h2>
+<h2 id="learning-objective_1">Learning Objective</h2>
+<p>Use the <code>useState</code> hook to add a state variable to a function component and update it with the setter function.</p>
+<h2 id="why-this-matters_1">Why This Matters</h2>
+<p>The <code>useState</code> hook is the fundamental tool for adding state to your components. It's the most common and important React hook you will learn. Mastering <code>useState</code> is the key that unlocks your ability to build dynamic, interactive user interfaces.</p>
+<h2 id="discovery-phase-fixing-the-like-button">Discovery Phase: Fixing the Like Button</h2>
+<p>Let's fix our broken <code>LikeButton</code> from the previous section by giving it state. To do this, we'll use the <code>useState</code> hook.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">LikeButton</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// 1. Call useState to create a state variable.</span>
+<span class="w">  </span><span class="c1">// It returns an array with two elements:</span>
+<span class="w">  </span><span class="c1">// - The current state value (`isLiked`)</span>
+<span class="w">  </span><span class="c1">// - A function to update it (`setIsLiked`)</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isLiked</span><span class="p">,</span><span class="w"> </span><span class="nx">setIsLiked</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span><span class="w"> </span><span class="c1">// `false` is the initial state.</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleClick</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 2. Call the setter function to update the state.</span>
+<span class="w">    </span><span class="nx">setIsLiked</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="c1">// 3. The UI is now driven by the state variable.</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleClick</span><span class="p">}&gt;{</span><span class="nx">isLiked</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;Liked!&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Like&quot;</span><span class="p">}&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Interactive Behavior</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">[Like]</span>
+<span class="na">(Click)</span>
+<span class="na">→ [Liked!] (The text now changes!)</span>
+</code></pre></div>
+
+<p>This works! Let's trace exactly what happens.</p>
+<h2 id="deep-dive-the-anatomy-of-usestate">Deep Dive: The Anatomy of <code>useState</code></h2>
+<h3 id="the-render-cycle-with-state">The Render Cycle with State</h3>
+<ol>
+<li>
+<p><strong>Initial Render</strong>:</p>
+<ul>
+<li><code>LikeButton</code> is called for the first time.</li>
+<li><code>useState(false)</code> is called. React initializes this piece of state to <code>false</code> and returns <code>[false, function]</code>.</li>
+<li>Our <code>isLiked</code> variable is <code>false</code>.</li>
+<li>The component returns <code>&lt;button&gt;Like&lt;/button&gt;</code>. React updates the DOM.</li>
+</ul>
+</li>
+<li>
+<p><strong>User Interaction</strong>:</p>
+<ul>
+<li>The user clicks the button.</li>
+<li>The <code>onClick</code> event fires, calling our <code>handleClick</code> function.</li>
+</ul>
+</li>
+<li>
+<p><strong>State Update</strong>:</p>
+<ul>
+<li>Inside <code>handleClick</code>, we call <code>setIsLiked(true)</code>.</li>
+<li>Calling this setter function does two things:</li>
+<li>It tells React to update the state value for the next render to <code>true</code>.</li>
+<li>It tells React to <strong>schedule a re-render</strong> of this component.</li>
+</ul>
+</li>
+<li>
+<p><strong>Re-render</strong>:</p>
+<ul>
+<li>React calls the <code>LikeButton</code> function again.</li>
+<li>This time, when <code>useState(false)</code> is encountered, React remembers the current value for this state is <code>true</code>, so it returns <code>[true, function]</code>.</li>
+<li>Our <code>isLiked</code> variable is now <code>true</code>.</li>
+<li>The component returns <code>&lt;button&gt;Liked!&lt;/button&gt;</code>.</li>
+</ul>
+</li>
+<li>
+<p><strong>DOM Update (Reconciliation)</strong>:</p>
+<ul>
+<li>React compares the new render output (<code>&lt;button&gt;Liked!&lt;/button&gt;</code>) with the old one (<code>&lt;button&gt;Like&lt;/button&gt;</code>).</li>
+<li>It sees that the text inside the button has changed and efficiently updates only that part of the real DOM.</li>
+</ul>
+</li>
+</ol>
+<h3 id="common-confusion-state-updates-seem-asynchronous">Common Confusion: State Updates Seem Asynchronous</h3>
+<p><strong>You might think</strong>: Calling <code>setCount(count + 1)</code> immediately changes the <code>count</code> variable.</p>
+<p><strong>Actually</strong>: State setter functions schedule an update. The state variable itself will only have the new value on the <em>next render</em>.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">Counter</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleClick</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// This schedules a re-render with count = 1</span>
+<span class="w">    </span><span class="nx">setCount</span><span class="p">(</span><span class="nx">count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 🛑 This will log 0, not 1!</span>
+<span class="w">    </span><span class="c1">// The `count` variable in *this* render is still 0.</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">count</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>How to remember</strong>: Think of <code>setState</code> as "requesting a re-render with this new value," not "change this variable right now."</p>
+<h3 id="updating-state-based-on-the-previous-state">Updating State Based on the Previous State</h3>
+<p>What happens if you need to update state multiple times in quick succession, like in a single event handler?</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">Counter</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleTripleClick</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setCount</span><span class="p">(</span><span class="nx">count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">);</span><span class="w"> </span><span class="c1">// With count=0, this requests a render with 1</span>
+<span class="w">    </span><span class="nx">setCount</span><span class="p">(</span><span class="nx">count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">);</span><span class="w"> </span><span class="c1">// With count=0, this also requests a render with 1</span>
+<span class="w">    </span><span class="nx">setCount</span><span class="p">(</span><span class="nx">count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">);</span><span class="w"> </span><span class="c1">// With count=0, this also requests a render with 1</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="w">  </span><span class="c1">// Clicking this button will only increment the count by 1, not 3!</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleTripleClick</span><span class="p">}&gt;</span><span class="o">+</span><span class="mf">3</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>To fix this, you can pass an <strong>updater function</strong> to the state setter. This function receives the pending state and should return the new state. React queues these functions and runs them in order.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">Counter</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleTripleClick</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Pass a function to guarantee you&#39;re working with the latest state.</span>
+<span class="w">    </span><span class="nx">setCount</span><span class="p">((</span><span class="nx">prevCount</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">prevCount</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setCount</span><span class="p">((</span><span class="nx">prevCount</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">prevCount</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setCount</span><span class="p">((</span><span class="nx">prevCount</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">prevCount</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="w">  </span><span class="c1">// Now this works correctly!</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleTripleClick</span><span class="p">}&gt;</span><span class="o">+</span><span class="mf">3</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Rule of thumb</strong>: If your new state depends on the previous state, always use the updater function form (<code>setSomething(prev =&gt; ...)</code>) to avoid bugs from stale state.</p>
+<h2 id="event-handling-in-react">Event Handling in React</h2>
+<h2 id="learning-objective_2">Learning Objective</h2>
+<p>Attach event handlers like <code>onClick</code> and <code>onChange</code> to JSX elements to trigger state updates and other logic.</p>
+<h2 id="why-this-matters_2">Why This Matters</h2>
+<p>Interactivity is all about responding to user actions. Event handlers are the bridge between the user's actions (clicking, typing, hovering) and your component's JavaScript logic. Understanding how to wire them up correctly is essential for making your application do anything useful.</p>
+<h2 id="discovery-phase-responding-to-a-click">Discovery Phase: Responding to a Click</h2>
+<p>The simplest event is a click. In HTML, you might use an <code>onclick</code> attribute with a string of JavaScript. In React, you pass a function to a camelCased prop like <code>onClick</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Version 1: Inline Arrow Function</span>
+<span class="c1">// Good for very short, simple actions.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">AlertButton</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">alert</span><span class="p">(</span><span class="s2">&quot;You clicked me!&quot;</span><span class="p">)}&gt;</span><span class="nx">Click</span><span class="w"> </span><span class="nx">Me</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// Version 2: Separate Handler Function</span>
+<span class="c1">// Better for readability and more complex logic.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">LogButton</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleClick</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Button was clicked at&quot;</span><span class="p">,</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Date</span><span class="p">());</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleClick</span><span class="p">}&gt;</span><span class="nx">Log</span><span class="w"> </span><span class="nx">Click</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Notice in <code>LogButton</code>, we pass <code>onClick={handleClick}</code>. We are passing a <em>reference</em> to the <code>handleClick</code> function. We are <strong>not</strong> calling it, like <code>onClick={handleClick()}</code>.</p>
+<h3 id="common-confusion-onclickhandleclick-vs-onclickhandleclick">Common Confusion: <code>onClick={handleClick}</code> vs. <code>onClick={handleClick()}</code></h3>
+<p><strong>You might think</strong>: I need to call the function, so I should use parentheses.</p>
+<p><strong>Actually</strong>: <code>onClick={handleClick()}</code> would call the <code>handleClick</code> function <em>during the render process</em> and pass its return value (which is <code>undefined</code>) to <code>onClick</code>. This would cause your function to fire every time the component renders, not just on click.</p>
+<p><strong>How to remember</strong>: You are telling React, "When a click happens in the future, please call this function for me." You are giving it a recipe, not the finished meal.</p>
+<h2 id="deep-dive-common-event-handling-patterns">Deep Dive: Common Event Handling Patterns</h2>
+<h3 id="passing-arguments-to-event-handlers">Passing Arguments to Event Handlers</h3>
+<p>What if you need to pass an ID or some other data to your handler? You can't just write <code>onClick={handleDelete(item.id)}</code> for the reason we just discussed. The solution is to use a wrapper arrow function.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">ItemList</span><span class="p">({</span><span class="w"> </span><span class="nx">items</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleDelete</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">id</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">alert</span><span class="p">(</span><span class="sb">`Deleting item </span><span class="si">${</span><span class="nx">id</span><span class="si">}</span><span class="sb">: </span><span class="si">${</span><span class="nx">name</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">items</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">item</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">item</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">item</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span>
+<span class="w">          </span><span class="p">{</span><span class="cm">/*</span>
+<span class="cm">            This inline arrow function is NOT called during render.</span>
+<span class="cm">            It&#39;s just defined. When the button is clicked,</span>
+<span class="cm">            this arrow function is executed, which then calls handleDelete.</span>
+<span class="cm">          */</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">handleDelete</span><span class="p">(</span><span class="nx">item</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span><span class="w"> </span><span class="nx">item</span><span class="p">.</span><span class="nx">name</span><span class="p">)}&gt;</span>
+<span class="w">            </span><span class="nx">Delete</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">))}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="reading-from-the-event-object">Reading from the Event Object</h3>
+<p>For events like <code>onChange</code> on an input, you often need to get information from the event itself. React passes a "synthetic event" object to your handler, which works similarly to the native browser event. The most common use case is getting the current value of an input with <code>event.target.value</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">SearchBar</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">query</span><span class="p">,</span><span class="w"> </span><span class="nx">setQuery</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// The event object `e` is automatically passed to the handler.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// e.target refers to the DOM element that triggered the event (the input).</span>
+<span class="w">    </span><span class="c1">// e.target.value holds its current value.</span>
+<span class="w">    </span><span class="nx">setQuery</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">        </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span>
+<span class="w">        </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Search...&quot;</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">query</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Current</span><span class="w"> </span><span class="nx">query</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">query</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This example combines state and event handling to create what's known as a <strong>controlled component</strong>, which is our next topic.</p>
+<h2 id="controlled-vs-uncontrolled-components">Controlled vs Uncontrolled Components</h2>
+<h2 id="learning-objective_3">Learning Objective</h2>
+<p>Differentiate between controlled and uncontrolled form inputs and understand the trade-offs of each approach.</p>
+<h2 id="why-this-matters_3">Why This Matters</h2>
+<p>This is a fundamental pattern for handling forms in React. Choosing the right approach is key to building forms that are predictable, easy to validate, and simple to integrate with the rest of your application's state. The "controlled" approach is the most common and powerful pattern in the React ecosystem.</p>
+<h2 id="discovery-phase-two-ways-to-get-an-inputs-value">Discovery Phase: Two Ways to Get an Input's Value</h2>
+<p>Imagine a simple form where you want to log the user's name on submit. How do we get the text from the <code>&lt;input&gt;</code>?</p>
+<h3 id="approach-1-uncontrolled-let-the-dom-handle-it">Approach 1: Uncontrolled (Let the DOM Handle It)</h3>
+<p>In an uncontrolled component, the DOM is the "source of truth" for the input's value. We don't tell the input what its value should be. We only ask for it when we need it, typically using a <code>ref</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useRef</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UncontrolledNameForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Create a ref to hold a reference to the input DOM node.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">inputRef</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">e</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="c1">// We read the value directly from the DOM node when the form is submitted.</span>
+<span class="w">    </span><span class="nx">alert</span><span class="p">(</span><span class="sb">`Hello, </span><span class="si">${</span><span class="nx">inputRef</span><span class="p">.</span><span class="nx">current</span><span class="p">.</span><span class="nx">value</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="nx">Name</span><span class="o">:</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* React will put the input&#39;s DOM element into `inputRef.current` */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">inputRef</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p">&gt;</span><span class="nx">Submit</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is simple and feels like traditional HTML/JavaScript. React isn't "in charge" of the input's value.</p>
+<h3 id="approach-2-controlled-let-react-handle-it">Approach 2: Controlled (Let React Handle It)</h3>
+<p>In a controlled component, React state is the "single source of truth." We use state to hold the input's value and update it on every keystroke.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">ControlledNameForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// 1. Create a piece of state to hold the input&#39;s value.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">name</span><span class="p">,</span><span class="w"> </span><span class="nx">setName</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">e</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="c1">// We read the value directly from our state.</span>
+<span class="w">    </span><span class="nx">alert</span><span class="p">(</span><span class="sb">`Hello, </span><span class="si">${</span><span class="nx">name</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="nx">Name</span><span class="o">:</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">          </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span>
+<span class="w">          </span><span class="err">//</span><span class="w"> </span><span class="na">2.</span><span class="w"> </span><span class="na">The</span><span class="w"> </span><span class="na">input</span><span class="err">&#39;</span><span class="na">s</span><span class="w"> </span><span class="na">value</span><span class="w"> </span><span class="na">is</span><span class="w"> </span><span class="na">driven</span><span class="w"> </span><span class="na">by</span><span class="w"> </span><span class="na">React</span><span class="w"> </span><span class="na">state.</span>
+<span class="w">          </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">name</span><span class="p">}</span>
+<span class="w">          </span><span class="err">//</span><span class="w"> </span><span class="na">3.</span><span class="w"> </span><span class="na">On</span><span class="w"> </span><span class="na">every</span><span class="w"> </span><span class="na">change</span><span class="err">,</span><span class="w"> </span><span class="na">we</span><span class="w"> </span><span class="na">update</span><span class="w"> </span><span class="na">the</span><span class="w"> </span><span class="na">React</span><span class="w"> </span><span class="na">state.</span>
+<span class="w">          </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setName</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p">&gt;</span><span class="nx">Submit</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h2 id="deep-dive-a-direct-comparison">Deep Dive: A Direct Comparison</h2>
+<p>The flow of data is completely different:</p>
+<ul>
+<li><strong>Uncontrolled</strong>: User types -&gt; DOM updates input -&gt; On submit, React reads from DOM.</li>
+<li><strong>Controlled</strong>: User types -&gt; <code>onChange</code> fires -&gt; <code>setName</code> updates state -&gt; React re-renders -&gt; Input <code>value</code> prop is updated from state.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;">Uncontrolled Components</th>
+<th style="text-align: left;">Controlled Components</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Source of Truth</strong></td>
+<td style="text-align: left;">The DOM</td>
+<td style="text-align: left;">React state</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Data Flow</strong></td>
+<td style="text-align: left;">One-way (read from DOM on demand).</td>
+<td style="text-align: left;">Two-way (state updates UI, UI updates state).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Typical Use Case</strong></td>
+<td style="text-align: left;">Very simple forms, file inputs.</td>
+<td style="text-align: left;">Most forms, especially with validation or dynamic UI.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Pros</strong></td>
+<td style="text-align: left;">Simpler setup, less code for basic forms.</td>
+<td style="text-align: left;">Enables instant validation, conditional logic, formatting.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Cons</strong></td>
+<td style="text-align: left;">Harder to implement features like instant validation.</td>
+<td style="text-align: left;">More boilerplate code for simple cases.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="production-perspective">Production Perspective</h3>
+<p><strong>Professionals almost always prefer controlled components.</strong> Why? Because modern applications require more than just getting a value on submit.</p>
+<p>With a controlled component, you can:</p>
+<ul>
+<li><strong>Perform instant validation</strong>: Show an error message as soon as the user types an invalid character.</li>
+<li><strong>Conditionally disable the submit button</strong>: <code>&lt;button disabled={name.length === 0}&gt;Submit&lt;/button&gt;</code>.</li>
+<li><strong>Enforce a specific format</strong>: Automatically add dashes to a credit card number or parentheses to a phone number as the user types.</li>
+<li><strong>Synchronize multiple inputs</strong>: Imagine a "price" slider that also updates a text input field.</li>
+</ul>
+<p>While uncontrolled components have their place for very simple, fire-and-forget forms, the controlled pattern gives you the power and flexibility needed for building rich, interactive user experiences.</p>
+<h2 id="forms-and-input-handling">Forms and Input Handling</h2>
+<h2 id="learning-objective_4">Learning Objective</h2>
+<p>Build a complete form with multiple inputs, manage their state in a single object, and handle form submission.</p>
+<h2 id="why-this-matters_4">Why This Matters</h2>
+<p>Most real-world forms have more than one field. Managing the state for each field individually can become tedious. Learning how to manage the entire form's state in a single object with a generic handler function is a scalable pattern you will use in almost every project.</p>
+<h2 id="discovery-phase-the-repetitive-approach">Discovery Phase: The Repetitive Approach</h2>
+<p>Let's build a registration form. A naive approach would be to create a separate <code>useState</code> for each field.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">RegistrationFormNaive</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">email</span><span class="p">,</span><span class="w"> </span><span class="nx">setEmail</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">password</span><span class="p">,</span><span class="w"> </span><span class="nx">setPassword</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleEmailChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setEmail</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handlePasswordChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setPassword</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">e</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">({</span><span class="w"> </span><span class="nx">email</span><span class="p">,</span><span class="w"> </span><span class="nx">password</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;email&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">email</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleEmailChange</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;password&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">password</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handlePasswordChange</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p">&gt;</span><span class="nx">Register</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This works, but imagine a form with ten fields. You'd have ten state variables and ten handler functions. This is not maintainable.</p>
+<h2 id="deep-dive-the-single-state-object-pattern">Deep Dive: The Single State Object Pattern</h2>
+<p>A much better approach is to hold the entire form's data in a single state object.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">RegistrationForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// 1. Use a single state object to hold all form data.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">formData</span><span class="p">,</span><span class="w"> </span><span class="nx">setFormData</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">password</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="c1">// 2. Create a single, generic change handler.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Destructure the name and value from the input element.</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nx">setFormData</span><span class="p">((</span><span class="nx">prevFormData</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({</span>
+<span class="w">      </span><span class="c1">// Copy the old fields</span>
+<span class="w">      </span><span class="p">...</span><span class="nx">prevFormData</span><span class="p">,</span>
+<span class="w">      </span><span class="c1">// And update the one that changed.</span>
+<span class="w">      </span><span class="c1">// The `[name]` syntax is a &quot;computed property name&quot;.</span>
+<span class="w">      </span><span class="c1">// If `name` is &quot;email&quot;, this becomes { email: value }.</span>
+<span class="w">      </span><span class="p">[</span><span class="nx">name</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="nx">value</span><span class="p">,</span>
+<span class="w">    </span><span class="p">}));</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 3. Prevent the default browser form submission (full page reload).</span>
+<span class="w">    </span><span class="nx">e</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Form submitted with data:&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">formData</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">alert</span><span class="p">(</span><span class="sb">`Registered with email: </span><span class="si">${</span><span class="nx">formData</span><span class="p">.</span><span class="nx">email</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="c1">// 4. Use the onSubmit handler on the &lt;form&gt; element.</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span><span class="nx">Email</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">        </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;email&quot;</span>
+<span class="w">        </span><span class="err">//</span><span class="w"> </span><span class="na">The</span><span class="w"> </span><span class="err">`</span><span class="na">name</span><span class="err">`</span><span class="w"> </span><span class="na">attribute</span><span class="w"> </span><span class="na">is</span><span class="w"> </span><span class="na">now</span><span class="w"> </span><span class="na">crucial</span><span class="err">!</span><span class="w"> </span><span class="na">It</span><span class="w"> </span><span class="na">must</span><span class="w"> </span><span class="na">match</span><span class="w"> </span><span class="na">the</span><span class="w"> </span><span class="na">key</span><span class="w"> </span><span class="na">in</span><span class="w"> </span><span class="na">our</span><span class="w"> </span><span class="na">state</span><span class="w"> </span><span class="na">object.</span>
+<span class="w">        </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;email&quot;</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">formData</span><span class="p">.</span><span class="nx">email</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">br</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span><span class="nx">Password</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">        </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;password&quot;</span>
+<span class="w">        </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;password&quot;</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">formData</span><span class="p">.</span><span class="nx">password</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">br</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p">&gt;</span><span class="nx">Register</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This pattern is far more scalable. To add a new <code>username</code> field, you only need to:</p>
+<ol>
+<li>Add <code>username: ''</code> to the initial state object.</li>
+<li>Add the new <code>&lt;input name="username" ... /&gt;</code> to your JSX.</li>
+</ol>
+<p>The <code>handleChange</code> function doesn't need to be touched. The key is the <code>name</code> attribute on each input, which tells the handler which property of the state object to update.</p>
+<h2 id="state-management-best-practices">State Management Best Practices</h2>
+<h2 id="learning-objective_5">Learning Objective</h2>
+<p>Apply principles for structuring and updating state effectively to avoid bugs and improve maintainability.</p>
+<h2 id="why-this-matters_5">Why This Matters</h2>
+<p>As your components grow, the complexity of their state can become a major source of bugs. Following a few simple principles for how you structure and update your state will make your components more predictable, easier to debug, and simpler to reason about.</p>
+<h2 id="discovery-phase-the-impossible-state-problem">Discovery Phase: The Impossible State Problem</h2>
+<p>Imagine you're fetching data. You might model your component's state with several booleans.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Anti-pattern: This state structure can lead to bugs.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">DataFetcher</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">setIsLoading</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isError</span><span class="p">,</span><span class="w"> </span><span class="nx">setIsError</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">data</span><span class="p">,</span><span class="w"> </span><span class="nx">setData</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// ... data fetching logic that sets these booleans ...</span>
+
+<span class="w">  </span><span class="c1">// What if a bug causes `isLoading` and `isError` to both be true?</span>
+<span class="w">  </span><span class="c1">// Our UI would be in a confusing, contradictory state.</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">isLoading</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">isError</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="ne">Error</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;{</span><span class="nx">data</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>The problem here is that our state allows for "impossible" situations. A request can't be both loading and in an error state at the same time. This structure makes it easy to write bugs where you forget to reset one boolean when setting another.</p>
+<h2 id="deep-dive-four-principles-of-good-state">Deep Dive: Four Principles of Good State</h2>
+<h3 id="principle-1-group-related-state">Principle 1: Group Related State</h3>
+<p>If two or more state variables always change together, consider grouping them into a single state variable. For our data fetching example, we can use a single <code>status</code> string.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Good: Impossible states are now impossible.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">DataFetcher</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// The status can only be one of these values at a time.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">status</span><span class="p">,</span><span class="w"> </span><span class="nx">setStatus</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;loading&quot;</span><span class="p">);</span><span class="w"> </span><span class="c1">// &#39;loading&#39;, &#39;success&#39;, &#39;error&#39;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">data</span><span class="p">,</span><span class="w"> </span><span class="nx">setData</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// ... fetch logic now calls `setStatus(&#39;success&#39;)` or `setStatus(&#39;error&#39;)` ...</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;loading&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;error&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="ne">Error</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;{</span><span class="nx">data</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="principle-2-avoid-redundant-state">Principle 2: Avoid Redundant State</h3>
+<p>Do not store data in state if it can be calculated from existing props or state during render. Storing it creates two sources of truth that can fall out of sync.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">NameForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">firstName</span><span class="p">,</span><span class="w"> </span><span class="nx">setFirstName</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">lastName</span><span class="p">,</span><span class="w"> </span><span class="nx">setLastName</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// 🛑 Anti-pattern: `fullName` is redundant state.</span>
+<span class="w">  </span><span class="c1">// const [fullName, setFullName] = useState(&#39;&#39;);</span>
+<span class="w">  </span><span class="c1">// useEffect(() =&gt; {</span>
+<span class="w">  </span><span class="c1">//   setFullName(firstName + &#39; &#39; + lastName);</span>
+<span class="w">  </span><span class="c1">// }, [firstName, lastName]);</span>
+
+<span class="w">  </span><span class="c1">// ✅ Good: Calculate it on the fly during render. It&#39;s always up to date.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">fullName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">firstName</span><span class="si">}</span><span class="sb"> </span><span class="si">${</span><span class="nx">lastName</span><span class="si">}</span><span class="sb">`</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">firstName</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setFirstName</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">lastName</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setLastName</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Full</span><span class="w"> </span><span class="nx">Name</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">fullName</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="principle-3-treat-state-as-immutable">Principle 3: Treat State as Immutable</h3>
+<p>As we've seen, you must never modify state objects or arrays directly. Always create a new one. React relies on reference equality (<code>===</code>) to detect changes. If you mutate an object, the reference doesn't change, and React won't re-render.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 🛑 BAD: Mutating state</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">handleAddItem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// This pushes to the original array. The reference doesn&#39;t change.</span>
+<span class="w">  </span><span class="c1">// React will not detect this as a state change.</span>
+<span class="w">  </span><span class="nx">todos</span><span class="p">.</span><span class="nx">push</span><span class="p">({</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="mf">4</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;New Todo&quot;</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="nx">setTodos</span><span class="p">(</span><span class="nx">todos</span><span class="p">);</span>
+<span class="p">};</span>
+
+<span class="c1">// ✅ GOOD: Creating a new array</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">handleAddItem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">newTodo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="mf">4</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;New Todo&quot;</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="c1">// The spread operator creates a new array with the new item.</span>
+<span class="w">  </span><span class="nx">setTodos</span><span class="p">([...</span><span class="nx">todos</span><span class="p">,</span><span class="w"> </span><span class="nx">newTodo</span><span class="p">]);</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="principle-4-keep-state-as-flat-as-possible">Principle 4: Keep State as Flat as Possible</h3>
+<p>Deeply nested state objects can be cumbersome to update immutably.
+<code>setFormData({...formData, user: {...formData.user, address: {...}}})</code>
+If your state becomes this nested, it's often a sign that you should either:
+a) Flatten your state structure.
+b) Split your component into smaller components, each managing its own piece of state.
+c) Use a more powerful state management hook like <code>useReducer</code> (covered in Chapter 6), which is designed for complex state transitions.</p>
+<h2 id="lifting-state-up">Lifting State Up</h2>
+<h2 id="learning-objective_6">Learning Objective</h2>
+<p>Share state between sibling components by moving it to their closest common ancestor.</p>
+<h2 id="why-this-matters_6">Why This Matters</h2>
+<p>This is the primary, built-in React pattern for component communication. Often, two child components need to share or react to the same data. "Lifting state up" is the mechanism that allows you to keep them in sync. It's the solution to the question, "How do I make component A talk to component B?"</p>
+<h2 id="discovery-phase-components-out-of-sync">Discovery Phase: Components Out of Sync</h2>
+<p>Imagine a temperature converter with two input fields: one for Celsius and one for Fahrenheit. When you type in one, the other should update. If each component manages its own temperature state, they have no way of knowing about each other.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// This does NOT work. The inputs are not connected.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">TemperatureInput</span><span class="p">({</span><span class="w"> </span><span class="nx">scale</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">temperature</span><span class="p">,</span><span class="w"> </span><span class="nx">setTemperature</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">fieldset</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">legend</span><span class="p">&gt;</span><span class="nx">Enter</span><span class="w"> </span><span class="nx">temperature</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="p">{</span><span class="nx">scale</span><span class="p">}</span><span class="o">:</span><span class="p">&lt;/</span><span class="nt">legend</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">temperature</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTemperature</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">fieldset</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">Calculator</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">TemperatureInput</span><span class="w"> </span><span class="na">scale</span><span class="o">=</span><span class="s">&quot;Celsius&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">TemperatureInput</span><span class="w"> </span><span class="na">scale</span><span class="o">=</span><span class="s">&quot;Fahrenheit&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Typing in the Celsius input only updates its own internal <code>temperature</code> state. The Fahrenheit input knows nothing about it. They are out of sync.</p>
+<h2 id="deep-dive-the-lifting-state-pattern">Deep Dive: The Lifting State Pattern</h2>
+<p>To fix this, we need a single "source of truth" for the temperature. The state needs to live in a place that can be accessed by both inputs. That place is their closest common ancestor: the <code>Calculator</code> component.</p>
+<p>The pattern involves three steps:</p>
+<ol>
+<li><strong>Move the state</strong> from the children up to the common parent.</li>
+<li><strong>Pass the state down</strong> to the children as props.</li>
+<li><strong>Pass event handlers down</strong> from the parent to the children as props, so the children can notify the parent when the state needs to change.</li>
+</ol>
+<p><strong>Data flows down. Events flow up.</strong></p>
+<p>Let's refactor our <code>Calculator</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// Helper functions for conversion</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">toCelsius</span><span class="p">(</span><span class="nx">fahrenheit</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">((</span><span class="nx">fahrenheit</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">32</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">5</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">9</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">toFahrenheit</span><span class="p">(</span><span class="nx">celsius</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="nx">celsius</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">9</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">5</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">32</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// The child component is now &quot;dumber&quot;. It just renders props and calls a function.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">TemperatureInput</span><span class="p">({</span><span class="w"> </span><span class="nx">scale</span><span class="p">,</span><span class="w"> </span><span class="nx">temperature</span><span class="p">,</span><span class="w"> </span><span class="nx">onTemperatureChange</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">fieldset</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">legend</span><span class="p">&gt;</span><span class="nx">Enter</span><span class="w"> </span><span class="nx">temperature</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="p">{</span><span class="nx">scale</span><span class="p">}</span><span class="o">:</span><span class="p">&lt;/</span><span class="nt">legend</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">temperature</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">onTemperatureChange</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">fieldset</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// The parent component is now &quot;smarter&quot;. It owns the state.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">Calculator</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// 1. State is lifted up to the parent.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">temperature</span><span class="p">,</span><span class="w"> </span><span class="nx">setTemperature</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">scale</span><span class="p">,</span><span class="w"> </span><span class="nx">setScale</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">);</span><span class="w"> </span><span class="c1">// &#39;c&#39; for Celsius, &#39;f&#39; for Fahrenheit</span>
+
+<span class="w">  </span><span class="c1">// 3. Parent defines the handlers that update its own state.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleCelsiusChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">temp</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setScale</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setTemperature</span><span class="p">(</span><span class="nx">temp</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleFahrenheitChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">temp</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setScale</span><span class="p">(</span><span class="s2">&quot;f&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setTemperature</span><span class="p">(</span><span class="nx">temp</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="c1">// Calculate the &quot;other&quot; value based on the current state.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">celsius</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">scale</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;f&quot;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">toCelsius</span><span class="p">(</span><span class="nx">temperature</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="nx">temperature</span><span class="p">;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">fahrenheit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">scale</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;c&quot;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">toFahrenheit</span><span class="p">(</span><span class="nx">temperature</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="nx">temperature</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* 2. Parent passes state and handlers down as props. */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">TemperatureInput</span>
+<span class="w">        </span><span class="na">scale</span><span class="o">=</span><span class="s">&quot;Celsius&quot;</span>
+<span class="w">        </span><span class="na">temperature</span><span class="o">=</span><span class="p">{</span><span class="nx">celsius</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onTemperatureChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleCelsiusChange</span><span class="p">}</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">TemperatureInput</span>
+<span class="w">        </span><span class="na">scale</span><span class="o">=</span><span class="s">&quot;Fahrenheit&quot;</span>
+<span class="w">        </span><span class="na">temperature</span><span class="o">=</span><span class="p">{</span><span class="nx">fahrenheit</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onTemperatureChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleFahrenheitChange</span><span class="p">}</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Let's trace the flow when you type "100" into the Celsius input:</strong></p>
+<ol>
+<li>The Celsius <code>TemperatureInput</code>'s <code>onChange</code> event fires.</li>
+<li>It calls its <code>onTemperatureChange</code> prop, which is the <code>handleCelsiusChange</code> function from the parent, with the value "100".</li>
+<li><code>handleCelsiusChange</code> in <code>Calculator</code> is executed.</li>
+<li>It calls <code>setScale('c')</code> and <code>setTemperature('100')</code>.</li>
+<li>This triggers a re-render of <code>Calculator</code>.</li>
+<li>During the re-render, <code>celsius</code> is calculated as <code>100</code> and <code>fahrenheit</code> is calculated as <code>toFahrenheit(100)</code>, which is <code>212</code>.</li>
+<li><code>Calculator</code> renders both <code>TemperatureInput</code> children, passing down the new values:<ul>
+<li>The Celsius input receives <code>temperature="100"</code>.</li>
+<li>The Fahrenheit input receives <code>temperature="212"</code>.</li>
+</ul>
+</li>
+<li>Both inputs are now in sync, with the <code>Calculator</code> component as the single source of truth.</li>
+</ol>
+<h3 id="production-perspective_1">Production Perspective</h3>
+<p>Lifting state up is the canonical way to share state in React. However, if you have to pass state through many layers of intermediate components that don't use the state themselves, it can become cumbersome. This is known as <strong>prop drilling</strong>. For these more complex scenarios, React provides the Context API (Chapter 6) and the ecosystem provides state management libraries like Zustand or Redux (Chapter 11). But for communication between siblings or close relatives, lifting state up is the correct and idiomatic solution.</p>
+<h2 id="building-interactive-uis">Building Interactive UIs</h2>
+<h2 id="learning-objective_7">Learning Objective</h2>
+<p>Synthesize all concepts from the chapter to build a small, complete, interactive application: a Todo list.</p>
+<h2 id="why-this-matters_7">Why This Matters</h2>
+<p>This section is where all the theory comes together. By building a familiar application from scratch, you will solidify your understanding of components, props, state, event handling, and lifting state up. This practical application will bridge the gap between knowing the concepts and knowing how to apply them to solve a real problem.</p>
+<h2 id="discovery-phase-todo-list-requirements">Discovery Phase: Todo List Requirements</h2>
+<p>Let's build a simple Todo list application with the following features:</p>
+<ol>
+<li>An input field and a button to add new todos.</li>
+<li>A list of all current todos.</li>
+<li>The ability to mark a todo as complete by clicking it.</li>
+<li>The ability to delete a todo.</li>
+</ol>
+<p>First, let's think about the component structure:</p>
+<ul>
+<li><code>TodoApp</code>: The main container component that will hold the application state.</li>
+<li><code>TodoForm</code>: The form for adding new todos.</li>
+<li><code>TodoList</code>: The component that renders the list of todos.</li>
+<li><code>TodoItem</code>: A single todo item, with its own toggle and delete buttons.</li>
+</ul>
+<p>Where should the state live? The list of todos needs to be accessed by <code>TodoList</code> (to display it) and modified by <code>TodoForm</code> (to add to it) and <code>TodoItem</code> (to toggle/delete from it). The closest common ancestor is <code>TodoApp</code>. Therefore, we will lift the <code>todos</code> state up to <code>TodoApp</code>.</p>
+<h2 id="deep-dive-building-the-todo-app">Deep Dive: Building the Todo App</h2>
+<p>Here is the complete code for the application, broken down by component.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="c1">// --- Child Component: TodoItem ---</span>
+<span class="c1">// Receives a todo object and handler functions from its parent.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">TodoItem</span><span class="p">({</span><span class="w"> </span><span class="nx">todo</span><span class="p">,</span><span class="w"> </span><span class="nx">onToggle</span><span class="p">,</span><span class="w"> </span><span class="nx">onDelete</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">textDecoration</span><span class="o">:</span><span class="w"> </span><span class="nx">todo</span><span class="p">.</span><span class="nx">completed</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;line-through&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;none&quot;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">span</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">onToggle</span><span class="p">(</span><span class="nx">todo</span><span class="p">.</span><span class="nx">id</span><span class="p">)}&gt;{</span><span class="nx">todo</span><span class="p">.</span><span class="nx">text</span><span class="p">}&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">onDelete</span><span class="p">(</span><span class="nx">todo</span><span class="p">.</span><span class="nx">id</span><span class="p">)}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">marginLeft</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;10px&quot;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">        </span><span class="o">&amp;</span><span class="nx">times</span><span class="p">;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// --- Child Component: TodoList ---</span>
+<span class="c1">// Receives the list of todos and handlers, and maps over them to render TodoItems.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">TodoList</span><span class="p">({</span><span class="w"> </span><span class="nx">todos</span><span class="p">,</span><span class="w"> </span><span class="nx">onToggle</span><span class="p">,</span><span class="w"> </span><span class="nx">onDelete</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">todos</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">todo</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">TodoItem</span>
+<span class="w">          </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">todo</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span>
+<span class="w">          </span><span class="na">todo</span><span class="o">=</span><span class="p">{</span><span class="nx">todo</span><span class="p">}</span>
+<span class="w">          </span><span class="na">onToggle</span><span class="o">=</span><span class="p">{</span><span class="nx">onToggle</span><span class="p">}</span>
+<span class="w">          </span><span class="na">onDelete</span><span class="o">=</span><span class="p">{</span><span class="nx">onDelete</span><span class="p">}</span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">))}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// --- Child Component: TodoForm ---</span>
+<span class="c1">// Manages its own state for the input field. Calls a parent function on submit.</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">TodoForm</span><span class="p">({</span><span class="w"> </span><span class="nx">onAddTodo</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">newTodoText</span><span class="p">,</span><span class="w"> </span><span class="nx">setNewTodoText</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">e</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">newTodoText</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="p">;</span><span class="w"> </span><span class="c1">// Don&#39;t add empty todos</span>
+<span class="w">    </span><span class="nx">onAddTodo</span><span class="p">(</span><span class="nx">newTodoText</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setNewTodoText</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span><span class="w"> </span><span class="c1">// Clear input after submission</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">        </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">newTodoText</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setNewTodoText</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">        </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;What needs to be done?&quot;</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p">&gt;</span><span class="nx">Add</span><span class="w"> </span><span class="nx">Todo</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// --- Parent Component: TodoApp ---</span>
+<span class="c1">// Owns the state and the logic for manipulating it.</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">TodoApp</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">todos</span><span class="p">,</span><span class="w"> </span><span class="nx">setTodos</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">([</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Learn React&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="mf">2</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Build a Todo App&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">]);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleAddTodo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">text</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">newTodo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="nb">Date</span><span class="p">.</span><span class="nx">now</span><span class="p">(),</span><span class="w"> </span><span class="c1">// A simple way to get a unique ID</span>
+<span class="w">      </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="nx">text</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">    </span><span class="nx">setTodos</span><span class="p">((</span><span class="nx">prevTodos</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">[...</span><span class="nx">prevTodos</span><span class="p">,</span><span class="w"> </span><span class="nx">newTodo</span><span class="p">]);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleToggle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">id</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setTodos</span><span class="p">((</span><span class="nx">prevTodos</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span>
+<span class="w">      </span><span class="nx">prevTodos</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">todo</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span>
+<span class="w">        </span><span class="nx">todo</span><span class="p">.</span><span class="nx">id</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">id</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="nx">todo</span><span class="p">,</span><span class="w"> </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="o">!</span><span class="nx">todo</span><span class="p">.</span><span class="nx">completed</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="nx">todo</span><span class="p">,</span>
+<span class="w">      </span><span class="p">),</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleDelete</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">id</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setTodos</span><span class="p">((</span><span class="nx">prevTodos</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">prevTodos</span><span class="p">.</span><span class="nx">filter</span><span class="p">((</span><span class="nx">todo</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">todo</span><span class="p">.</span><span class="nx">id</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="nx">id</span><span class="p">));</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Todo</span><span class="w"> </span><span class="nx">List</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">TodoForm</span><span class="w"> </span><span class="na">onAddTodo</span><span class="o">=</span><span class="p">{</span><span class="nx">handleAddTodo</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">TodoList</span><span class="w"> </span><span class="na">todos</span><span class="o">=</span><span class="p">{</span><span class="nx">todos</span><span class="p">}</span><span class="w"> </span><span class="na">onToggle</span><span class="o">=</span><span class="p">{</span><span class="nx">handleToggle</span><span class="p">}</span><span class="w"> </span><span class="na">onDelete</span><span class="o">=</span><span class="p">{</span><span class="nx">handleDelete</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="tracing-the-data-flow-for-delete">Tracing the Data Flow for "Delete"</h3>
+<p>Let's trace what happens when you click the delete button (<code>&amp;times;</code>) for the "Learn React" todo:</p>
+<ol>
+<li>The <code>onClick</code> handler in the <code>TodoItem</code> component is triggered.</li>
+<li>It calls its <code>onDelete</code> prop, passing up its own <code>todo.id</code> (which is <code>1</code>).</li>
+<li>The <code>onDelete</code> prop in <code>TodoItem</code> was passed down from <code>TodoList</code>, which in turn received it from <code>TodoApp</code>. So, the <code>handleDelete</code> function in <code>TodoApp</code> is executed with the argument <code>1</code>.</li>
+<li><code>handleDelete</code> calls <code>setTodos</code>, passing an updater function.</li>
+<li>The updater function receives the current <code>todos</code> array and filters it, returning a new array that no longer contains the todo with <code>id: 1</code>.</li>
+<li>React schedules a re-render of <code>TodoApp</code> with the new, shorter <code>todos</code> array.</li>
+<li><code>TodoApp</code> re-renders <code>TodoList</code>, passing the new array as a prop.</li>
+<li><code>TodoList</code> re-renders and maps over the new array. It no longer creates a <code>TodoItem</code> for the deleted todo.</li>
+<li>React updates the DOM to remove the corresponding <code>&lt;li&gt;</code> element.</li>
+</ol>
+<p>This example perfectly illustrates the "state flows down, events flow up" architecture that is central to building applications in React.</p>
+<h2 id="module-synthesis">Module Synthesis 📋</h2>
+<h2 id="module-4-synthesis">Module 4 Synthesis</h2>
+<p>In this pivotal chapter, we brought our components to life with interactivity. We established the crucial distinction between <strong>props</strong> (read-only data from a parent) and <strong>state</strong> (a component's internal, mutable memory). We learned that state is what a component needs when it must "remember" something that changes over time.</p>
+<p>Our primary tool for this was the <strong><code>useState</code> hook</strong>, which provides a state variable and a setter function to schedule re-renders. We saw how to connect user actions to our logic using <strong>event handlers</strong> like <code>onClick</code> and <code>onChange</code>, and learned the correct way to pass arguments to them.</p>
+<p>We dove deep into the world of forms, contrasting <strong>uncontrolled components</strong> (where the DOM is the source of truth) with the more powerful and idiomatic <strong>controlled components</strong> (where React state is the source of truth). We mastered the scalable pattern of managing form state in a single object with a generic <code>handleChange</code> function.</p>
+<p>Finally, we tied it all together with the most important pattern for component communication: <strong>lifting state up</strong>. By moving state to the closest common ancestor, we enabled sibling components to stay in sync, creating a unidirectional data flow where "state flows down, and events flow up." The final Todo list project demonstrated how all these concepts synthesize to create a complete, interactive application.</p>
+<h2 id="looking-ahead-to-chapter-5">Looking Ahead to Chapter 5</h2>
+<p>Our components are now interactive, but they exist in a bubble. They don't yet know how to interact with the "outside world"—for example, how to fetch data from a server when they first appear, or how to clean up a connection when they disappear. In the next chapter, <strong>Component Lifecycle and Effects</strong>, we will introduce the <code>useEffect</code> hook. This will allow us to synchronize our components with external systems, manage side effects, and gain full control over the component's lifecycle.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-10-25 16:27:47 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>
