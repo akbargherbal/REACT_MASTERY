@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appendix BCommon Pitfalls and How to Avoid Them</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">APPENDICES</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-appendix-b-common-pitfalls-and-how-to-avoid-them">Chapter Appendix B: Common Pitfalls and How to Avoid Them</h1>
+<h2 id="introduction-learning-from-failure">Introduction: Learning from Failure</h2>
+<h2 id="introduction-learning-from-failure_1">Introduction: Learning from Failure</h2>
+<p>In software development, and especially in a complex ecosystem like React/Next.js, errors are not just obstacles; they are data. A well-understood error message or a piece of unexpected behavior is a map that can lead you to a deeper understanding of the system.</p>
+<p>This appendix is a catalog of the most common pitfalls encountered by developers. We won't just show you the solution. Instead, for each pitfall, we will:</p>
+<ol>
+<li><strong>Create the problem</strong>: Write code that works, but has a subtle, hidden flaw.</li>
+<li><strong>Trigger the failure</strong>: Demonstrate a scenario where the flaw causes a crash, a bug, or a performance issue.</li>
+<li><strong>Diagnose the evidence</strong>: Systematically analyze the browser console, React DevTools, and other signals to understand the root cause.</li>
+<li><strong>Implement the fix</strong>: Apply the correct pattern or API to solve the problem.</li>
+<li><strong>Generalize the lesson</strong>: Extract the underlying principle so you can avoid similar issues in the future.</li>
+</ol>
+<p>By learning to recognize the <em>symptoms</em> of these common problems, you'll be able to debug your own applications faster and write more robust code from the start.</p>
+<h2 id="pitfall-1-the-useeffect-dependency-trap">Pitfall 1: The useEffect Dependency Trap</h2>
+<h2 id="pitfall-1-the-useeffect-dependency-trap_1">Pitfall 1: The <code>useEffect</code> Dependency Trap</h2>
+<p>The <code>useEffect</code> hook is powerful, but its dependency array is the source of two of the most common bugs in React: stale data from missing dependencies, and infinite loops from unstable dependencies.</p>
+<h3 id="iteration-1-the-stale-data-bug">Iteration 1: The Stale Data Bug</h3>
+<p>Let's build a component that fetches and displays user data based on a <code>userId</code> prop.</p>
+<p><strong>Phase 1: Establish the Reference Implementation</strong></p>
+<p>Our anchor example is a <code>UserProfile</code> component inside a <code>Dashboard</code> page. The <code>Dashboard</code> has buttons to switch between different users.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+└── app/
+    ├── page.tsx            (Our Dashboard)
+    └── UserProfile.tsx     (Our component with the flaw)
+</code></pre></div>
+
+<p>Here is the initial, flawed implementation.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/UserProfile.tsx</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="c1">// A mock API function</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">fetchUserData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Fetching data for user </span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">...`</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// Simulate network delay</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">resolve</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">resolve</span><span class="p">,</span><span class="w"> </span><span class="mf">500</span><span class="p">));</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">userId</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;1&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Alice&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;alice@example.com&#39;</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">userId</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;2&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Bob&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;bob@example.com&#39;</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">userId</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Unknown User&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;unknown@example.com&#39;</span><span class="w"> </span><span class="p">};</span>
+<span class="p">};</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">loading</span><span class="p">,</span><span class="w"> </span><span class="nx">setLoading</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setLoading</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">fetchUserData</span><span class="p">(</span><span class="nx">userId</span><span class="p">)</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">data</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">setLoading</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="w">      </span><span class="p">});</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// &lt;-- THE FLAW: Empty dependency array</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">loading</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">profile</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">No</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="nx">data</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">User</span><span class="w"> </span><span class="nx">Profile</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;&lt;</span><span class="nt">strong</span><span class="p">&gt;</span><span class="nx">ID</span><span class="o">:</span><span class="p">&lt;/</span><span class="nt">strong</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">id</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;&lt;</span><span class="nt">strong</span><span class="p">&gt;</span><span class="nx">Name</span><span class="o">:</span><span class="p">&lt;/</span><span class="nt">strong</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;&lt;</span><span class="nt">strong</span><span class="p">&gt;</span><span class="nx">Email</span><span class="o">:</span><span class="p">&lt;/</span><span class="nt">strong</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>And here is the parent <code>Dashboard</code> component that lets us switch the <code>userId</code> prop.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">UserProfile</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./UserProfile&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">currentUserId</span><span class="p">,</span><span class="w"> </span><span class="nx">setCurrentUserId</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Dashboard</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCurrentUserId</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">)}&gt;</span><span class="nx">View</span><span class="w"> </span><span class="nx">Alice</span><span class="w"> </span><span class="p">(</span><span class="nx">ID</span><span class="w"> </span><span class="mf">1</span><span class="p">)&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCurrentUserId</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">)}&gt;</span><span class="nx">View</span><span class="w"> </span><span class="nx">Bob</span><span class="w"> </span><span class="p">(</span><span class="nx">ID</span><span class="w"> </span><span class="mf">2</span><span class="p">)&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">hr</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">UserProfile</span><span class="w"> </span><span class="na">userId</span><span class="o">=</span><span class="p">{</span><span class="nx">currentUserId</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Phase 2: Progressive Problem Exposure</strong></p>
+<p>The component loads Alice's data correctly on the initial render. But what happens when we click the "View Bob" button?</p>
+<p><strong>Failure Demonstration</strong></p>
+<ol>
+<li>The page loads, showing "Loading profile..." then Alice's data.</li>
+<li>Click the "View Bob (ID 2)" button.</li>
+<li>The UI briefly shows "Loading profile..." again, but then displays <strong>Alice's data</strong>, not Bob's.</li>
+</ol>
+<h3 id="diagnostic-analysis-reading-the-failure">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+The UI shows stale data. After clicking to view Bob, the loading state flickers, but the profile for Alice is displayed again.</p>
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">Fetching</span><span class="w"> </span><span class="nv">data</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">user</span><span class="w"> </span><span class="mi">1</span>...
+
+<span class="nv">Warning</span>:<span class="w"> </span><span class="nv">React</span><span class="w"> </span><span class="nv">Hook</span><span class="w"> </span><span class="nv">useEffect</span><span class="w"> </span><span class="nv">has</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">missing</span><span class="w"> </span><span class="nv">dependency</span>:<span class="w"> </span><span class="s1">&#39;userId&#39;</span>.<span class="w"> </span><span class="nv">Either</span><span class="w"> </span><span class="k">include</span><span class="w"> </span><span class="nv">it</span><span class="w"> </span><span class="nv">or</span><span class="w"> </span><span class="nv">remove</span><span class="w"> </span><span class="nv">the</span><span class="w"> </span><span class="nv">dependency</span><span class="w"> </span><span class="nv">array</span>.
+<span class="w">    </span><span class="nv">at</span><span class="w"> </span><span class="nv">UserProfile</span><span class="w"> </span><span class="ss">(</span>.<span class="o">/</span><span class="nv">src</span><span class="o">/</span><span class="nv">app</span><span class="o">/</span><span class="nv">UserProfile</span>.<span class="nv">tsx</span>:<span class="mi">25</span>:<span class="mi">3</span><span class="ss">)</span>
+<span class="w">    </span>...
+</code></pre></div>
+
+<p><strong>React DevTools Evidence</strong>:
+-   <strong>Components Tab (after clicking "View Bob")</strong>:
+    -   <code>Dashboard</code> component: State <code>currentUserId</code> is <code>"2"</code>.
+    -   <code>UserProfile</code> component: Props <code>userId</code> is <code>"2"</code>.
+    -   <code>UserProfile</code> component: State <code>user</code> is <code>{id: '1', name: 'Alice', ...}</code>. <strong>This is the mismatch!</strong> The prop is correct, but the state is stale.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: The profile doesn't update to the selected user.</p>
+<ul>
+<li>Expected: See Bob's profile after clicking the button.</li>
+<li>Actual: See Alice's profile again.</li>
+</ul>
+</li>
+<li>
+<p><strong>What the console reveals</strong>: React is explicitly telling us what's wrong. The warning <code>React Hook useEffect has a missing dependency: 'userId'</code> is the smoking gun. It means our effect reads the <code>userId</code> prop but has not "subscribed" to its changes.</p>
+</li>
+<li>
+<p><strong>What DevTools shows</strong>: We can confirm the diagnosis. The <code>UserProfile</code> component <em>is</em> receiving the new prop (<code>userId="2"</code>), but its internal state (<code>user</code>) is not being updated correctly because the <code>useEffect</code> that fetches data isn't running again.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: The <code>useEffect</code> has an empty dependency array (<code>[]</code>), which tells React: "Only run this effect once, after the initial render, and never again."</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: An empty dependency array is for one-time setup code. Our effect is not setup code; it needs to re-synchronize with the outside world (the <code>userId</code> prop) whenever it changes.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A way to tell React to re-run the effect whenever the <code>userId</code> prop changes.</p>
+</li>
+</ol>
+<p><strong>Solution Implementation</strong></p>
+<p>The fix is to follow the advice from the console warning and add <code>userId</code> to the dependency array.</p>
+<p><strong>Before</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/UserProfile.tsx</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setLoading</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">fetchUserData</span><span class="p">(</span><span class="nx">userId</span><span class="p">)</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">data</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">setLoading</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="w">      </span><span class="p">});</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// &lt;-- PROBLEM</span>
+</code></pre></div>
+
+<p><strong>After</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/UserProfile.tsx</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setLoading</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">fetchUserData</span><span class="p">(</span><span class="nx">userId</span><span class="p">)</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">data</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">setLoading</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="w">      </span><span class="p">});</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span><span class="w"> </span><span class="c1">// &lt;-- FIX</span>
+</code></pre></div>
+
+<p><strong>Verification</strong></p>
+<p>Now, when you click "View Bob (ID 2)", the console logs <code>Fetching data for user 2...</code> and Bob's profile correctly appears. The component now correctly synchronizes with its props.</p>
+<hr />
+<h3 id="iteration-2-the-infinite-loop-bug">Iteration 2: The Infinite Loop Bug</h3>
+<p>Now let's explore the opposite problem. What happens when a dependency changes on <em>every single render</em>?</p>
+<p>Let's modify our component to accept a <code>config</code> object prop containing fetch options.</p>
+<p><strong>Phase 1: Establish the Reference Implementation</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/UserProfileWithConfig.tsx</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="c1">// ... (fetchUserData and User interface are the same)</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">fetchUserData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">options</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">priority</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Fetching data for user </span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb"> with priority </span><span class="si">${</span><span class="nx">options</span><span class="p">.</span><span class="nx">priority</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">resolve</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">resolve</span><span class="p">,</span><span class="w"> </span><span class="mf">500</span><span class="p">));</span>
+<span class="w">  </span><span class="c1">// ... (same user data logic)</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">userId</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;User &#39;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">userId</span><span class="p">,</span><span class="w"> </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;user@example.com&#39;</span><span class="w"> </span><span class="p">};</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileWithConfig</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="p">,</span><span class="w"> </span><span class="nx">options</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">options</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">priority</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">fetchUserData</span><span class="p">(</span><span class="nx">userId</span><span class="p">,</span><span class="w"> </span><span class="nx">options</span><span class="p">)</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">data</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">      </span><span class="p">});</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">,</span><span class="w"> </span><span class="nx">options</span><span class="p">]);</span><span class="w"> </span><span class="c1">// &lt;-- THE FLAW: &#39;options&#39; is an object</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">User</span><span class="w"> </span><span class="nx">Profile</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;&lt;</span><span class="nt">strong</span><span class="p">&gt;</span><span class="nx">Name</span><span class="o">:</span><span class="p">&lt;/</span><span class="nt">strong</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>And the parent component that passes the <code>options</code> object.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx (modified)</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">UserProfileWithConfig</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./UserProfileWithConfig&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">currentUserId</span><span class="p">,</span><span class="w"> </span><span class="nx">setCurrentUserId</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// This component re-renders when its state changes.</span>
+<span class="w">  </span><span class="c1">// On every render, a NEW options object is created.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">fetchOptions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">priority</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;high&#39;</span><span class="w"> </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Dashboard</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCurrentUserId</span><span class="p">(</span><span class="nx">currentUserId</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;1&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;2&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1&#39;</span><span class="p">)}&gt;</span>
+<span class="w">        </span><span class="nx">Switch</span><span class="w"> </span><span class="nx">User</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">hr</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">UserProfileWithConfig</span><span class="w"> </span><span class="na">userId</span><span class="o">=</span><span class="p">{</span><span class="nx">currentUserId</span><span class="p">}</span><span class="w"> </span><span class="na">options</span><span class="o">=</span><span class="p">{</span><span class="nx">fetchOptions</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Phase 2: Progressive Problem Exposure</strong></p>
+<p>Run the app. What do you see?</p>
+<p><strong>Failure Demonstration</strong></p>
+<p>The component gets stuck in a loop. The "Loading..." message might flicker, and if you open the browser's developer tools, you'll see a storm of activity.</p>
+<h3 id="diagnostic-analysis-reading-the-failure_1">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+The UI is stuck. The browser tab may become slow or unresponsive.</p>
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">Fetching</span><span class="w"> </span><span class="nv">data</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">user</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="nv">with</span><span class="w"> </span><span class="nv">priority</span><span class="w"> </span><span class="nv">high</span>
+<span class="nv">Fetching</span><span class="w"> </span><span class="nv">data</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">user</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="nv">with</span><span class="w"> </span><span class="nv">priority</span><span class="w"> </span><span class="nv">high</span>
+<span class="nv">Fetching</span><span class="w"> </span><span class="nv">data</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">user</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="nv">with</span><span class="w"> </span><span class="nv">priority</span><span class="w"> </span><span class="nv">high</span>
+<span class="nv">Fetching</span><span class="w"> </span><span class="nv">data</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">user</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="nv">with</span><span class="w"> </span><span class="nv">priority</span><span class="w"> </span><span class="nv">high</span>
+...<span class="w"> </span><span class="ss">(</span><span class="nv">repeats</span><span class="w"> </span><span class="nv">indefinitely</span><span class="ss">)</span>
+</code></pre></div>
+
+<p><strong>Network Tab Analysis</strong>:
+-   If <code>fetchUserData</code> made a real network request, you would see hundreds of identical requests being sent to the server every few seconds.</p>
+<p><strong>React DevTools Evidence</strong>:
+-   <strong>Profiler</strong>: If you record a profiling session, you'll see the <code>UserProfileWithConfig</code> component re-rendering continuously and rapidly. The reason for the update will be that its props changed.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: A broken, looping component.</li>
+<li><strong>What the console reveals</strong>: The <code>fetchUserData</code> function is being called over and over again, without any user interaction.</li>
+<li><strong>What DevTools shows</strong>: The component is trapped in a render loop.</li>
+<li>
+<p><strong>Root cause identified</strong>: The <code>options</code> prop is an object. In JavaScript, <code>{ priority: 'high' } !== { priority: 'high' }</code>. They are two separate objects in memory. The <code>Dashboard</code> component creates a <em>new</em> <code>fetchOptions</code> object on every single render. This new object is passed as a prop to <code>UserProfileWithConfig</code>. Inside <code>UserProfileWithConfig</code>, the <code>useEffect</code> hook compares the <code>options</code> dependency from the previous render to the current one. Since the object reference is always new, React thinks the dependency has changed and re-runs the effect. The effect calls <code>setUser</code>, which triggers a re-render, and the cycle begins again.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: We are passing an unstable dependency (a newly created object) to <code>useEffect</code>, guaranteeing it will run on every render.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A way to provide a <em>stable</em> reference for the <code>options</code> object so that it only changes when its contents actually change.</p>
+</li>
+</ol>
+<p><strong>Solution Implementation</strong></p>
+<p>We can solve this in the parent component by memoizing the <code>options</code> object with the <code>useMemo</code> hook. This ensures that the same object reference is returned as long as its own dependencies (<code>[]</code> in this case) don't change.</p>
+<p><strong>Before</strong> (Parent Component):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx</span>
+
+<span class="c1">// ...</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">currentUserId</span><span class="p">,</span><span class="w"> </span><span class="nx">setCurrentUserId</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// PROBLEM: New object on every render</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">fetchOptions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">priority</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;high&#39;</span><span class="w"> </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">UserProfileWithConfig</span><span class="w"> </span><span class="na">userId</span><span class="o">=</span><span class="p">{</span><span class="nx">currentUserId</span><span class="p">}</span><span class="w"> </span><span class="na">options</span><span class="o">=</span><span class="p">{</span><span class="nx">fetchOptions</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Parent Component):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useMemo</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// &lt;-- Import useMemo</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">UserProfileWithConfig</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./UserProfileWithConfig&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">currentUserId</span><span class="p">,</span><span class="w"> </span><span class="nx">setCurrentUserId</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// FIX: Memoize the object so its reference is stable</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">fetchOptions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({</span><span class="w"> </span><span class="nx">priority</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;high&#39;</span><span class="w"> </span><span class="p">}),</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">UserProfileWithConfig</span><span class="w"> </span><span class="na">userId</span><span class="o">=</span><span class="p">{</span><span class="nx">currentUserId</span><span class="p">}</span><span class="w"> </span><span class="na">options</span><span class="o">=</span><span class="p">{</span><span class="nx">fetchOptions</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Verification</strong></p>
+<p>After this change, the component loads once and stops. The infinite loop is broken. The <code>fetchOptions</code> object now has a stable identity across re-renders of <code>Dashboard</code>, so <code>useEffect</code> in the child component no longer re-runs unnecessarily.</p>
+<h3 id="common-failure-modes-and-their-signatures">Common Failure Modes and Their Signatures</h3>
+<h4 id="symptom-data-doesnt-update-when-props-change">Symptom: Data doesn't update when props change.</h4>
+<p><strong>Browser behavior</strong>: UI shows stale information.
+<strong>Console pattern</strong>: <code>Warning: React Hook useEffect has a missing dependency...</code>
+<strong>DevTools clues</strong>: The component's props have updated, but its state has not.
+<strong>Root cause</strong>: A variable used inside <code>useEffect</code> is missing from the dependency array.
+<strong>Solution</strong>: Add the missing variable to the dependency array. Use the <code>exhaustive-deps</code> lint rule to catch this automatically.</p>
+<h4 id="symptom-infinite-re-render-loop">Symptom: Infinite re-render loop.</h4>
+<p><strong>Browser behavior</strong>: Page is stuck, flickering, or unresponsive.
+<strong>Console pattern</strong>: A <code>console.log</code> inside the component or effect fires continuously.
+<strong>Network Tab clues</strong>: A flood of identical network requests.
+<strong>Root cause</strong>: A dependency in a <code>useEffect</code> array is an object, array, or function that is re-created on every render.
+<strong>Solution</strong>: Memoize the unstable dependency in the parent component using <code>useMemo</code> (for objects/arrays) or <code>useCallback</code> (for functions).</p>
+<h2 id="pitfall-2-direct-state-mutation">Pitfall 2: Direct State Mutation</h2>
+<h2 id="pitfall-2-direct-state-mutation_1">Pitfall 2: Direct State Mutation</h2>
+<p>React's re-rendering mechanism is triggered when it detects a change in state or props. For objects and arrays, this detection relies on a change in the object's <em>reference</em> (its identity in memory), not its contents. Mutating state directly breaks this mechanism, leading to a UI that doesn't update.</p>
+<h3 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h3>
+<p>Let's build a simple to-do list. The user can add items to a list stored in state. Our flawed version will use <code>Array.prototype.push</code> to add a new item.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/TodoList.tsx</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">Todo</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">TodoList</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">todos</span><span class="p">,</span><span class="w"> </span><span class="nx">setTodos</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Todo</span><span class="err">[]</span><span class="p">&gt;([</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">1</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Learn React&#39;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">newTodoText</span><span class="p">,</span><span class="w"> </span><span class="nx">setNewTodoText</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleAddTodo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">newId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">todos</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nb">Math</span><span class="p">.</span><span class="nx">max</span><span class="p">(...</span><span class="nx">todos</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">t</span><span class="p">.</span><span class="nx">id</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">1</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="kt">1</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">newTodo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">newId</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="kt">newTodoText</span><span class="w"> </span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// THE FLAW: Mutating the state array directly</span>
+<span class="w">    </span><span class="nx">todos</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">newTodo</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setTodos</span><span class="p">(</span><span class="nx">todos</span><span class="p">);</span><span class="w"> </span><span class="c1">// We are setting state with the SAME array reference</span>
+
+<span class="w">    </span><span class="nx">setNewTodoText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Todo</span><span class="w"> </span><span class="nx">List</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">todos</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">todo</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">todo</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;{</span><span class="nx">todo</span><span class="p">.</span><span class="nx">text</span><span class="p">}&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">        </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">newTodoText</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setNewTodoText</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">        </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;New todo...&quot;</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleAddTodo</span><span class="p">}&gt;</span><span class="nx">Add</span><span class="w"> </span><span class="nx">Todo</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="phase-2-progressive-problem-exposure">Phase 2: Progressive Problem Exposure</h3>
+<p>Type something into the input field and click "Add Todo".</p>
+<p><strong>Failure Demonstration</strong></p>
+<p>Absolutely nothing happens in the UI. The new to-do item does not appear in the list.</p>
+<h3 id="diagnostic-analysis-reading-the-failure_2">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+The list on the screen does not change after clicking the "Add" button.</p>
+<p><strong>Browser Console Output</strong>:
+There are no errors or warnings. The silence is what makes this bug so confusing for beginners.</p>
+<p><strong>React DevTools Evidence</strong>:
+-   <strong>Components Tab</strong>:
+    1.  Select the <code>TodoList</code> component.
+    2.  Look at the <code>todos</code> state hook. Initially, it's an array with one item.
+    3.  Click "Add Todo" in your app.
+    4.  <strong>Crucially, the state value shown in DevTools <em>updates</em>!</strong> You will see the new to-do item in the array.
+    5.  However, the component has not re-rendered. The profiler would show zero renders for this action.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: A button that doesn't work.</li>
+<li><strong>What the console reveals</strong>: Nothing. This is a logic error, not a syntax error.</li>
+<li><strong>What DevTools shows</strong>: This is the key. The state <em>data</em> has changed, but React didn't <em>detect</em> the change. This tells us the problem is with how we're signaling the update to React.</li>
+<li><strong>Root cause identified</strong>: We are directly mutating the <code>todos</code> array with <code>todos.push(newTodo)</code>. This modifies the array in place. When we call <code>setTodos(todos)</code>, we are passing the <em>exact same array reference</em> that React already has. React performs a quick reference check (<code>Object.is(oldState, newState)</code>), sees that the reference hasn't changed, and concludes that no update is necessary, so it bails out of the re-render.</li>
+<li><strong>Why the current approach can't solve this</strong>: Mutation is fundamentally incompatible with React's state update detection for objects and arrays.</li>
+<li><strong>What we need</strong>: To create a <em>new</em> array containing all the old items plus the new one, and pass this new array to our state setter function.</li>
+</ol>
+<p><strong>Solution Implementation</strong></p>
+<p>We must replace the mutation with an immutable update. The spread syntax is perfect for this.</p>
+<p><strong>Before</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/TodoList.tsx</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleAddTodo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="w">    </span><span class="c1">// PROBLEM: Mutation</span>
+<span class="w">    </span><span class="nx">todos</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">newTodo</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setTodos</span><span class="p">(</span><span class="nx">todos</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="p">};</span>
+</code></pre></div>
+
+<p><strong>After</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/TodoList.tsx</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleAddTodo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">newId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">todos</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nb">Math</span><span class="p">.</span><span class="nx">max</span><span class="p">(...</span><span class="nx">todos</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">t</span><span class="p">.</span><span class="nx">id</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">1</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="kt">1</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">newTodo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">newId</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="kt">newTodoText</span><span class="w"> </span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// FIX: Create a new array</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">newTodos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[...</span><span class="nx">todos</span><span class="p">,</span><span class="w"> </span><span class="nx">newTodo</span><span class="p">];</span>
+<span class="w">    </span><span class="nx">setTodos</span><span class="p">(</span><span class="nx">newTodos</span><span class="p">);</span>
+
+<span class="w">    </span><span class="nx">setNewTodoText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+</code></pre></div>
+
+<p><strong>Verification</strong></p>
+<p>Now, when you add a new to-do, it instantly appears in the list. By creating a new array, we give <code>setTodos</code> a new reference. React detects the change and correctly re-renders the component.</p>
+<h3 id="general-principle-treat-state-as-immutable">General Principle: Treat State as Immutable</h3>
+<ul>
+<li><strong>For Arrays</strong>: Never use mutating methods like <code>push</code>, <code>pop</code>, <code>splice</code>, <code>sort</code>, or <code>reverse</code> on state arrays. Instead, use non-mutating alternatives like <code>concat</code>, <code>slice</code>, <code>filter</code>, <code>map</code>, or the spread syntax (<code>[...]</code>).</li>
+<li><strong>For Objects</strong>: Never modify properties directly (e.g., <code>state.user.name = 'new'</code>). Instead, create a new object using the spread syntax (<code>{...state, user: {...state.user, name: 'new'}}</code>).</li>
+</ul>
+<h2 id="pitfall-3-misunderstanding-server-vs-client-components">Pitfall 3: Misunderstanding Server vs. Client Components</h2>
+<h2 id="pitfall-3-misunderstanding-server-vs-client-components_1">Pitfall 3: Misunderstanding Server vs. Client Components</h2>
+<p>Next.js 13+ with the App Router introduces a powerful but initially confusing distinction: Server Components and Client Components. The most common pitfall is trying to use client-side features (like hooks) in a Server Component.</p>
+<h3 id="iteration-1-using-hooks-on-the-server">Iteration 1: Using Hooks on the Server</h3>
+<p>By default, all components inside the <code>app</code> directory are <strong>Server Components</strong>. They run on the server and are great for fetching data and reducing the client-side JavaScript bundle. However, they cannot use state, effects, or browser-only APIs.</p>
+<p><strong>Phase 1: Establish the Reference Implementation</strong></p>
+<p>A developer new to the App Router wants to add a simple counter to their homepage.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx (Flawed Version)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// &lt;-- This is the problem</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span><span class="w"> </span><span class="c1">// &lt;-- Hooks are client-side only</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">my</span><span class="w"> </span><span class="nx">page</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCount</span><span class="p">(</span><span class="nx">count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span><span class="nx">Increment</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="phase-2-progressive-problem-exposure_1">Phase 2: Progressive Problem Exposure</h3>
+<p>As soon as you save this file, your Next.js development server will show an error.</p>
+<p><strong>Failure Demonstration</strong></p>
+<p>The application fails to render, and Next.js displays a helpful error overlay in the browser.</p>
+<h3 id="diagnostic-analysis-reading-the-failure_3">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+A full-screen error overlay from Next.js.</p>
+<p><strong>Terminal Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code>./src/app/page.tsx
+ReactServerComponentsError:
+
+You<span class="s1">&#39;re importing a component that needs useState. It only works in a Client Component but none of its parents are marked with &quot;use client&quot;, so they&#39;</span>re<span class="w"> </span>Server<span class="w"> </span>Components<span class="w"> </span>by<span class="w"> </span>default.
+
+Learn<span class="w"> </span>more:<span class="w"> </span>https://nextjs.org/docs/getting-started/react-essentials
+
+<span class="w">   </span>,-<span class="o">[</span>/Users/dev/project/src/app/page.tsx:1:1<span class="o">]</span>
+<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>import<span class="w"> </span><span class="o">{</span><span class="w"> </span>useState<span class="w"> </span><span class="o">}</span><span class="w"> </span>from<span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="w">   </span>:<span class="w">          </span>^^^^^^^^^
+<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="p">|</span>
+<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="nb">export</span><span class="w"> </span>default<span class="w"> </span><span class="k">function</span><span class="w"> </span>HomePage<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="p">|</span><span class="w">   </span>const<span class="w"> </span><span class="o">[</span>count,<span class="w"> </span>setCount<span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>useState<span class="o">(</span><span class="m">0</span><span class="o">)</span><span class="p">;</span>
+<span class="w">   </span><span class="sb">`</span>----
+
+Maybe<span class="w"> </span>one<span class="w"> </span>of<span class="w"> </span>these<span class="w"> </span>should<span class="w"> </span>be<span class="w"> </span>marked<span class="w"> </span>as<span class="w"> </span>a<span class="w"> </span>client<span class="w"> </span>entry<span class="w"> </span>with<span class="w"> </span><span class="s2">&quot;use client&quot;</span>:
+<span class="w">  </span>./src/app/page.tsx
+</code></pre></div>
+
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: A clear, immediate error.</li>
+<li><strong>What the console reveals</strong>: The error message is incredibly specific. It identifies the exact hook (<code>useState</code>), explains that it only works in a Client Component, and even suggests the solution: marking the file with <code>"use client"</code>.</li>
+<li><strong>Root cause identified</strong>: We are attempting to use a client-side hook (<code>useState</code>) inside a Server Component. Server Components are stateless and non-interactive.</li>
+<li><strong>What we need</strong>: A way to tell Next.js that this component (or at least part of it) needs to be interactive and run in the browser.</li>
+</ol>
+<p><strong>Solution Implementation</strong></p>
+<p>The fix is exactly what the error message suggests: add the <code>"use client"</code> directive to the top of the file. This marks the component and all components imported into it as part of the client-side JavaScript bundle.</p>
+<p><strong>Before</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="c1">// ...</span>
+</code></pre></div>
+
+<p><strong>After</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// &lt;-- FIX: Mark this as a Client Component</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="c1">// ...</span>
+</code></pre></div>
+
+<p><strong>Verification</strong></p>
+<p>The page now loads and the counter works as expected.</p>
+<hr />
+<h3 id="iteration-2-the-client-component-island-pattern">Iteration 2: The "Client Component Island" Pattern</h3>
+<p>The first solution works, but it has a performance cost. By making the entire <code>HomePage</code> a Client Component, we've sent all of its code and its dependencies to the browser, even the static parts like the <code>&lt;h1&gt;</code>.</p>
+<p>A better approach is to keep as much of the page as a Server Component as possible and isolate the interactive parts into their own small Client Components. This is often called the "Client Component Island" pattern.</p>
+<p><strong>Problematic Approach</strong>: Making the whole page a client component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// &lt;-- Makes the entire page a client component</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Header</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../components/Header&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Header is now also client-side</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Footer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../components/Footer&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Footer is now also client-side</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">SomeLargeStaticComponent</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../components/SomeLargeStaticComponent&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Header</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">SomeLargeStaticComponent</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">my</span><span class="w"> </span><span class="nx">page</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCount</span><span class="p">(</span><span class="nx">count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span><span class="nx">Increment</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Footer</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>The issue here is that <code>Header</code>, <code>Footer</code>, and <code>SomeLargeStaticComponent</code> might be completely static, but because they are imported into a Client Component, they become part of the client bundle.</p>
+<p><strong>Solution: Isolate Interactivity</strong></p>
+<ol>
+<li>Create a new, small component just for the counter.</li>
+<li>Mark <em>only that component</em> as <code>"use client"</code>.</li>
+<li>Import this new Client Component into your main Server Component page.</li>
+</ol>
+<p><strong>Step 1: Create the Client Component</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/CounterButton.tsx</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">CounterButton</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCount</span><span class="p">(</span><span class="nx">count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span><span class="nx">Increment</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Step 2: Use it in the Server Component Page</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx (Now a Server Component again)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">Header</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../components/Header&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Footer</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../components/Footer&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">SomeLargeStaticComponent</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../components/SomeLargeStaticComponent&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">CounterButton</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../components/CounterButton&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// &lt;-- Import the client island</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// This component is now a Server Component. No hooks allowed here.</span>
+<span class="w">  </span><span class="c1">// It can do server-only things like directly accessing a database.</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Header</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">SomeLargeStaticComponent</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">my</span><span class="w"> </span><span class="nx">page</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">CounterButton</span><span class="w"> </span><span class="p">/&gt;</span><span class="w"> </span><span class="p">{</span><span class="cm">/* &lt;-- Render the interactive island */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Footer</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Improvement</strong>:
+-   <strong>Performance</strong>: The initial page load is faster because only the JavaScript for <code>CounterButton</code> is sent to the client. <code>HomePage</code>, <code>Header</code>, <code>Footer</code>, and <code>SomeLargeStaticComponent</code> are rendered to static HTML on the server.
+-   <strong>Architecture</strong>: This encourages a clean separation of concerns between server-side data fetching/rendering and client-side interactivity.</p>
+<p><strong>When to Apply This Solution</strong>:
+-   <strong>What it optimizes for</strong>: Minimal client-side JavaScript, faster initial page loads (Time to Interactive).
+-   <strong>What it sacrifices</strong>: A small amount of architectural complexity (creating more, smaller components).
+-   <strong>When to choose this approach</strong>: Almost always. This is the idiomatic way to build apps with the Next.js App Router. Start with Server Components and introduce Client Components only when you need interactivity.
+-   <strong>When to avoid this approach</strong>: If a page is almost entirely interactive (like a complex dashboard or a web app like Figma), it might be simpler to make the whole page a Client Component.</p>
+<h2 id="synthesis-a-pitfall-decision-guide">Synthesis: A Pitfall Decision Guide</h2>
+<h2 id="synthesis-a-pitfall-decision-guide_1">Synthesis: A Pitfall Decision Guide</h2>
+<p>This table summarizes the common pitfalls, their tell-tale symptoms, and the tools you can use to diagnose them. Use this as a quick reference when you encounter strange behavior in your application.</p>
+<table>
+<thead>
+<tr>
+<th>Symptom in Browser</th>
+<th>Potential Cause</th>
+<th>Key Diagnostic Tool(s)</th>
+<th>Solution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UI doesn't update after a prop changes.</td>
+<td>Missing <code>useEffect</code> dependency.</td>
+<td>React DevTools (props updated, state stale), Console Warning</td>
+<td>Add the missing prop/variable to the <code>useEffect</code> dependency array.</td>
+</tr>
+<tr>
+<td>Page freezes, flickers, or makes endless API calls.</td>
+<td>Unstable dependency in <code>useEffect</code> (object/fn).</td>
+<td>Network Tab, React Profiler, Console Logs</td>
+<td>Memoize the dependency with <code>useMemo</code> or <code>useCallback</code> in the parent.</td>
+</tr>
+<tr>
+<td>UI doesn't update after clicking a button to add/change data.</td>
+<td>Direct state mutation (<code>.push()</code>, <code>obj.prop=</code>).</td>
+<td>React DevTools (state value changes, but no re-render)</td>
+<td>Use immutable patterns (spread syntax <code>...</code>, <code>.map</code>, <code>.filter</code>).</td>
+</tr>
+<tr>
+<td>Next.js error overlay: "useState only works in a Client Component".</td>
+<td>Using hooks or event handlers in a Server Component.</td>
+<td>Next.js Error Overlay, Terminal Output</td>
+<td>Add <code>"use client"</code> to the top of the file.</td>
+</tr>
+<tr>
+<td>Slow initial load, large JS bundle for a mostly static page.</td>
+<td>Over-using <code>"use client"</code> on large parent components.</td>
+<td>Bundle Analyzer (<code>@next/bundle-analyzer</code>), Network Tab</td>
+<td>Isolate interactivity into small "Client Component Islands".</td>
+</tr>
+<tr>
+<td>Many unrelated components re-render when one piece of state changes.</td>
+<td>Prop drilling or an unstable Context value.</td>
+<td>React Profiler (highlight updates)</td>
+<td>Use component composition or stabilize Context value with <code>useMemo</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>By internalizing these patterns of failure, you move from guessing to systematic debugging. Every bug becomes a lesson that deepens your understanding of the React and Next.js mental model.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:41:02 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

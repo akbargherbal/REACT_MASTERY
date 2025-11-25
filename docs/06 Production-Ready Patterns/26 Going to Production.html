@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>26 Going to Production</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">06 Production-Ready Patterns</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-26-going-to-production">Chapter 26: Going to Production</h1>
+<h2 id="environment-configuration">Environment configuration</h2>
+<h2 id="the-final-mile-from-localhost-to-live">The Final Mile: From Localhost to Live</h2>
+<p>So far, we've built, tested, and optimized our application in a development environment. But <code>localhost:3000</code> is a safe, predictable bubble. The real world—production—is messy. It involves different databases, secret API keys, third-party services, and the terrifying prospect of real users encountering real bugs.</p>
+<p>This chapter is about bridging that gap. We'll take a simple, functional component and harden it for production, introducing the essential practices that separate hobby projects from professional, scalable applications.</p>
+<h3 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h3>
+<p>Our anchor example for this chapter will be a <code>ProductDetailsPage</code>. It's a common, realistic component that fetches data and displays it. This component will be our patient, and we will perform a series of production-hardening procedures on it.</p>
+<p>Here is its initial, naive implementation. It works perfectly on a developer's machine, but it's a ticking time bomb in a real deployment pipeline.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">src</span><span class="o">/</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">app</span><span class="o">/</span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="n">product</span><span class="o">/</span>
+<span class="w">        </span><span class="err">└──</span><span class="w"> </span><span class="o">[</span><span class="n">productId</span><span class="o">]/</span>
+<span class="w">            </span><span class="err">└──</span><span class="w"> </span><span class="n">page</span><span class="p">.</span><span class="n">tsx</span><span class="w">      </span><span class="err">←</span><span class="w"> </span><span class="n">Our</span><span class="w"> </span><span class="n">reference</span><span class="w"> </span><span class="n">implementation</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/product/[productId]/page.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">notFound</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/navigation&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">Product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getProduct</span><span class="p">(</span><span class="nx">productId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="p">&lt;</span><span class="nt">Product</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// DANGER: Hardcoded API endpoint</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`http://api.local/products/</span><span class="si">${</span><span class="nx">productId</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">.</span><span class="nx">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// This will be handled by the nearest error.js file</span>
+<span class="w">    </span><span class="c1">// For now, let&#39;s assume it might just fail silently or return null</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDetailsPage</span><span class="p">({</span><span class="w"> </span><span class="nx">params</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">params</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">productId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">getProduct</span><span class="p">(</span><span class="nx">params</span><span class="p">.</span><span class="nx">productId</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">product</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">notFound</span><span class="p">();</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">description</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">strong</span><span class="p">&gt;</span><span class="nx">$</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">price</span><span class="p">.</span><span class="nx">toFixed</span><span class="p">(</span><span class="mf">2</span><span class="p">)}&lt;/</span><span class="nt">strong</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="p">&gt;</span><span class="nx">Add</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">Cart</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="the-first-failure-the-hardcoded-api-endpoint">The First Failure: The Hardcoded API Endpoint</h3>
+<p>Our component works, but it has a fatal flaw: <code>const res = await fetch('http://api.local/products/...')</code>.</p>
+<p><strong>Current Limitation</strong>: This URL is hardcoded. This is fine for local development where we might be running a mock API server at <code>api.local</code>. But what happens when we deploy?</p>
+<p><strong>New Scenario Introduction</strong>: We need to deploy this application to two environments:
+1.  <strong>Staging</strong>: A pre-production environment for QA testing. Its API is at <code>https://api.staging.my-app.com</code>.
+2.  <strong>Production</strong>: The live site for real users. Its API is at <code>https://api.my-app.com</code>.</p>
+<p>With the current code, we would have to manually change the URL in <code>page.tsx</code>, commit, and deploy for each environment. This is error-prone, inefficient, and a guaranteed way to cause a production outage by accidentally pointing the live site to the staging API.</p>
+<p>This isn't a "bug" that throws an error; it's an architectural failure. The code is not portable across environments.</p>
+<h3 id="technique-introduced-environment-variables">Technique Introduced: Environment Variables</h3>
+<p>To solve this, we must decouple configuration from code. The standard mechanism for this is <strong>environment variables</strong>. Next.js has built-in support for them using <code>.env</code> files.</p>
+<p><strong>How it works</strong>:
+- You create files like <code>.env.local</code>, <code>.env.development</code>, <code>.env.production</code>.
+- Next.js loads the appropriate file based on the current environment (<code>npm run dev</code> vs. <code>npm run build</code>).
+- These variables are exposed to your application via <code>process.env</code>.</p>
+<p><strong>CRITICAL: Server vs. Browser Variables</strong>
+By default, all variables defined in <code>.env</code> files are only available on the server (e.g., in Server Components, <code>getStaticProps</code>, <code>getServerSideProps</code>, API routes). This is a security feature to prevent leaking secret keys to the client.</p>
+<p>To expose a variable to the browser, you <strong>must</strong> prefix it with <code>NEXT_PUBLIC_</code>.</p>
+<p>Our <code>ProductDetailsPage</code> is a Server Component, so it runs on the server. We don't strictly <em>need</em> the <code>NEXT_PUBLIC_</code> prefix for the API URL. However, it's a common pattern to fetch data on the client side as well. To keep our configuration consistent and flexible, we'll adopt the <code>NEXT_PUBLIC_</code> prefix as a good practice for non-secret URLs.</p>
+<h3 id="solution-implementation-using-environment-variables">Solution Implementation: Using Environment Variables</h3>
+<p>Let's create our environment configuration files.</p>
+<p><strong>Step 1: Create <code>.env</code> files</strong>
+These files should be in the root of your project and <strong>added to <code>.gitignore</code></strong> (except for <code>.env.example</code>).</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># .env.development.local (for `npm run dev`)</span>
+<span class="nv">NEXT_PUBLIC_API_URL</span><span class="o">=</span><span class="s2">&quot;http://api.local&quot;</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1"># .env.production.local (for `npm run build` and `npm run start`)</span>
+<span class="c1"># In a real project, these values would be set by your hosting provider (Vercel, Netlify, AWS).</span>
+<span class="nv">NEXT_PUBLIC_API_URL</span><span class="o">=</span><span class="s2">&quot;https://api.my-app.com&quot;</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1"># .gitignore</span>
+.env*.local
+</code></pre></div>
+
+<p><strong>Step 2: Refactor the component</strong></p>
+<p>Now, we'll update our <code>getProduct</code> function to use the new environment variable.</p>
+<p><strong>Before</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/product/[productId]/page.tsx (snippet)</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getProduct</span><span class="p">(</span><span class="nx">productId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">Product</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// DANGER: Hardcoded API endpoint</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`http://api.local/products/</span><span class="si">${</span><span class="nx">productId</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/product/[productId]/page.tsx (snippet)</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getProduct</span><span class="p">(</span><span class="nx">productId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">Product</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ✅ Reads configuration from the environment</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">apiUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">NEXT_PUBLIC_API_URL</span><span class="p">;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`</span><span class="si">${</span><span class="nx">apiUrl</span><span class="si">}</span><span class="sb">/products/</span><span class="si">${</span><span class="nx">productId</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification">Verification</h3>
+<p>How do we know it's working?</p>
+<ol>
+<li>
+<p><strong>Run in Development</strong>:</p>
+<ul>
+<li>Start the dev server: <code>npm run dev</code>.</li>
+<li>In the terminal where you ran the command, Next.js will log which <code>.env</code> files were loaded.</li>
+<li>When you visit a product page, the <code>fetch</code> call will go to <code>http://api.local/products/...</code>.</li>
+</ul>
+</li>
+<li>
+<p><strong>Run in Production Mode (Locally)</strong>:</p>
+<ul>
+<li>Build the app: <code>npm run build</code>.</li>
+<li>Start the production server: <code>npm run start</code>.</li>
+<li>When you visit a product page, the <code>fetch</code> call will now go to <code>https://api.my-app.com/products/...</code>.</li>
+</ul>
+</li>
+</ol>
+<p><strong>Expected vs. Actual Improvement</strong>:
+- <strong>Expected</strong>: The application should point to different APIs depending on the environment it's running in, without any code changes.
+- <strong>Actual</strong>: The application now correctly separates configuration from code, making it portable and safe to deploy across multiple environments.</p>
+<p><strong>Limitation Preview</strong>: Our configuration is now flexible, but our feature set is rigid. What if we want to ship code for a new feature but not show it to all users immediately? This leads us to feature flags.</p>
+<h2 id="feature-flags-with-simple-patterns">Feature flags with simple patterns</h2>
+<h2 id="iteration-1-controlling-feature-rollouts">Iteration 1: Controlling Feature Rollouts</h2>
+<p>Our component now correctly fetches data from different environments. But in modern software development, "shipping" and "releasing" are two separate events. We want to be able to merge and deploy code to production <em>without</em> making it visible to all users.</p>
+<p><strong>Current state recap</strong>: Our <code>ProductDetailsPage</code> shows product information.
+<strong>Current limitation</strong>: Any new UI we add to the component is immediately live for everyone upon deployment.</p>
+<p><strong>New scenario introduction</strong>: The product team wants to add a "Customer Reviews" section to the page. However, the backend API for reviews isn't ready yet, and they want to release it to internal employees first for testing before a public launch.</p>
+<h3 id="the-failure-all-or-nothing-deployments">The Failure: All-or-Nothing Deployments</h3>
+<p>The naive approach is to just build the new component and add it to the page.</p>
+<p>Let's create a placeholder <code>CustomerReviews</code> component.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">src</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">app</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">product</span><span class="o">/</span>
+<span class="err">│</span><span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="o">[</span><span class="n">productId</span><span class="o">]/</span>
+<span class="err">│</span><span class="w">           </span><span class="err">└──</span><span class="w"> </span><span class="n">page</span><span class="p">.</span><span class="n">tsx</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">components</span><span class="o">/</span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="n">CustomerReviews</span><span class="p">.</span><span class="n">tsx</span><span class="w">   </span><span class="err">←</span><span class="w"> </span><span class="k">New</span><span class="w"> </span><span class="n">component</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/CustomerReviews.tsx</span>
+
+<span class="c1">// A placeholder component for now.</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getReviews</span><span class="p">(</span><span class="nx">productId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Fetching reviews for </span><span class="si">${</span><span class="nx">productId</span><span class="si">}</span><span class="sb">...`</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// Simulate network delay</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">resolve</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">resolve</span><span class="p">,</span><span class="w"> </span><span class="mf">500</span><span class="p">));</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">1</span><span class="p">,</span><span class="w"> </span><span class="nx">author</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Jane Doe&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">comment</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Amazing product!&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">2</span><span class="p">,</span><span class="w"> </span><span class="nx">author</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;John Smith&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">comment</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Could be better.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">CustomerReviews</span><span class="p">({</span><span class="w"> </span><span class="nx">productId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">productId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">reviews</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">getReviews</span><span class="p">(</span><span class="nx">productId</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">marginTop</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">borderTop</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1px solid #ccc&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">paddingTop</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1rem&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Customer</span><span class="w"> </span><span class="nx">Reviews</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">reviews</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">review</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">review</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">strong</span><span class="p">&gt;{</span><span class="nx">review</span><span class="p">.</span><span class="nx">author</span><span class="p">}&lt;/</span><span class="nt">strong</span><span class="p">&gt;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">review</span><span class="p">.</span><span class="nx">comment</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, let's add it to our page.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/product/[productId]/page.tsx (Updated)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">notFound</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/navigation&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">CustomerReviews</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/components/CustomerReviews&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// ← Import</span>
+
+<span class="c1">// ... (getProduct function is the same)</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDetailsPage</span><span class="p">({</span><span class="w"> </span><span class="nx">params</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">params</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">productId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">getProduct</span><span class="p">(</span><span class="nx">params</span><span class="p">.</span><span class="nx">productId</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">product</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">notFound</span><span class="p">();</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">description</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">strong</span><span class="p">&gt;</span><span class="nx">$</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">price</span><span class="p">.</span><span class="nx">toFixed</span><span class="p">(</span><span class="mf">2</span><span class="p">)}&lt;/</span><span class="nt">strong</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="p">&gt;</span><span class="nx">Add</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">Cart</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* The new feature is now live for everyone */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">CustomerReviews</span><span class="w"> </span><span class="na">productId</span><span class="o">=</span><span class="p">{</span><span class="nx">params</span><span class="p">.</span><span class="nx">productId</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="diagnostic-analysis-reading-the-failure">Diagnostic Analysis: Reading the Failure</h3>
+<p>This isn't a code failure; it's a process failure.</p>
+<p><strong>Browser Behavior</strong>: Every single user who visits the product page after this deployment will see the "Customer Reviews" section.</p>
+<p><strong>Business Impact</strong>:
+- If the backend API isn't ready, the component might crash or show an error, degrading the user experience.
+- We can't get feedback from a small group of users before a full rollout.
+- If we find a bug in the new feature, we have to do a full rollback/hotfix deployment, which is stressful and slow.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: A new feature appears, whether it's ready or not.</li>
+<li><strong>What the console reveals</strong>: Nothing is wrong from a technical perspective. The code runs as written.</li>
+<li><strong>Root cause identified</strong>: The visibility of a feature is directly tied to its presence in the codebase.</li>
+<li><strong>Why the current approach can't solve this</strong>: We have no mechanism to control UI visibility at runtime based on configuration.</li>
+<li><strong>What we need</strong>: A way to conditionally render the <code>CustomerReviews</code> component based on a flag that we can change without a new deployment. This is a <strong>feature flag</strong> (or feature toggle).</li>
+</ol>
+<h3 id="technique-introduced-feature-flags-via-environment-variables">Technique Introduced: Feature Flags via Environment Variables</h3>
+<p>For simple on/off toggles, we can reuse the environment variable system we just learned. This is a powerful pattern for enabling and disabling features during a rollout.</p>
+<h3 id="solution-implementation-adding-a-feature-flag">Solution Implementation: Adding a Feature Flag</h3>
+<p><strong>Step 1: Add the feature flag to your <code>.env</code> files</strong></p>
+<p>We'll add a new variable, <code>NEXT_PUBLIC_FEATURE_REVIEWS_ENABLED</code>. We set it to <code>true</code> in development but would keep it <code>false</code> in the production environment file until we're ready to launch.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># .env.development.local</span>
+<span class="nv">NEXT_PUBLIC_API_URL</span><span class="o">=</span><span class="s2">&quot;http://api.local&quot;</span>
+<span class="nv">NEXT_PUBLIC_FEATURE_REVIEWS_ENABLED</span><span class="o">=</span><span class="s2">&quot;true&quot;</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1"># .env.production.local</span>
+<span class="nv">NEXT_PUBLIC_API_URL</span><span class="o">=</span><span class="s2">&quot;https://api.my-app.com&quot;</span>
+<span class="nv">NEXT_PUBLIC_FEATURE_REVIEWS_ENABLED</span><span class="o">=</span><span class="s2">&quot;false&quot;</span><span class="w"> </span><span class="c1"># Off in production by default</span>
+</code></pre></div>
+
+<p><strong>Step 2: Conditionally render the component</strong></p>
+<p>Now we update the page to check this flag.</p>
+<p><strong>Before</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/product/[productId]/page.tsx (snippet)</span>
+<span class="c1">// ...</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">CustomerReviews</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/components/CustomerReviews&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDetailsPage</span><span class="p">({</span><span class="w"> </span><span class="nx">params</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... product details ... */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">CustomerReviews</span><span class="w"> </span><span class="na">productId</span><span class="o">=</span><span class="p">{</span><span class="nx">params</span><span class="p">.</span><span class="nx">productId</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/product/[productId]/page.tsx (snippet)</span>
+<span class="c1">// ...</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">CustomerReviews</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/components/CustomerReviews&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDetailsPage</span><span class="p">({</span><span class="w"> </span><span class="nx">params</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">params</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">productId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">getProduct</span><span class="p">(</span><span class="nx">params</span><span class="p">.</span><span class="nx">productId</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// ✅ Read the feature flag from the environment</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">reviewsEnabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">NEXT_PUBLIC_FEATURE_REVIEWS_ENABLED</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;true&#39;</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">product</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">notFound</span><span class="p">();</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... product details ... */</span><span class="p">}</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ✅ Conditionally render the new feature */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">reviewsEnabled</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">CustomerReviews</span><span class="w"> </span><span class="na">productId</span><span class="o">=</span><span class="p">{</span><span class="nx">params</span><span class="p">.</span><span class="nx">productId</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification_1">Verification</h3>
+<p>Now, when we run the application:
+-   <code>npm run dev</code>: The <code>CustomerReviews</code> component will be visible because <code>NEXT_PUBLIC_FEATURE_REVIEWS_ENABLED</code> is <code>"true"</code> in <code>.env.development.local</code>.
+-   <code>npm run build</code> &amp; <code>npm run start</code>: The component will be hidden, because the flag is <code>"false"</code> in <code>.env.production.local</code>.</p>
+<p>To release the feature, we would simply update the environment variable in our production hosting environment (e.g., on Vercel's dashboard) from <code>false</code> to <code>true</code>. The change would take effect on the next deployment, or immediately if our provider supports it, without any code changes.</p>
+<h3 id="when-to-apply-this-solution">When to Apply This Solution</h3>
+<ul>
+<li><strong>What it optimizes for</strong>: Decoupling deployment from release, risk reduction, and controlled rollouts.</li>
+<li><strong>What it sacrifices</strong>: Adds a small amount of complexity to the code and requires managing environment variables.</li>
+<li><strong>When to choose this approach</strong>: For simple on/off toggles for new features, especially during development and initial launch phases.</li>
+<li><strong>When to avoid this approach</strong>: This simple pattern is not suitable for more complex scenarios like:<ul>
+<li><strong>Percentage-based rollouts</strong> (e.g., "show to 10% of users").</li>
+<li><strong>User-targeting</strong> (e.g., "show only to users in Canada").</li>
+<li><strong>A/B testing</strong>.
+For these, you should use a dedicated feature flagging service like LaunchDarkly, Vercel Flags, or Statsig.</li>
+</ul>
+</li>
+</ul>
+<p><strong>Limitation Preview</strong>: Our app is now configurable and its features can be toggled. But we have no idea what users are doing. Are they even clicking "Add to Cart"? We are flying blind. Next, we need to add analytics.</p>
+<h2 id="analytics-integration">Analytics integration</h2>
+<h2 id="iteration-2-measuring-user-behavior">Iteration 2: Measuring User Behavior</h2>
+<p>Our <code>ProductDetailsPage</code> is deployed, configurable, and has a feature-flagged component. But from a business perspective, it's a black box. We need data to understand how users interact with our product.</p>
+<p><strong>Current state recap</strong>: We have a product page with an "Add to Cart" button.
+<strong>Current limitation</strong>: We have no way of knowing if anyone ever clicks that button. We can't answer basic questions like "Which products are most popular?" or "Does the new reviews section increase cart additions?".</p>
+<p><strong>New scenario introduction</strong>: The marketing team wants to track every time a user clicks the "Add to Cart" button, along with the product ID and price.</p>
+<h3 id="the-failure-flying-blind">The Failure: Flying Blind</h3>
+<p>Without analytics, we are making business decisions based on guesswork. The "failure" is a complete lack of visibility into user behavior, which prevents us from improving our product.</p>
+<h3 id="diagnostic-analysis-reading-the-failure_1">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>: A user clicks "Add to Cart". The UI might update, but no tracking information is sent.</p>
+<p><strong>Network Tab Analysis</strong>:
+-   Request pattern: No requests are sent to any analytics service upon button click.
+-   Evidence: The only network activity is the initial page load and data fetch.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: A normal button click.</li>
+<li><strong>What the business experiences</strong>: Zero data.</li>
+<li><strong>Root cause identified</strong>: The application lacks any client-side instrumentation to report user actions.</li>
+<li><strong>Why the current approach can't solve this</strong>: Our component is a Server Component. User interactions like clicks happen in the browser, on the client. We need to introduce client-side interactivity and a way to communicate with a third-party analytics service.</li>
+<li><strong>What we need</strong>:<ul>
+<li>A way to handle client-side events (<code>onClick</code>). This requires converting part of our page to a Client Component.</li>
+<li>A small, reusable library for sending analytics events.</li>
+<li>Configuration for the analytics service (e.g., an tracking ID).</li>
+</ul>
+</li>
+</ol>
+<h3 id="technique-introduced-client-components-and-analytics-abstraction">Technique Introduced: Client Components and Analytics Abstraction</h3>
+<p>To handle user interactions, we must use a Client Component (<code>"use client"</code>). We'll extract the interactive parts of our page into a new component.</p>
+<p>We will also create a simple analytics library (<code>lib/analytics.ts</code>) to abstract the details of the specific analytics provider we're using. This is a crucial pattern: it means if we ever switch from Google Analytics to Mixpanel, we only have to change this one file, not every single component that tracks an event.</p>
+<h3 id="solution-implementation">Solution Implementation</h3>
+<p><strong>Step 1: Create the Analytics Abstraction</strong></p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+└── lib/
+    └── analytics.ts   ← New analytics helper
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/lib/analytics.ts</span>
+
+<span class="c1">// This is a mock analytics library. In a real app, you would install</span>
+<span class="c1">// a package like `@vercel/analytics` or `analytics.js` and call its methods here.</span>
+
+<span class="c1">// We declare the global `window.analytics` object for TypeScript</span>
+<span class="kr">declare</span><span class="w"> </span><span class="nb">global</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">interface</span><span class="w"> </span><span class="nx">Window</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Replace with your analytics provider&#39;s actual interface</span>
+<span class="w">    </span><span class="nx">analytics</span><span class="o">?:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">track</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">eventName</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">properties</span><span class="o">:</span><span class="w"> </span><span class="kt">Record</span><span class="o">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">any</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">trackEvent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">eventName</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">properties</span><span class="o">:</span><span class="w"> </span><span class="kt">Record</span><span class="o">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">any</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Check if the analytics script has loaded and the function is available</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nb">window</span><span class="p">.</span><span class="nx">analytics</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="ow">typeof</span><span class="w"> </span><span class="nb">window</span><span class="p">.</span><span class="nx">analytics</span><span class="p">.</span><span class="nx">track</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;function&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nb">window</span><span class="p">.</span><span class="nx">analytics</span><span class="p">.</span><span class="nx">track</span><span class="p">(</span><span class="nx">eventName</span><span class="p">,</span><span class="w"> </span><span class="nx">properties</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="c1">// Also log to the console during development for easy debugging</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">NODE_ENV</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;development&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`[Analytics Event]: </span><span class="si">${</span><span class="nx">eventName</span><span class="si">}</span><span class="sb">`</span><span class="p">,</span><span class="w"> </span><span class="nx">properties</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p><strong>Step 2: Add the Analytics Provider Script</strong></p>
+<p>Most analytics providers require you to add a script tag to your site. We'll do this in the root <code>layout.tsx</code> file. We'll also configure it with an environment variable.</p>
+<p>First, add the new variable to your <code>.env</code> files:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># .env.development.local</span>
+<span class="c1"># ...</span>
+<span class="nv">NEXT_PUBLIC_ANALYTICS_ID</span><span class="o">=</span><span class="s2">&quot;G-DEV-12345&quot;</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1"># .env.production.local</span>
+<span class="c1"># ...</span>
+<span class="nv">NEXT_PUBLIC_ANALYTICS_ID</span><span class="o">=</span><span class="s2">&quot;G-PROD-67890&quot;</span>
+</code></pre></div>
+
+<p>Now, update the root layout.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/layout.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Script</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/script&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RootLayout</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">children</span><span class="p">,</span>
+<span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">children</span><span class="o">:</span><span class="w"> </span><span class="kt">React.ReactNode</span>
+<span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">analyticsId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">NEXT_PUBLIC_ANALYTICS_ID</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">html</span><span class="w"> </span><span class="na">lang</span><span class="o">=</span><span class="s">&quot;en&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;{</span><span class="nx">children</span><span class="p">}&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* </span>
+<span class="cm">        In a real app, this would be the script from your provider.</span>
+<span class="cm">        We&#39;ll use a mock script to simulate the `window.analytics` object.</span>
+<span class="cm">      */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">analyticsId</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Script</span><span class="w"> </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;mock-analytics&quot;</span><span class="w"> </span><span class="na">strategy</span><span class="o">=</span><span class="s">&quot;afterInteractive&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="sb">`</span>
+<span class="sb">            window.analytics = {</span>
+<span class="sb">              track: (name, props) =&gt; {</span>
+<span class="sb">                console.log(&#39;Analytics call to provider:&#39;, name, props);</span>
+<span class="sb">                // This is where the real provider would send a network request.</span>
+<span class="sb">              }</span>
+<span class="sb">            };</span>
+<span class="sb">            console.log(&#39;Mock Analytics Initialized with ID: </span><span class="si">${</span><span class="nx">analyticsId</span><span class="si">}</span><span class="sb">&#39;);</span>
+<span class="sb">          `</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">Script</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">)}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Step 3: Refactor the Product Page into a Client Component</strong></p>
+<p>Our <code>ProductDetailsPage</code> is a Server Component, which can't have interactive event handlers like <code>onClick</code>. We need to extract the part that needs to be interactive (the "Add to Cart" button and its logic) into a new Client Component.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">src</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">app</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">product</span><span class="o">/</span>
+<span class="err">│</span><span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="o">[</span><span class="n">productId</span><span class="o">]/</span>
+<span class="err">│</span><span class="w">           </span><span class="err">└──</span><span class="w"> </span><span class="n">page</span><span class="p">.</span><span class="n">tsx</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">components</span><span class="o">/</span>
+<span class="w">    </span><span class="err">├──</span><span class="w"> </span><span class="n">CustomerReviews</span><span class="p">.</span><span class="n">tsx</span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="n">ProductActions</span><span class="p">.</span><span class="n">tsx</span><span class="w">   </span><span class="err">←</span><span class="w"> </span><span class="k">New</span><span class="w"> </span><span class="n">Client</span><span class="w"> </span><span class="n">Component</span>
+</code></pre></div>
+
+<p><strong>New Client Component</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/ProductActions.tsx</span>
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// ← This marks it as a Client Component</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">trackEvent</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/lib/analytics&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">ProductActionsProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">productId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">productName</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductActions</span><span class="p">({</span><span class="w"> </span><span class="nx">productId</span><span class="p">,</span><span class="w"> </span><span class="nx">productName</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">ProductActionsProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleAddToCart</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Add to cart clicked!&#39;</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">trackEvent</span><span class="p">(</span><span class="s1">&#39;add_to_cart&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">productId</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">productName</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">price</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">currency</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;USD&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="p">});</span>
+<span class="w">    </span><span class="c1">// In a real app, you&#39;d also add logic here to update a shopping cart context.</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleAddToCart</span><span class="p">}&gt;</span><span class="nx">Add</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">Cart</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Update the Main Page Component</strong>:</p>
+<p>Now we replace the static <code>&lt;button&gt;</code> in our Server Component with our new interactive <code>ProductActions</code> Client Component.</p>
+<p><strong>Before</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/product/[productId]/page.tsx (snippet)</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDetailsPage</span><span class="p">({</span><span class="w"> </span><span class="nx">params</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">description</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">strong</span><span class="p">&gt;</span><span class="nx">$</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">price</span><span class="p">.</span><span class="nx">toFixed</span><span class="p">(</span><span class="mf">2</span><span class="p">)}&lt;/</span><span class="nt">strong</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="p">&gt;</span><span class="nx">Add</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">Cart</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span><span class="cm">/* ← Static button */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/product/[productId]/page.tsx (Updated)</span>
+<span class="c1">// ... (imports and getProduct are the same)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ProductActions</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/components/ProductActions&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// ← Import new component</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDetailsPage</span><span class="p">({</span><span class="w"> </span><span class="nx">params</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">params</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">productId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">getProduct</span><span class="p">(</span><span class="nx">params</span><span class="p">.</span><span class="nx">productId</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">reviewsEnabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">NEXT_PUBLIC_FEATURE_REVIEWS_ENABLED</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;true&#39;</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">product</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">notFound</span><span class="p">();</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">description</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">strong</span><span class="p">&gt;</span><span class="nx">$</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">price</span><span class="p">.</span><span class="nx">toFixed</span><span class="p">(</span><span class="mf">2</span><span class="p">)}&lt;/</span><span class="nt">strong</span><span class="p">&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ✅ Replace static button with interactive Client Component */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ProductActions</span><span class="w"> </span>
+<span class="w">        </span><span class="na">productId</span><span class="o">=</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="w"> </span>
+<span class="w">        </span><span class="na">productName</span><span class="o">=</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span><span class="w"> </span>
+<span class="w">        </span><span class="na">price</span><span class="o">=</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">price</span><span class="p">}</span><span class="w"> </span>
+<span class="w">      </span><span class="p">/&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="nx">reviewsEnabled</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">CustomerReviews</span><span class="w"> </span><span class="na">productId</span><span class="o">=</span><span class="p">{</span><span class="nx">params</span><span class="p">.</span><span class="nx">productId</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification_2">Verification</h3>
+<ol>
+<li>Run the app with <code>npm run dev</code>.</li>
+<li>Open the browser's developer tools and go to the Console tab.</li>
+<li>Navigate to a product page. You should see the message "Mock Analytics Initialized...".</li>
+<li>Click the "Add to Cart" button.</li>
+</ol>
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">Add</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">cart</span><span class="w"> </span><span class="n">clicked</span><span class="o">!</span>
+<span class="p">[</span><span class="n">Analytics</span><span class="w"> </span><span class="n">Event</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="n">add_to_cart</span><span class="w"> </span><span class="p">{</span><span class="n">productId</span><span class="o">:</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">123</span><span class="err">&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">productName</span><span class="o">:</span><span class="w"> </span><span class="err">&#39;</span><span class="n">Super</span><span class="w"> </span><span class="n">Widget</span><span class="err">&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">price</span><span class="o">:</span><span class="w"> </span><span class="mf">99.99</span><span class="p">,</span><span class="w"> </span><span class="n">currency</span><span class="o">:</span><span class="w"> </span><span class="err">&#39;</span><span class="n">USD</span><span class="err">&#39;</span><span class="p">}</span>
+<span class="n">Analytics</span><span class="w"> </span><span class="n">call</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">provider</span><span class="o">:</span><span class="w"> </span><span class="n">add_to_cart</span><span class="w"> </span><span class="p">{</span><span class="n">productId</span><span class="o">:</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">123</span><span class="err">&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">productName</span><span class="o">:</span><span class="w"> </span><span class="err">&#39;</span><span class="n">Super</span><span class="w"> </span><span class="n">Widget</span><span class="err">&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">price</span><span class="o">:</span><span class="w"> </span><span class="mf">99.99</span><span class="p">,</span><span class="w"> </span><span class="n">currency</span><span class="o">:</span><span class="w"> </span><span class="err">&#39;</span><span class="n">USD</span><span class="err">&#39;</span><span class="p">}</span>
+</code></pre></div>
+
+<p>This confirms that our <code>onClick</code> handler is firing, our <code>trackEvent</code> abstraction is being called, and it's successfully invoking the (mocked) third-party analytics library. In a real scenario, the Network tab would show a request being sent to the analytics provider's endpoint.</p>
+<p><strong>Limitation Preview</strong>: We can now track what users do successfully. But what happens when things go wrong? If our API fails or a client-side bug occurs, the user gets a broken experience, and we might never know about it. We need to add error monitoring.</p>
+<h2 id="monitoring-and-alerting">Monitoring and alerting</h2>
+<h2 id="iteration-3-detecting-and-reporting-errors">Iteration 3: Detecting and Reporting Errors</h2>
+<p>Our application is now instrumented for success metrics (analytics), but not for failure metrics. When something breaks, we are still in the dark. We need a system to capture errors, report them to a centralized service, and alert the development team.</p>
+<p><strong>Current state recap</strong>: We can track user actions like adding an item to a cart.
+<strong>Current limitation</strong>: If the <code>getProduct</code> fetch call fails, the user sees a generic <code>not-found</code> or <code>error</code> page, and our team is not notified. We only find out when a customer complains.</p>
+<p><strong>New scenario introduction</strong>: The product API has a bug and starts returning <code>500 Internal Server Error</code> for some product IDs. We need to be alerted automatically the moment this happens.</p>
+<h3 id="the-failure-silent-errors">The Failure: Silent Errors</h3>
+<p>Let's simulate the API failure. We'll modify <code>getProduct</code> to throw an error.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/product/[productId]/page.tsx (modified for demonstration)</span>
+
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getProduct</span><span class="p">(</span><span class="nx">productId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">Product</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">apiUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">NEXT_PUBLIC_API_URL</span><span class="p">;</span>
+
+<span class="w">  </span><span class="c1">// Simulate a 50% failure rate</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.5</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;API Server Error: Failed to fetch product data.&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`</span><span class="si">${</span><span class="nx">apiUrl</span><span class="si">}</span><span class="sb">/products/</span><span class="si">${</span><span class="nx">productId</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">.</span><span class="nx">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;API Network Error: Invalid response.&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>When this error is thrown in a Server Component during rendering, Next.js will catch it and render the nearest <code>error.js</code> boundary. If you don't have one, it provides a default error page in production.</p>
+<h3 id="diagnostic-analysis-reading-the-failure_2">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>: The user sees a generic error page. For example, Next.js's default is "Application error: a server-side exception has occurred (see the server logs for more information)." It's unhelpful for the user and provides no immediate feedback to us.</p>
+<p><strong>Terminal Output (Server Logs)</strong>:</p>
+<div class="codehilite"><pre><span></span><code>-<span class="w"> </span>error<span class="w"> </span>src/app/product/<span class="o">[</span>productId<span class="o">]</span>/page.tsx<span class="w"> </span><span class="o">(</span><span class="m">15</span>:11<span class="o">)</span><span class="w"> </span>@<span class="w"> </span>getProduct
+-<span class="w"> </span>error<span class="w"> </span>Error:<span class="w"> </span>API<span class="w"> </span>Server<span class="w"> </span>Error:<span class="w"> </span>Failed<span class="w"> </span>to<span class="w"> </span>fetch<span class="w"> </span>product<span class="w"> </span>data.
+<span class="w">    </span>at<span class="w"> </span>getProduct<span class="w"> </span><span class="o">(</span>./src/app/product/<span class="o">[</span>productId<span class="o">]</span>/page.tsx:21:11<span class="o">)</span>
+<span class="w">    </span>at<span class="w"> </span>ProductDetailsPage<span class="w"> </span><span class="o">(</span>./src/app/product/<span class="o">[</span>productId<span class="o">]</span>/page.tsx:32:21<span class="o">)</span>
+<span class="w">    </span>...
+</code></pre></div>
+
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: A broken page with a generic, unhelpful message.</li>
+<li><strong>What the developer experiences</strong>: The error is logged to the server console, but if you're running on a platform like Vercel, you have to manually go digging through logs to find it. There are no automatic alerts. For a client-side error, it would only appear in the user's browser console, which is completely invisible to us.</li>
+<li><strong>Root cause identified</strong>: The application has no mechanism to report exceptions to a dedicated monitoring service.</li>
+<li><strong>Why the current approach can't solve this</strong>: <code>console.error</code> is not a monitoring strategy. Logs are passive; we need an active system that aggregates errors and pushes alerts.</li>
+<li><strong>What we need</strong>: An error monitoring service (like Sentry, LogRocket, or Datadog) and a way to report errors to it from both the server and the client.</li>
+</ol>
+<h3 id="technique-introduced-centralized-error-reporting">Technique Introduced: Centralized Error Reporting</h3>
+<p>We'll follow a similar pattern to our analytics library by creating a simple <code>lib/monitoring.ts</code> abstraction. This will allow us to capture errors and send them to a third-party service.</p>
+<h3 id="solution-implementation_1">Solution Implementation</h3>
+<p><strong>Step 1: Create the Monitoring Abstraction</strong></p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+└── lib/
+    ├── analytics.ts
+    └── monitoring.ts   ← New monitoring helper
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/lib/monitoring.ts</span>
+
+<span class="c1">// This is a mock monitoring library. In a real app, you would install</span>
+<span class="c1">// a package like `@sentry/nextjs` and call its methods here.</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">UserInfo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">email?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">reportError</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="o">:</span><span class="w"> </span><span class="kt">Error</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="o">:</span><span class="w"> </span><span class="kt">Record</span><span class="o">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">any</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="nx">user?</span><span class="o">:</span><span class="w"> </span><span class="kt">UserInfo</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// In a real app, this would send the error to Sentry, Datadog, etc.</span>
+<span class="w">  </span><span class="c1">// This service would then aggregate errors and send alerts (e.g., to Slack).</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">errorReport</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="kt">error.message</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">stack</span><span class="o">:</span><span class="w"> </span><span class="kt">error.stack</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">context</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">user</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">timestamp</span><span class="o">:</span><span class="w"> </span><span class="kt">new</span><span class="w"> </span><span class="nb">Date</span><span class="p">().</span><span class="nx">toISOString</span><span class="p">(),</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s2">&quot;[Error Report Sent]:&quot;</span><span class="p">,</span><span class="w"> </span><span class="nb">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">errorReport</span><span class="p">,</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"> </span><span class="mf">2</span><span class="p">));</span>
+
+<span class="w">  </span><span class="c1">// Here you would call the actual SDK, e.g., Sentry.captureException(error);</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p><strong>Step 2: Integrate Error Reporting into Data Fetching</strong></p>
+<p>Now, we'll wrap our <code>getProduct</code> function's logic in a <code>try...catch</code> block to report any failures.</p>
+<p><strong>Before</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/product/[productId]/page.tsx (snippet)</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getProduct</span><span class="p">(</span><span class="nx">productId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">Product</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">apiUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">NEXT_PUBLIC_API_URL</span><span class="p">;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`</span><span class="si">${</span><span class="nx">apiUrl</span><span class="si">}</span><span class="sb">/products/</span><span class="si">${</span><span class="nx">productId</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">.</span><span class="nx">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// This just renders a not-found page, we don&#39;t know it happened.</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/product/[productId]/page.tsx (snippet)</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">reportError</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/lib/monitoring&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// ← Import</span>
+
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getProduct</span><span class="p">(</span><span class="nx">productId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">Product</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">apiUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">NEXT_PUBLIC_API_URL</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`</span><span class="si">${</span><span class="nx">apiUrl</span><span class="si">}</span><span class="sb">/products/</span><span class="si">${</span><span class="nx">productId</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">.</span><span class="nx">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// Create a more informative error</span>
+<span class="w">      </span><span class="kd">const</span><span class="w"> </span><span class="nx">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="sb">`API request failed with status </span><span class="si">${</span><span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">      </span><span class="c1">// Throw it so Next.js can catch it and render the error boundary</span>
+<span class="w">      </span><span class="k">throw</span><span class="w"> </span><span class="nx">error</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">();</span>
+<span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="w"> </span><span class="ow">instanceof</span><span class="w"> </span><span class="ne">Error</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// ✅ Report the error to our monitoring service</span>
+<span class="w">      </span><span class="nx">reportError</span><span class="p">(</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">productId</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">component</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;ProductDetailsPage&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">source</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;getProduct&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="p">});</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="c1">// Re-throw the error so that Next.js&#39;s error handling still takes over</span>
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="nx">error</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><em>Note: We re-throw the error so that Next.js still renders the <code>error.js</code> boundary. Our <code>reportError</code> function is a side-effect.</em></p>
+<p><strong>Step 3: Create a Custom Error UI</strong></p>
+<p>To give the user a better experience, we can create a custom <code>error.js</code> file. This file defines a UI boundary for runtime errors.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">src</span><span class="o">/</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">app</span><span class="o">/</span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="n">product</span><span class="o">/</span>
+<span class="w">        </span><span class="err">└──</span><span class="w"> </span><span class="o">[</span><span class="n">productId</span><span class="o">]/</span>
+<span class="w">            </span><span class="err">├──</span><span class="w"> </span><span class="n">page</span><span class="p">.</span><span class="n">tsx</span>
+<span class="w">            </span><span class="err">└──</span><span class="w"> </span><span class="n">error</span><span class="p">.</span><span class="n">tsx</span><span class="w">   </span><span class="err">←</span><span class="w"> </span><span class="k">New</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="n">boundary</span><span class="w"> </span><span class="n">UI</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/product/[productId]/error.tsx</span>
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Error components must be Client Components</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">reportError</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/lib/monitoring&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductError</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">error</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">reset</span><span class="p">,</span>
+<span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">error</span><span class="o">:</span><span class="w"> </span><span class="kt">Error</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">digest?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="nx">reset</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Report the error to our monitoring service</span>
+<span class="w">    </span><span class="c1">// This captures errors that happen during rendering on the client</span>
+<span class="w">    </span><span class="nx">reportError</span><span class="p">(</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">component</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;ProductErrorUI&quot;</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Something</span><span class="w"> </span><span class="nx">went</span><span class="w"> </span><span class="nx">wrong</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">We</span><span class="s1">&#39;re sorry, we couldn&#39;</span><span class="nx">t</span><span class="w"> </span><span class="nx">load</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">product</span><span class="w"> </span><span class="nx">details</span><span class="p">.</span><span class="w"> </span><span class="nx">Please</span><span class="w"> </span><span class="k">try</span><span class="w"> </span><span class="nx">again</span><span class="w"> </span><span class="nx">later</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">reset</span><span class="p">()}&gt;</span>
+<span class="w">        </span><span class="nx">Try</span><span class="w"> </span><span class="nx">again</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification_3">Verification</h3>
+<ol>
+<li>Re-introduce the simulated error in <code>getProduct</code>.</li>
+<li>Run the app and navigate to a product page.</li>
+<li>The request will eventually fail.</li>
+</ol>
+<p><strong>Browser Behavior</strong>: Instead of the default Next.js error page, the user now sees our custom UI from <code>error.tsx</code> with a "Something went wrong!" message and a "Try again" button.</p>
+<p><strong>Terminal Output (Server Logs)</strong>:
+You will see our detailed error report logged to the console, simulating it being sent to a service like Sentry.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">[</span>Error<span class="w"> </span>Report<span class="w"> </span>Sent<span class="o">]</span>:<span class="w"> </span><span class="o">{</span>
+<span class="w">  </span><span class="s2">&quot;message&quot;</span>:<span class="w"> </span><span class="s2">&quot;API request failed with status 500&quot;</span>,
+<span class="w">  </span><span class="s2">&quot;stack&quot;</span>:<span class="w"> </span><span class="s2">&quot;Error: API request failed with status 500\n    at getProduct (...)&quot;</span>,
+<span class="w">  </span><span class="s2">&quot;context&quot;</span>:<span class="w"> </span><span class="o">{</span>
+<span class="w">    </span><span class="s2">&quot;productId&quot;</span>:<span class="w"> </span><span class="s2">&quot;123&quot;</span>,
+<span class="w">    </span><span class="s2">&quot;component&quot;</span>:<span class="w"> </span><span class="s2">&quot;ProductDetailsPage&quot;</span>,
+<span class="w">    </span><span class="s2">&quot;source&quot;</span>:<span class="w"> </span><span class="s2">&quot;getProduct&quot;</span>
+<span class="w">  </span><span class="o">}</span>,
+<span class="w">  </span><span class="s2">&quot;timestamp&quot;</span>:<span class="w"> </span><span class="s2">&quot;2023-10-27T10:00:00.000Z&quot;</span>
+<span class="o">}</span>
+-<span class="w"> </span>error<span class="w"> </span>Error:<span class="w"> </span>API<span class="w"> </span>request<span class="w"> </span>failed<span class="w"> </span>with<span class="w"> </span>status<span class="w"> </span><span class="m">500</span>
+...<span class="w"> </span><span class="o">(</span>Next.js<span class="w"> </span>default<span class="w"> </span>error<span class="w"> </span>log<span class="o">)</span>
+</code></pre></div>
+
+<p>This structured log is what a monitoring service would use to create an issue, group similar errors, and send an alert to your team's Slack channel, giving you immediate visibility into production problems.</p>
+<h2 id="the-deployment-checklist">The deployment checklist</h2>
+<h2 id="synthesis-the-pre-flight-checklist">Synthesis: The Pre-Flight Checklist</h2>
+<p>We have taken our simple <code>ProductDetailsPage</code> and progressively hardened it for production. We've made it configurable, added feature flags, integrated analytics, and set up error monitoring. These are the core pillars of a production-ready application.</p>
+<p>This final section synthesizes these concepts into a practical checklist to review before every deployment.</p>
+<h3 id="the-journey-from-problem-to-solution">The Journey: From Problem to Solution</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Iteration</th>
+<th style="text-align: left;">Failure Mode</th>
+<th style="text-align: left;">Technique Applied</th>
+<th style="text-align: left;">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">Hardcoded API URLs, not portable.</td>
+<td style="text-align: left;">None (Initial State)</td>
+<td style="text-align: left;">Works only in one environment.</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">All-or-nothing feature releases.</td>
+<td style="text-align: left;">Environment Variables for Feature Flags</td>
+<td style="text-align: left;">Features can be enabled/disabled at runtime without a new deploy.</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">No visibility into user behavior.</td>
+<td style="text-align: left;">Analytics Abstraction &amp; Client Component</td>
+<td style="text-align: left;">User interactions are tracked, providing valuable product data.</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">Silent failures, bugs go unnoticed.</td>
+<td style="text-align: left;">Centralized Error Reporting &amp; <code>error.js</code></td>
+<td style="text-align: left;">Errors are captured, reported, and users see a friendly UI.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="final-implementation">Final Implementation</h3>
+<p>Here is the complete, production-ready version of our <code>page.tsx</code> and its supporting components, incorporating all the improvements.</p>
+<p><code language="tsx">
+// src/app/product/[productId]/page.tsx (Final Version)</p>
+<p>import { notFound } from 'next/navigation';
+import { reportError } from '@/lib/monitoring';
+import CustomerReviews from '@/components/CustomerReviews';
+import ProductActions from '@/components/ProductActions';</p>
+<p>type Product = {
+  id: string;
+  name:string;
+  price: number;
+  description: string;
+};</p>
+<p>async function getProduct(productId: string): Promise<Product | null> {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) {
+      throw new Error("Configuration Error: NEXT_PUBLIC_API_URL is not defined.");
+    }
+    const res = await fetch(<code>${apiUrl}/products/${productId}</code>, { next: { revalidate: 3600 } }); // Add revalidation</p>
+<div class="codehilite"><pre><span></span><code>if<span class="w"> </span>(!res.ok)<span class="w"> </span>{
+<span class="w">  </span>throw<span class="w"> </span>new<span class="w"> </span>Error(`API<span class="w"> </span>request<span class="w"> </span>failed<span class="w"> </span>with<span class="w"> </span>status<span class="w"> </span><span class="cp">${</span><span class="n">res</span><span class="o">.</span><span class="n">status</span><span class="cp">}</span>`);
+}
+return<span class="w"> </span>res.json();
+</code></pre></div>
+
+<p>} catch (error) {
+    if (error instanceof Error) {
+      reportError(error, { productId, component: 'ProductDetailsPage', source: 'getProduct' });
+    }
+    // Let Next.js handle rendering the error boundary
+    throw error;
+  }
+}</p>
+<p>export default async function ProductDetailsPage({ params }: { params: { productId: string } }) {
+  // The <code>getProduct</code> call is wrapped in Next.js's error handling
+  const product = await getProduct(params.productId);</p>
+<p>const reviewsEnabled = process.env.NEXT_PUBLIC_FEATURE_REVIEWS_ENABLED === 'true';</p>
+<p>if (!product) {
+    notFound();
+  }</p>
+<p>return (
+    <main>
+      <h1>{product.name}</h1>
+      <p>{product.description}</p>
+      <strong>${product.price.toFixed(2)}</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="w">  </span><span class="nt">&lt;ProductActions</span><span class="w"> </span>
+<span class="w">    </span><span class="na">productId=</span><span class="s">{product.id}</span><span class="w"> </span>
+<span class="w">    </span><span class="na">productName=</span><span class="s">{product.name}</span><span class="w"> </span>
+<span class="w">    </span><span class="na">price=</span><span class="s">{product.price}</span><span class="w"> </span>
+<span class="w">  </span><span class="nt">/&gt;</span>
+
+<span class="w">  </span>{reviewsEnabled<span class="w"> </span><span class="err">&amp;&amp;</span><span class="w"> </span><span class="nt">&lt;CustomerReviews</span><span class="w"> </span><span class="na">productId=</span><span class="s">{params.productId}</span><span class="w"> </span><span class="nt">/&gt;</span>}
+<span class="nt">&lt;/main&gt;</span>
+</code></pre></div>
+
+<p>);
+}
+    ```</p>
+<h3 id="the-deployment-checklist_1">The Deployment Checklist</h3>
+<p>Use this as a final check before merging to your main branch and deploying.</p>
+<p><strong>✅ Configuration &amp; Security</strong>
+- [ ] All secret keys (database URLs, private API keys) are stored in environment variables, NOT committed to Git.
+- [ ] The <code>.env.local</code> and other sensitive <code>.env</code> files are in <code>.gitignore</code>.
+- [ ] An <code>.env.example</code> file exists to show other developers what variables are needed.
+- [ ] Environment variables are correctly prefixed (<code>NEXT_PUBLIC_</code> for browser access, no prefix for server-only).
+- [ ] Run <code>npm audit</code> to check for known vulnerabilities in dependencies.</p>
+<p><strong>✅ Code Quality &amp; Build</strong>
+- [ ] The code passes all linter (<code>next lint</code>) and formatter (e.g., Prettier) checks.
+- [ ] The TypeScript compiler runs without errors (<code>npx tsc --noEmit</code>).
+- [ ] The production build completes successfully (<code>npm run build</code>).
+- [ ] Review the build output for unexpectedly large page sizes or chunks.
+- [ ] All <code>console.log</code> statements used for debugging have been removed.</p>
+<p><strong>✅ Functionality &amp; Testing</strong>
+- [ ] All new features are controlled by feature flags, set to <code>false</code> in production by default.
+- [ ] Unit and integration tests pass in your CI/CD pipeline.
+- [ ] End-to-end tests (e.g., with Cypress or Playwright) pass for critical user flows.
+- [ ] The application has been tested on major browsers (Chrome, Firefox, Safari).
+- [ ] The application is responsive and works on mobile devices.</p>
+<p><strong>✅ Analytics &amp; Monitoring</strong>
+- [ ] Analytics events are implemented for all key user actions.
+- [ ] Error reporting is configured for both server-side and client-side exceptions.
+- [ ] Custom <code>error.tsx</code> and <code>not-found.tsx</code> pages are in place to provide a good user experience on failure.
+- [ ] Alerts are configured in your monitoring service to notify the team of critical errors.</p>
+<p><strong>✅ Performance</strong>
+- [ ] Run a Lighthouse audit on key pages. Aim for scores above 90.
+- [ ] Check Core Web Vitals (LCP, FID/INP, CLS).
+- [ ] Analyze the bundle with <code>@next/bundle-analyzer</code> to identify and remove unnecessary dependencies.
+- [ ] Ensure images are optimized using <code>next/image</code>.
+- [ ] Caching strategies (e.g., <code>revalidate</code> times, <code>cache</code> function) are set appropriately for data fetches.</p>
+<p><strong>✅ Deployment &amp; Rollback</strong>
+- [ ] The deployment process is automated via a CI/CD pipeline.
+- [ ] You have a clear and tested plan for rolling back to the previous version if the deployment fails.
+- [ ] The team is aware of the deployment and is ready to monitor the release.</p>
+<p>Going to production is more than just running a command. It's a disciplined process of verification that ensures your application is robust, secure, and observable. By following these steps, you can deploy with confidence.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:41:01 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

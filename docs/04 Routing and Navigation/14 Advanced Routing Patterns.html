@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>14 Advanced Routing Patterns</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">04 Routing and Navigation</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-14-advanced-routing-patterns">Chapter 14: Advanced Routing Patterns</h1>
+<h2 id="code-splitting-and-lazy-loading">Code splitting and lazy loading</h2>
+<h2 id="the-monolithic-monster-why-loading-everything-at-once-fails">The Monolithic Monster: Why Loading Everything at Once Fails</h2>
+<p>In modern web applications, speed is not a feature; it's a prerequisite. Users expect pages to load instantly. One of the biggest enemies of a fast initial load is a large JavaScript bundle. When your application grows, you add more pages, more features, and more libraries. Without a deliberate strategy, all of this code gets bundled into a single, massive file that every user must download when they first visit your site, regardless of which page they actually need.</p>
+<p>This chapter will guide you through transforming a slow, monolithic application into a highly optimized, performant user experience using advanced routing patterns available in Next.js.</p>
+<h3 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h3>
+<p>We will build a simple E-commerce Admin Dashboard. This dashboard will have three main pages:
+1.  <strong>Overview</strong>: The main landing page.
+2.  <strong>Orders</strong>: A page to view recent orders, containing a complex charting library.
+3.  <strong>Products</strong>: A page to manage a long list of products.</p>
+<p>This dashboard is our <strong>anchor example</strong>. We will start with a naive implementation and progressively refine it throughout this chapter, demonstrating how each advanced routing pattern solves a specific, tangible problem.</p>
+<p>First, let's set up the initial project structure.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">src</span><span class="o">/</span>
+├──<span class="w"> </span><span class="nv">app</span><span class="o">/</span>
+│<span class="w">   </span>├──<span class="w"> </span><span class="nv">layout</span>.<span class="nv">tsx</span><span class="w">         </span>#<span class="w"> </span><span class="nv">Root</span><span class="w"> </span><span class="nv">layout</span><span class="w"> </span><span class="nv">with</span><span class="w"> </span><span class="nv">navigation</span>
+│<span class="w">   </span>├──<span class="w"> </span><span class="nv">page</span>.<span class="nv">tsx</span><span class="w">           </span>#<span class="w"> </span><span class="nv">Overview</span><span class="w"> </span><span class="nv">page</span>
+│<span class="w">   </span>├──<span class="w"> </span><span class="nv">orders</span><span class="o">/</span>
+│<span class="w">   </span>│<span class="w">   </span>└──<span class="w"> </span><span class="nv">page</span>.<span class="nv">tsx</span><span class="w">       </span>#<span class="w"> </span><span class="nv">Orders</span><span class="w"> </span><span class="nv">page</span><span class="w"> </span><span class="ss">(</span><span class="nv">with</span><span class="w"> </span><span class="nv">heavy</span><span class="w"> </span><span class="nv">component</span><span class="ss">)</span>
+│<span class="w">   </span>└──<span class="w"> </span><span class="nv">products</span><span class="o">/</span>
+│<span class="w">       </span>└──<span class="w"> </span><span class="nv">page</span>.<span class="nv">tsx</span><span class="w">       </span>#<span class="w"> </span><span class="nv">Products</span><span class="w"> </span><span class="nv">page</span>
+└──<span class="w"> </span><span class="nv">components</span><span class="o">/</span>
+<span class="w">    </span>├──<span class="w"> </span><span class="nv">Nav</span>.<span class="nv">tsx</span><span class="w">            </span>#<span class="w"> </span><span class="nv">Navigation</span><span class="w"> </span><span class="nv">component</span>
+<span class="w">    </span>└──<span class="w"> </span><span class="nv">HeavyChart</span>.<span class="nv">tsx</span><span class="w">     </span>#<span class="w"> </span><span class="nv">A</span><span class="w"> </span><span class="nv">simulated</span><span class="w"> </span><span class="nv">heavy</span><span class="w"> </span><span class="nv">component</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">the</span><span class="w"> </span><span class="nv">Orders</span><span class="w"> </span><span class="nv">page</span>
+</code></pre></div>
+
+<p>Here is the initial, problematic code.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/HeavyChart.tsx</span>
+<span class="c1">// A placeholder for a large charting library like D3 or Chart.js</span>
+<span class="c1">// Imagine this component is 500KB of JavaScript.</span>
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HeavyChart</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-gray-100 p-8 rounded-lg&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-xl font-bold mb-4&quot;</span><span class="p">&gt;</span><span class="nx">Sales</span><span class="w"> </span><span class="nx">Data</span><span class="w"> </span><span class="nx">Chart</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;(</span><span class="nx">This</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">placeholder</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">very</span><span class="w"> </span><span class="nx">large</span><span class="w"> </span><span class="nx">and</span><span class="w"> </span><span class="nx">complex</span><span class="w"> </span><span class="nx">chart</span><span class="w"> </span><span class="nx">component</span><span class="p">.)&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;w-full h-64 bg-gray-300 animate-pulse mt-4&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/orders/page.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">HeavyChart</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/components/HeavyChart&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">OrdersPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-3xl font-bold mb-6&quot;</span><span class="p">&gt;</span><span class="nx">Orders</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">HeavyChart</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/page.tsx</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductsPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Generate a long list to demonstrate scrolling issues later</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">products</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Array</span><span class="p">.</span><span class="kr">from</span><span class="p">({</span><span class="w"> </span><span class="nx">length</span><span class="o">:</span><span class="w"> </span><span class="kt">100</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="p">(</span><span class="nx">_</span><span class="p">,</span><span class="w"> </span><span class="nx">i</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="sb">`Product </span><span class="si">${</span><span class="nx">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-3xl font-bold mb-6&quot;</span><span class="p">&gt;</span><span class="nx">Products</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;space-y-2&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">products</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">product</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">product</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-2 border rounded&quot;</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">product</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Nav.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Link</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next/link&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Nav</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">nav</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-gray-800 p-4&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex space-x-6 text-white&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">li</span><span class="p">&gt;&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">href</span><span class="o">=</span><span class="s">&quot;/&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;hover:text-blue-300&quot;</span><span class="p">&gt;</span><span class="nx">Overview</span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">li</span><span class="p">&gt;&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">href</span><span class="o">=</span><span class="s">&quot;/orders&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;hover:text-blue-300&quot;</span><span class="p">&gt;</span><span class="nx">Orders</span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">li</span><span class="p">&gt;&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">href</span><span class="o">=</span><span class="s">&quot;/products&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;hover:text-blue-300&quot;</span><span class="p">&gt;</span><span class="nx">Products</span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/layout.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Metadata</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Inter</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next/font/google&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="s2">&quot;./globals.css&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Nav</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/components/Nav&quot;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">inter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">Inter</span><span class="p">({</span><span class="w"> </span><span class="nx">subsets</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;latin&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">});</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">metadata</span><span class="o">:</span><span class="w"> </span><span class="kt">Metadata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">title</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Admin Dashboard&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;E-commerce Admin&quot;</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RootLayout</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">children</span><span class="p">,</span>
+<span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">children</span><span class="o">:</span><span class="w"> </span><span class="kt">React.ReactNode</span><span class="p">;</span>
+<span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">html</span><span class="w"> </span><span class="na">lang</span><span class="o">=</span><span class="s">&quot;en&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">body</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">inter</span><span class="p">.</span><span class="nx">className</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Nav</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-8&quot;</span><span class="p">&gt;{</span><span class="nx">children</span><span class="p">}&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">OverviewPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-3xl font-bold mb-6&quot;</span><span class="p">&gt;</span><span class="nx">Dashboard</span><span class="w"> </span><span class="nx">Overview</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">your</span><span class="w"> </span><span class="nx">admin</span><span class="w"> </span><span class="nx">dashboard</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="iteration-0-the-problem-of-the-monolithic-bundle">Iteration 0: The Problem of the Monolithic Bundle</h3>
+<p>With the code above, we have a fully functional application. However, it hides a severe performance problem. Let's run the app (<code>npm run dev</code>), open the browser's developer tools, and analyze what happens on the initial page load.</p>
+<h3 id="diagnostic-analysis-reading-the-failure">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+The user visits <code>http://localhost:3000</code>. The page loads, but on a slow connection, there's a noticeable delay before anything appears.</p>
+<p><strong>Browser DevTools - Network Tab</strong> (Filter by JS, Disable cache):
+When you load the homepage (<code>/</code>), you'll see a large JavaScript file being downloaded. This file is often named something like <code>app/page-....js</code> or a similar hash-based name.</p>
+<div class="codehilite"><pre><span></span><code>Name                    Status  Type      Size
+----------------------------------------------------
+page-....js             200     script    525 KB  &lt;-- PROBLEM
+...other chunks
+</code></pre></div>
+
+<p><strong>Performance Metrics</strong> (Simulated Slow 3G connection):
+- <strong>Bundle size</strong>: ~525 KB (where 500 KB is our simulated <code>HeavyChart</code>)
+- <strong>Initial load time</strong>: 3.5s
+- <strong>Largest Contentful Paint (LCP)</strong>: 3.2s
+- <strong>Time to Interactive (TTI)</strong>: 3.4s</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: A slow initial page load. They are forced to wait for code they might never use.</p>
+<ul>
+<li><strong>Expected</strong>: The homepage should load quickly, only downloading the code necessary for the "Overview" page.</li>
+<li><strong>Actual</strong>: The browser downloads the code for the Overview, Orders, <em>and</em> Products pages, including the massive <code>HeavyChart</code> component, just to show the simple homepage.</li>
+</ul>
+</li>
+<li>
+<p><strong>What the Network tab reveals</strong>: A single, large JavaScript chunk contains the code for all our pages.</p>
+<ul>
+<li><strong>Key indicator</strong>: The size of the initial JS chunk is far larger than what's needed for the simple overview page.</li>
+</ul>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: By default, Next.js bundles components that are statically imported together. Because our <code>orders/page.tsx</code> statically imports <code>HeavyChart</code>, and it's part of the same application, its code is included in the initial JavaScript payload.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: Static <code>import</code> statements are resolved at build time. The bundler sees <code>import HeavyChart from '@/components/HeavyChart'</code> and has no choice but to include it in the bundle. It cannot know that the user won't visit the <code>/orders</code> page immediately.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A way to tell Next.js: "Don't bundle this component initially. Only load its code when the user actually navigates to the page that needs it." This is called <strong>code splitting</strong> on a route level, and the technique is <strong>lazy loading</strong>.</p>
+</li>
+</ol>
+<h3 id="iteration-1-slaying-the-monolith-with-nextdynamic">Iteration 1: Slaying the Monolith with <code>next/dynamic</code></h3>
+<p>To solve this, we'll use <code>next/dynamic</code>, a special function that allows for dynamic, client-side loading of React components. It tells Next.js to create a separate JavaScript chunk for the specified component.</p>
+<p><strong>Before</strong> (Iteration 0): The <code>OrdersPage</code> directly imports <code>HeavyChart</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/orders/page.tsx - Version 0</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">HeavyChart</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/components/HeavyChart&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">OrdersPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-3xl font-bold mb-6&quot;</span><span class="p">&gt;</span><span class="nx">Orders</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">HeavyChart</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 1): We use <code>next/dynamic</code> to load <code>HeavyChart</code> lazily.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/orders/page.tsx - Version 1</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">dynamic</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next/dynamic&quot;</span><span class="p">;</span>
+
+<span class="c1">// The dynamic import creates a separate chunk for HeavyChart.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">HeavyChart</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">dynamic</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">import</span><span class="p">(</span><span class="s2">&quot;@/components/HeavyChart&quot;</span><span class="p">),</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Optional: Show a loading component while the dynamic component is loading.</span>
+<span class="w">  </span><span class="nx">loading</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">chart</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;,</span>
+<span class="w">  </span><span class="c1">// Optional: Disable Server-Side Rendering for this component if it relies on browser APIs.</span>
+<span class="w">  </span><span class="nx">ssr</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="p">,</span><span class="w"> </span>
+<span class="p">});</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">OrdersPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-3xl font-bold mb-6&quot;</span><span class="p">&gt;</span><span class="nx">Orders</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">HeavyChart</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification-checking-the-results">Verification: Checking the Results</h3>
+<p>Let's clear the cache and reload the homepage (<code>/</code>) again, observing the Network tab.</p>
+<p><strong>Browser DevTools - Network Tab</strong> (on initial load of <code>/</code>):</p>
+<div class="codehilite"><pre><span></span><code>Name                    Status  Type      Size
+----------------------------------------------------
+page-....js             200     script    25 KB   &lt;-- IMPROVEMENT!
+...other chunks
+</code></pre></div>
+
+<p>The initial JavaScript chunk is now tiny! The code for <code>HeavyChart</code> is gone.</p>
+<p>Now, navigate to the <code>/orders</code> page.</p>
+<p><strong>Browser DevTools - Network Tab</strong> (when navigating to <code>/orders</code>):</p>
+<div class="codehilite"><pre><span></span><code>Name                    Status  Type      Size
+----------------------------------------------------
+components_HeavyChart_tsx-....js  200  script  500 KB  &lt;-- Loaded on demand
+</code></pre></div>
+
+<p>A new chunk containing <code>HeavyChart</code> is downloaded only when we navigate to the page that uses it.</p>
+<p><strong>Performance Metrics</strong> (Simulated Slow 3G connection):
+- <strong>Before</strong>:
+  - Bundle size: 525 KB
+  - LCP: 3.2s
+- <strong>After</strong>:
+  - Bundle size: 25 KB (95% reduction)
+  - LCP: 0.8s (75% improvement)</p>
+<p><strong>Improvement</strong>: The initial page load is dramatically faster. Users who never visit the "Orders" page will never download the 500KB charting library, saving bandwidth and improving their experience.</p>
+<h3 id="when-to-apply-this-solution">When to Apply This Solution</h3>
+<ul>
+<li><strong>What it optimizes for</strong>: Fast initial page loads (Time to Interactive, First Contentful Paint).</li>
+<li><strong>What it sacrifices</strong>: A small delay on the first navigation to the lazy-loaded route while the new chunk is downloaded.</li>
+<li><strong>When to choose this approach</strong>:<ul>
+<li>For pages or large components that are not visible on the initial load.</li>
+<li>For features behind a login wall.</li>
+<li>For components with heavy dependencies (e.g., charting, mapping, or 3D rendering libraries).</li>
+</ul>
+</li>
+<li><strong>When to avoid this approach</strong>:<ul>
+<li>For small components where the overhead of a separate network request outweighs the bundle size savings.</li>
+<li>For components critical to the initial view (e.g., the navigation bar itself).</li>
+</ul>
+</li>
+</ul>
+<p><strong>Limitation preview</strong>: While we've solved the initial bundle size, our data loading is still naive. In the next section, we'll see how fetching data on the client side after the page loads creates a new set of performance problems.</p>
+<h2 id="route-based-data-loading">Route-based data loading</h2>
+<h2 id="the-client-side-fetching-waterfall">The Client-Side Fetching Waterfall</h2>
+<p>Our application now has excellent code splitting. The initial load is fast, and secondary pages are loaded on demand. But what about the <em>data</em> for those pages? A common pattern, especially for developers coming from Single-Page Applications (SPAs), is to fetch data inside a <code>useEffect</code> hook.</p>
+<p>Let's refactor our <code>ProductsPage</code> to fetch its data from an API endpoint.</p>
+<h3 id="iteration-1-recap">Iteration 1 Recap</h3>
+<p>Our <code>ProductsPage</code> currently uses a hardcoded array.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/page.tsx - Version 0</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductsPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">products</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Array</span><span class="p">.</span><span class="kr">from</span><span class="p">({</span><span class="w"> </span><span class="nx">length</span><span class="o">:</span><span class="w"> </span><span class="kt">100</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="p">(</span><span class="nx">_</span><span class="p">,</span><span class="w"> </span><span class="nx">i</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="sb">`Product </span><span class="si">${</span><span class="nx">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// ... renders products</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="iteration-2-introducing-client-side-data-fetching">Iteration 2: Introducing Client-Side Data Fetching</h3>
+<p>First, let's create a simple API route to serve the product data.</p>
+<p><code language="typescript">
+// src/app/api/products/route.ts
+import { NextResponse } from "next/server";</p>
+<p>export async function GET() {
+  // Simulate a database delay
+  await new Promise(resolve =&gt; setTimeout(resolve, 500)); </p>
+<p>const products = Array.from({ length: 100 }, (_, i) =&gt; ({
+    id: i + 1,
+    name: <code>Product ${i + 1}</code>,
+  }));</p>
+<p>return NextResponse.json(products);
+}</p>
+<div class="codehilite"><pre><span></span><code><span class="n">Now</span><span class="p">,</span> <span class="n">let</span><span class="s1">&#39;s modify the `ProductsPage` to fetch from this endpoint using the classic `useEffect` pattern. This requires converting it to a Client Component.</span>
+
+<span class="err">```</span><span class="n">tsx</span>
+<span class="o">//</span> <span class="n">src</span><span class="o">/</span><span class="n">app</span><span class="o">/</span><span class="n">products</span><span class="o">/</span><span class="n">page</span><span class="o">.</span><span class="n">tsx</span> <span class="o">-</span> <span class="n">Version</span> <span class="mi">1</span> <span class="p">(</span><span class="n">Problematic</span><span class="p">)</span>
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="p">{</span> <span class="n">useState</span><span class="p">,</span> <span class="n">useEffect</span> <span class="p">}</span> <span class="kn">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="n">interface</span> <span class="n">Product</span> <span class="p">{</span>
+  <span class="nb">id</span><span class="p">:</span> <span class="n">number</span><span class="p">;</span>
+  <span class="n">name</span><span class="p">:</span> <span class="n">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">export</span> <span class="n">default</span> <span class="n">function</span> <span class="n">ProductsPage</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">const</span> <span class="p">[</span><span class="n">products</span><span class="p">,</span> <span class="n">setProducts</span><span class="p">]</span> <span class="o">=</span> <span class="n">useState</span><span class="o">&lt;</span><span class="n">Product</span><span class="p">[]</span><span class="o">&gt;</span><span class="p">([]);</span>
+  <span class="n">const</span> <span class="p">[</span><span class="n">isLoading</span><span class="p">,</span> <span class="n">setIsLoading</span><span class="p">]</span> <span class="o">=</span> <span class="n">useState</span><span class="p">(</span><span class="n">true</span><span class="p">);</span>
+
+  <span class="n">useEffect</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="n">fetch</span><span class="p">(</span><span class="s1">&#39;/api/products&#39;</span><span class="p">)</span>
+      <span class="o">.</span><span class="n">then</span><span class="p">(</span><span class="n">res</span> <span class="o">=&gt;</span> <span class="n">res</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
+      <span class="o">.</span><span class="n">then</span><span class="p">(</span><span class="n">data</span> <span class="o">=&gt;</span> <span class="p">{</span>
+        <span class="n">setProducts</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+        <span class="n">setIsLoading</span><span class="p">(</span><span class="n">false</span><span class="p">);</span>
+      <span class="p">});</span>
+  <span class="p">},</span> <span class="p">[]);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">isLoading</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">Loading</span> <span class="n">products</span><span class="o">...&lt;/</span><span class="n">p</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="k">return</span> <span class="p">(</span>
+    <span class="o">&lt;</span><span class="n">div</span><span class="o">&gt;</span>
+      <span class="o">&lt;</span><span class="n">h1</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;text-3xl font-bold mb-6&quot;</span><span class="o">&gt;</span><span class="n">Products</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+      <span class="o">&lt;</span><span class="n">ul</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;space-y-2&quot;</span><span class="o">&gt;</span>
+        <span class="p">{</span><span class="n">products</span><span class="o">.</span><span class="n">map</span><span class="p">((</span><span class="n">product</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">(</span>
+          <span class="o">&lt;</span><span class="n">li</span> <span class="n">key</span><span class="o">=</span><span class="p">{</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">}</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;p-2 border rounded&quot;</span><span class="o">&gt;</span>
+            <span class="p">{</span><span class="n">product</span><span class="o">.</span><span class="n">name</span><span class="p">}</span>
+          <span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+        <span class="p">))}</span>
+      <span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+    <span class="o">&lt;/</span><span class="n">div</span><span class="o">&gt;</span>
+  <span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This code works, but it introduces a subtle performance issue known as a "request waterfall." Let's diagnose it.</p>
+<h3 id="diagnostic-analysis-reading-the-failure_1">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+When the user navigates to <code>/products</code>, they first see "Loading products...". After a noticeable delay, the loading text is replaced by the actual product list. This flash of loading content can be jarring and contributes to Content Layout Shift (CLS).</p>
+<p><strong>Browser DevTools - Network Tab</strong> (Navigate from <code>/</code> to <code>/products</code>):</p>
+<p>You will see a sequence like this:</p>
+<ol>
+<li><strong>Request 1</strong>: <code>products-page-....js</code> (The JavaScript for the page component)</li>
+<li><strong>Request 2</strong>: <code>products</code> (The XHR/fetch request to <code>/api/products</code>)</li>
+</ol>
+<p>This is a waterfall: the browser can't even <em>start</em> fetching the data until <em>after</em> it has downloaded, parsed, and executed the JavaScript for the <code>ProductsPage</code> component.</p>
+<div class="codehilite"><pre><span></span><code>Request Timeline:
+|--------------------|  products-page-....js (200ms)
+                     |----------------|  /api/products (500ms)
+                     ^                ^
+                     |                Content appears here
+                     Page navigation starts
+</code></pre></div>
+
+<p><strong>Performance Metrics</strong>:
+- <strong>Time to Contentful Data</strong>: ~700ms (200ms for JS + 500ms for API) + rendering time.
+- <strong>Content Layout Shift (CLS)</strong>: A non-zero value, as the loading indicator is replaced by the list.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: A loading spinner followed by the content popping in. The page feels slow to load its essential data.</p>
+<ul>
+<li><strong>Expected</strong>: The page should load with its data already present, or at least start loading the data and the page code in parallel.</li>
+<li><strong>Actual</strong>: A sequential load: Page Code -&gt; Data Fetch -&gt; Render.</li>
+</ul>
+</li>
+<li>
+<p><strong>What the Network tab reveals</strong>: A clear waterfall pattern. The data fetch depends on the component code fetch.</p>
+<ul>
+<li><strong>Key indicator</strong>: The <code>fetch('/api/products')</code> request starts <em>after</em> the component's JavaScript chunk finishes downloading.</li>
+</ul>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: Client-side data fetching (<code>useEffect</code>) can only run after the component has mounted in the browser. This inherently creates a waterfall, delaying the presentation of meaningful content to the user.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: The <code>useEffect</code> hook is fundamentally a client-side browser mechanism. It cannot run on the server. This forces the data fetching to happen late in the rendering lifecycle.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A way to fetch data <em>on the server</em> before the page is even sent to the client. The server should handle the data fetching, render the complete HTML with the data included, and stream it to the browser.</p>
+</li>
+</ol>
+<h3 id="iteration-3-server-components-for-route-based-data-loading">Iteration 3: Server Components for Route-Based Data Loading</h3>
+<p>The App Router in Next.js solves this problem elegantly with React Server Components (RSCs). By making our page component <code>async</code>, we can fetch data directly within it. This code runs exclusively on the server.</p>
+<p><strong>Before</strong> (Iteration 2): A Client Component with <code>useEffect</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/page.tsx - Version 1 (Problematic)</span>
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="c1">// ... (rest of the client-side code)</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 3): A Server Component that fetches data directly.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/page.tsx - Version 2 (Optimized)</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">Product</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getProducts</span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="p">&lt;</span><span class="nt">Product</span><span class="err">[]</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// In a real app, you&#39;d fetch from your database or an external API.</span>
+<span class="w">  </span><span class="c1">// We fetch from our own route handler for this example.</span>
+<span class="w">  </span><span class="c1">// The `cache: &#39;no-store&#39;` option ensures fresh data on every request.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`</span><span class="si">${</span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">NEXT_PUBLIC_API_URL</span><span class="si">}</span><span class="sb">/api/products`</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">cache</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;no-store&#39;</span><span class="w"> </span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">.</span><span class="nx">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s1">&#39;Failed to fetch products&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="c1">// The page component is now an async function!</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductsPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">products</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">getProducts</span><span class="p">();</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-3xl font-bold mb-6&quot;</span><span class="p">&gt;</span><span class="nx">Products</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;space-y-2&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">products</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">product</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-2 border rounded&quot;</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><em>Note: You'll need to set <code>NEXT_PUBLIC_API_URL=http://localhost:3000</code> in a <code>.env.local</code> file for this to work.</em></p>
+<h3 id="verification-a-waterfall-free-world">Verification: A Waterfall-Free World</h3>
+<p>Let's navigate to the <code>/products</code> page again and inspect the Network tab.</p>
+<p><strong>Browser Behavior</strong>:
+The page loads, and the product list is immediately visible. There is no "Loading products..." flash. The transition feels much smoother.</p>
+<p><strong>Browser DevTools - Network Tab</strong>:
+When you navigate to <code>/products</code>, you will see the request for the page's HTML. You will <strong>not</strong> see a separate client-side <code>fetch</code> request to <code>/api/products</code>. The data is already embedded in the HTML streamed from the server.</p>
+<p><strong>Performance Metrics</strong>:
+- <strong>Time to Contentful Data</strong>: The time it takes for the server to respond with the initial HTML chunk, which already contains the data. This is much faster from a user's perspective.
+- <strong>Content Layout Shift (CLS)</strong>: 0. The page renders in its final state, eliminating layout shifts from loading indicators.</p>
+<p><strong>Improvement</strong>: We have eliminated the client-side request waterfall. The server does the work, leading to a faster perceived load time, better SEO, and a superior user experience.</p>
+<p><strong>Limitation preview</strong>: Our app is now fast and efficient. But what about the user's context? When they scroll down a long list, navigate away, and come back, they lose their place. In the next section, we'll tackle scroll restoration and focus management to perfect the navigation experience.</p>
+<h2 id="scroll-restoration-and-focus-management">Scroll restoration and focus management</h2>
+<h2 id="the-amnesiac-app-forgetting-the-users-context">The Amnesiac App: Forgetting the User's Context</h2>
+<p>Our dashboard is now performant, with code-split pages and server-rendered data. But a great user experience is about more than just speed; it's about feeling intuitive and seamless. One common UX failure is losing the user's scroll position after navigation.</p>
+<h3 id="iteration-2-recap">Iteration 2 Recap</h3>
+<p>Our <code>ProductsPage</code> renders a list of 100 items. It's fast and data is loaded on the server.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/page.tsx - Version 2</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductsPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">products</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">getProducts</span><span class="p">();</span>
+<span class="w">  </span><span class="c1">// ... renders a long list of products</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="the-problem-lost-scroll-position">The Problem: Lost Scroll Position</h3>
+<p>Let's demonstrate the problem. To do this, we need a page to navigate <em>to</em>.</p>
+<p><code language="tsx">
+// src/app/products/[id]/page.tsx
+export default function ProductDetailPage({ params }: { params: { id: string } }) {
+  return (
+    <div>
+      <h1 className="text-3xl font-bold">Product Detail: {params.id}</h1>
+      <p>Details about product {params.id} would go here.</p>
+    </div>
+  );
+}</p>
+<div class="codehilite"><pre><span></span><code><span class="n">And</span> <span class="n">let</span><span class="s1">&#39;s update our product list to link to this new detail page.</span>
+
+<span class="o">&lt;</span><span class="n">code</span> <span class="n">language</span><span class="o">=</span><span class="s2">&quot;tsx&quot;</span><span class="o">&gt;</span>
+<span class="o">//</span> <span class="n">src</span><span class="o">/</span><span class="n">app</span><span class="o">/</span><span class="n">products</span><span class="o">/</span><span class="n">page</span><span class="o">.</span><span class="n">tsx</span> <span class="o">-</span> <span class="n">Version</span> <span class="mf">2.1</span> <span class="p">(</span><span class="k">for</span> <span class="n">demonstration</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">Link</span> <span class="kn">from</span><span class="w"> </span><span class="s1">&#39;next/link&#39;</span><span class="p">;</span>
+
+<span class="o">//</span> <span class="o">...</span> <span class="p">(</span><span class="n">getProducts</span> <span class="n">function</span> <span class="ow">is</span> <span class="n">the</span> <span class="n">same</span><span class="p">)</span>
+
+<span class="n">export</span> <span class="n">default</span> <span class="k">async</span> <span class="n">function</span> <span class="n">ProductsPage</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">const</span> <span class="n">products</span> <span class="o">=</span> <span class="k">await</span> <span class="n">getProducts</span><span class="p">();</span>
+
+  <span class="k">return</span> <span class="p">(</span>
+    <span class="o">&lt;</span><span class="n">div</span><span class="o">&gt;</span>
+      <span class="o">&lt;</span><span class="n">h1</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;text-3xl font-bold mb-6&quot;</span><span class="o">&gt;</span><span class="n">Products</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+      <span class="o">&lt;</span><span class="n">ul</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;space-y-2&quot;</span><span class="o">&gt;</span>
+        <span class="p">{</span><span class="n">products</span><span class="o">.</span><span class="n">map</span><span class="p">((</span><span class="n">product</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">(</span>
+          <span class="o">&lt;</span><span class="n">li</span> <span class="n">key</span><span class="o">=</span><span class="p">{</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">}</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;p-2 border rounded&quot;</span><span class="o">&gt;</span>
+            <span class="o">&lt;</span><span class="n">Link</span> <span class="n">href</span><span class="o">=</span><span class="p">{</span><span class="err">`</span><span class="o">/</span><span class="n">products</span><span class="o">/</span><span class="err">$</span><span class="p">{</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">}</span><span class="err">`</span><span class="p">}</span> <span class="n">className</span><span class="o">=</span><span class="s2">&quot;block&quot;</span><span class="o">&gt;</span>
+              <span class="p">{</span><span class="n">product</span><span class="o">.</span><span class="n">name</span><span class="p">}</span>
+            <span class="o">&lt;/</span><span class="n">Link</span><span class="o">&gt;</span>
+          <span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+        <span class="p">))}</span>
+      <span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+    <span class="o">&lt;/</span><span class="n">div</span><span class="o">&gt;</span>
+  <span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Failure Scenario</strong>:
+1.  Navigate to the <code>/products</code> page.
+2.  Scroll down to "Product 75".
+3.  Click on the link for "Product 75". You are now on <code>/products/75</code>.
+4.  Click the browser's "Back" button.</p>
+<h3 id="diagnostic-analysis-reading-the-failure_2">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+When you return to the <code>/products</code> page, you are at the <strong>top of the page</strong>, not back at "Product 75". You have lost your context. This is incredibly frustrating for users navigating long lists or feeds.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: Disorientation and frustration. They have to perform extra work (scrolling) to get back to where they were.</p>
+<ul>
+<li><strong>Expected</strong>: The browser should remember my scroll position and restore it when I navigate back.</li>
+<li><strong>Actual</strong>: The page loads at the top, as if visited for the first time.</li>
+</ul>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: By default, the Next.js App Router <em>does</em> attempt to restore scroll position. However, this behavior can sometimes be misconfigured or disabled. The key is to understand how it works and how to ensure it functions correctly.</p>
+</li>
+</ol>
+<h3 id="solution-understanding-and-ensuring-scroll-restoration">Solution: Understanding and Ensuring Scroll Restoration</h3>
+<p>In the Next.js App Router, scroll restoration is <strong>enabled by default</strong>. The behavior we just described is what you'd expect in older frameworks or if the feature were disabled. The App Router's router maintains a history of scroll positions and automatically restores them on back/forward navigation.</p>
+<p>So, why might it fail?
+*   <strong>Custom Layouts</strong>: Complex layouts with internal scroll containers (<code>overflow: scroll</code>) might not be tracked automatically. The router tracks the <code>window</code> scroll position.
+*   <strong>Disabling the Feature</strong>: You can explicitly disable it on a <code>&lt;Link&gt;</code> component with <code>scroll={false}</code>. This is useful for links that only update a small part of the page (like a tab) where you <em>don't</em> want the page to scroll to the top.</p>
+<p>Let's demonstrate the <code>scroll={false}</code> prop. If we wanted a link to <em>not</em> scroll to the top on navigation, we would do this:</p>
+<p><code language="tsx">
+// Example of disabling scroll behavior
+<Link href="/some-other-page" scroll={false}>
+  This link won't scroll the page to the top.
+</Link></p>
+<div class="codehilite"><pre><span></span><code><span class="n">Since</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="n">behavior</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">what</span><span class="w"> </span><span class="n">we</span><span class="w"> </span><span class="n">want</span><span class="p">,</span><span class="w"> </span><span class="n">there</span><span class="s1">&#39;s no code to &quot;fix&quot;. The important lesson is that Next.js handles this for us, and we should be careful not to break it.</span>
+
+<span class="s1">### The Next Frontier: Accessibility and Focus Management</span>
+
+<span class="s1">While scroll position is handled, a related and often overlooked issue is **focus management**. After navigating to a new page, where is the browser&#39;</span><span class="n">s</span><span class="w"> </span><span class="n">focus</span><span class="nv">?</span>
+
+<span class="o">**</span><span class="n">Failure</span><span class="w"> </span><span class="n">Scenario</span><span class="o">**:</span>
+<span class="mf">1.</span><span class="w">  </span><span class="k">Use</span><span class="w"> </span><span class="n">your</span><span class="w"> </span><span class="n">keyboard</span><span class="s1">&#39;s `Tab` key to navigate through the links on the `/` page.</span>
+<span class="s1">2.  Press `Enter` on the &quot;Products&quot; link.</span>
+<span class="s1">3.  The `/products` page loads.</span>
+<span class="s1">4.  Now, press the `Tab` key again. Where does the focus go?</span>
+
+<span class="s1">**Browser Behavior**:</span>
+<span class="s1">The focus is often lost or unpredictable. It might jump to the browser&#39;</span><span class="n">s</span><span class="w"> </span><span class="n">URL</span><span class="w"> </span><span class="n">bar</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">remain</span><span class="w"> </span><span class="s2">&quot;in limbo&quot;</span><span class="p">.</span><span class="w"> </span><span class="k">For</span><span class="w"> </span><span class="n">users</span><span class="w"> </span><span class="n">relying</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">screen</span><span class="w"> </span><span class="n">readers</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">keyboard</span><span class="w"> </span><span class="n">navigation</span><span class="p">,</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">major</span><span class="w"> </span><span class="n">accessibility</span><span class="w"> </span><span class="n">failure</span><span class="p">.</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="k">context</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">lost</span><span class="p">.</span>
+
+<span class="o">**</span><span class="n">What</span><span class="w"> </span><span class="n">we</span><span class="w"> </span><span class="n">need</span><span class="o">**:</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="k">system</span><span class="w"> </span><span class="n">that</span><span class="p">,</span><span class="w"> </span><span class="n">upon</span><span class="w"> </span><span class="k">every</span><span class="w"> </span><span class="n">route</span><span class="w"> </span><span class="k">change</span><span class="p">,</span><span class="w"> </span><span class="n">programmatically</span><span class="w"> </span><span class="n">moves</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">browser</span><span class="s1">&#39;s focus to a logical starting point on the new page, typically the main heading (`&lt;h1&gt;`).</span>
+
+<span class="s1">### Iteration 4: Implementing a Focus Manager</span>
+
+<span class="s1">We can solve this with a small, reusable client component that listens for route changes and manages focus.</span>
+
+<span class="s1">**Project Structure**:</span>
+</code></pre></div>
+
+<p>src/
+└── components/
+    ├── RouteFocusManager.tsx  # New component
+    └── ...</p>
+<div class="codehilite"><pre><span></span><code><span class="o">&lt;</span><span class="n">code</span> <span class="n">language</span><span class="o">=</span><span class="s2">&quot;tsx&quot;</span><span class="o">&gt;</span>
+<span class="o">//</span> <span class="n">src</span><span class="o">/</span><span class="n">components</span><span class="o">/</span><span class="n">RouteFocusManager</span><span class="o">.</span><span class="n">tsx</span>
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="p">{</span> <span class="n">usePathname</span> <span class="p">}</span> <span class="kn">from</span><span class="w"> </span><span class="s2">&quot;next/navigation&quot;</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="p">{</span> <span class="n">useEffect</span><span class="p">,</span> <span class="n">useRef</span> <span class="p">}</span> <span class="kn">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="n">export</span> <span class="n">function</span> <span class="n">RouteFocusManager</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">const</span> <span class="n">pathname</span> <span class="o">=</span> <span class="n">usePathname</span><span class="p">();</span>
+  <span class="n">const</span> <span class="n">mainContentRef</span> <span class="o">=</span> <span class="n">useRef</span><span class="o">&lt;</span><span class="n">HTMLElement</span> <span class="o">|</span> <span class="n">null</span><span class="o">&gt;</span><span class="p">(</span><span class="n">null</span><span class="p">);</span>
+
+  <span class="n">useEffect</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="o">//</span> <span class="n">Find</span> <span class="n">the</span> <span class="n">main</span> <span class="n">content</span> <span class="n">area</span><span class="o">.</span> <span class="n">We</span><span class="s1">&#39;ll add an id=&quot;main-content&quot; to it.</span>
+    <span class="n">mainContentRef</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="n">getElementById</span><span class="p">(</span><span class="s2">&quot;main-content&quot;</span><span class="p">);</span>
+
+    <span class="o">//</span> <span class="n">On</span> <span class="n">route</span> <span class="n">change</span><span class="p">,</span> <span class="n">focus</span> <span class="n">the</span> <span class="n">main</span> <span class="n">content</span> <span class="n">area</span><span class="o">.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">mainContentRef</span><span class="o">.</span><span class="n">current</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">mainContentRef</span><span class="o">.</span><span class="n">current</span><span class="o">.</span><span class="n">focus</span><span class="p">();</span>
+    <span class="p">}</span>
+  <span class="p">},</span> <span class="p">[</span><span class="n">pathname</span><span class="p">]);</span>
+
+  <span class="k">return</span> <span class="n">null</span><span class="p">;</span> <span class="o">//</span> <span class="n">This</span> <span class="n">component</span> <span class="n">renders</span> <span class="n">nothing</span><span class="o">.</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, we need to integrate this into our root layout and add the corresponding <code>id</code> and <code>tabIndex</code> to our main content element.</p>
+<p><code language="tsx">
+// src/app/layout.tsx - Version 2
+import Nav from "@/components/Nav";
+import { RouteFocusManager } from "@/components/RouteFocusManager"; // Import
+import "./globals.css";</p>
+<p>export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        {/<em> This component is a client component that will run in the browser </em>/}
+        <RouteFocusManager /> 
+        <Nav />
+        {/<em> Add id and tabIndex to the main element </em>/}
+        <main id="main-content" tabIndex={-1} className="p-8 outline-none">
+          {children}
+        </main>
+      </body>
+    </html>
+  );
+}</p>
+<div class="codehilite"><pre><span></span><code><span class="o">**</span><span class="n">Why</span><span class="w"> </span><span class="n n-Quoted">`tabIndex={-1}`</span><span class="nv">?</span><span class="o">**</span><span class="w"> </span><span class="n">This</span><span class="w"> </span><span class="n">makes</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">element</span><span class="w"> </span><span class="n">programmatically</span><span class="w"> </span><span class="n">focusable</span><span class="w"> </span><span class="p">(</span><span class="n">via</span><span class="w"> </span><span class="n n-Quoted">`element.focus()`</span><span class="p">)</span><span class="w"> </span><span class="k">without</span><span class="w"> </span><span class="n">adding</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">natural</span><span class="w"> </span><span class="n">tab</span><span class="w"> </span><span class="k">order</span><span class="p">.</span><span class="w"> </span><span class="n">This</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">exactly</span><span class="w"> </span><span class="n">what</span><span class="w"> </span><span class="n">we</span><span class="w"> </span><span class="n">want</span><span class="p">.</span>
+
+<span class="c1">### Verification: Accessible Navigation</span>
+
+<span class="mf">1.</span><span class="w">  </span><span class="n">Navigate</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">site</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="n">your</span><span class="w"> </span><span class="n">keyboard</span><span class="p">.</span>
+<span class="mf">2.</span><span class="w">  </span><span class="n">Click</span><span class="w"> </span><span class="n n-Quoted">`Enter`</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">navigation</span><span class="p">.</span>
+<span class="mf">3.</span><span class="w">  </span><span class="k">As</span><span class="w"> </span><span class="n">soon</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="k">page</span><span class="w"> </span><span class="n">loads</span><span class="p">,</span><span class="w"> </span><span class="n">press</span><span class="w"> </span><span class="n n-Quoted">`Tab`</span><span class="p">.</span>
+
+<span class="o">**</span><span class="n">Browser</span><span class="w"> </span><span class="n">Behavior</span><span class="o">**:</span>
+<span class="n">The</span><span class="w"> </span><span class="n">focus</span><span class="w"> </span><span class="n">now</span><span class="w"> </span><span class="n">correctly</span><span class="w"> </span><span class="k">starts</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">top</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="n">content</span><span class="w"> </span><span class="n">area</span><span class="p">.</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="k">first</span><span class="w"> </span><span class="n">press</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n n-Quoted">`Tab`</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">focus</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">first</span><span class="w"> </span><span class="n">focusable</span><span class="w"> </span><span class="n">element</span><span class="w"> </span><span class="o">*</span><span class="n">within</span><span class="o">*</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="k">page</span><span class="s1">&#39;s content (e.g., the first product link), not the browser chrome or some other random element. Screen readers will announce the new page&#39;</span><span class="n">s</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="n">heading</span><span class="p">,</span><span class="w"> </span><span class="n">giving</span><span class="w"> </span><span class="n">users</span><span class="w"> </span><span class="n">immediate</span><span class="w"> </span><span class="k">context</span><span class="p">.</span>
+
+<span class="o">**</span><span class="n">Improvement</span><span class="o">**:</span><span class="w"> </span><span class="n">Our</span><span class="w"> </span><span class="n">application</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">now</span><span class="w"> </span><span class="n">significantly</span><span class="w"> </span><span class="n">more</span><span class="w"> </span><span class="k">accessible</span><span class="p">.</span><span class="w"> </span><span class="n">We</span><span class="w"> </span><span class="n">provide</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">predictable</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">seamless</span><span class="w"> </span><span class="n">experience</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="k">all</span><span class="w"> </span><span class="n">users</span><span class="p">,</span><span class="w"> </span><span class="n">including</span><span class="w"> </span><span class="n">those</span><span class="w"> </span><span class="n">who</span><span class="w"> </span><span class="n">rely</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">assistive</span><span class="w"> </span><span class="n">technologies</span><span class="p">.</span>
+
+<span class="o">**</span><span class="n">Limitation</span><span class="w"> </span><span class="n">preview</span><span class="o">**:</span><span class="w"> </span><span class="n">Our</span><span class="w"> </span><span class="n">app</span><span class="w"> </span><span class="n">feels</span><span class="w"> </span><span class="n">great</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="k">use</span><span class="p">.</span><span class="w"> </span><span class="n">But</span><span class="w"> </span><span class="n">can</span><span class="w"> </span><span class="n">we</span><span class="w"> </span><span class="n">make</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="n">feel</span><span class="w"> </span><span class="o">*</span><span class="n">instantaneous</span><span class="o">*</span><span class="nv">?</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="n">final</span><span class="w"> </span><span class="n">piece</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">puzzle</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="k">load</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">code</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">next</span><span class="w"> </span><span class="k">page</span><span class="w"> </span><span class="o">*</span><span class="k">before</span><span class="o">*</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">user</span><span class="w"> </span><span class="n">even</span><span class="w"> </span><span class="n">clicks</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">link</span><span class="p">.</span><span class="w"> </span><span class="n">This</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">called</span><span class="w"> </span><span class="n">prefetching</span><span class="p">.</span>
+
+<span class="c1">## When to prefetch</span>
+
+<span class="c1">## Predicting the Future: Making Navigation Instantaneous</span>
+
+<span class="n">We</span><span class="s1">&#39;ve optimized our bundle size, data loading, and navigation context. The final step in mastering routing is to make navigation feel truly instantaneous. Even with code splitting, there&#39;</span><span class="n">s</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">small</span><span class="w"> </span><span class="n">delay</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">user</span><span class="w"> </span><span class="n">clicks</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">browser</span><span class="w"> </span><span class="n">fetches</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">necessary</span><span class="w"> </span><span class="n">JavaScript</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="k">page</span><span class="p">.</span><span class="w"> </span><span class="n">Prefetching</span><span class="w"> </span><span class="n">solves</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">loading</span><span class="w"> </span><span class="n">resources</span><span class="w"> </span><span class="n">ahead</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="kt">time</span><span class="p">.</span>
+
+<span class="c1">### Iteration 3 Recap</span>
+
+<span class="n">Our</span><span class="w"> </span><span class="n">application</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">well</span><span class="o">-</span><span class="n">structured</span><span class="p">.</span><span class="w"> </span><span class="k">When</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">user</span><span class="w"> </span><span class="n">clicks</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="s2">&quot;Orders&quot;</span><span class="w"> </span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">browser</span><span class="w"> </span><span class="n">requests</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">JavaScript</span><span class="w"> </span><span class="n">chunk</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">orders</span><span class="w"> </span><span class="k">page</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="n">renders</span><span class="w"> </span><span class="n">it</span><span class="p">.</span>
+
+<span class="c1">### The Problem: Network Latency on Navigation</span>
+
+<span class="n">Let</span><span class="s1">&#39;s simulate a user on a slightly slower network to see the problem clearly.</span>
+
+<span class="s1">**Failure Scenario**:</span>
+<span class="s1">1.  Open Browser DevTools and go to the Network tab.</span>
+<span class="s1">2.  Select a &quot;Fast 3G&quot; or similar network throttling profile.</span>
+<span class="s1">3.  Load the homepage (`/`).</span>
+<span class="s1">4.  Click the &quot;Orders&quot; link.</span>
+
+<span class="s1">### Diagnostic Analysis: Reading the Failure</span>
+
+<span class="s1">**Browser Behavior**:</span>
+<span class="s1">There is a noticeable pause—perhaps 1-2 seconds—between clicking the &quot;Orders&quot; link and seeing the &quot;Loading chart...&quot; message appear. The UI feels sluggish.</span>
+
+<span class="s1">**Browser DevTools - Network Tab**:</span>
+<span class="s1">You can see the exact cause of the delay. The request for the `orders-page-....js` chunk only begins *after* the user clicks the link. The navigation is blocked on this network request.</span>
+</code></pre></div>
+
+<p>User Action: Click "Orders" Link
+|
+|--- Network Request for orders-page-....js (e.g., 800ms on Fast 3G) ---|
+                                                                         |
+                                                                         Page Renders</p>
+<div class="codehilite"><pre><span></span><code><span class="o">**</span><span class="n">Let</span><span class="s1">&#39;s parse this evidence**:</span>
+
+<span class="s1">1.  **What the user experiences**: A laggy interface. The app doesn&#39;</span><span class="n">t</span><span class="w"> </span><span class="n">feel</span><span class="w"> </span><span class="n">responsive</span><span class="p">.</span>
+
+<span class="w">    </span><span class="o">-</span><span class="w">   </span><span class="o">**</span><span class="n">Expected</span><span class="o">**:</span><span class="w"> </span><span class="n">Clicking</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="n">should</span><span class="w"> </span><span class="n">feel</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">instant</span><span class="w"> </span><span class="n">transition</span><span class="p">.</span>
+<span class="w">    </span><span class="o">-</span><span class="w">   </span><span class="o">**</span><span class="n">Actual</span><span class="o">**:</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="n">transition</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">gated</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="kt">time</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="n">takes</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">download</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">next</span><span class="w"> </span><span class="k">page</span><span class="s1">&#39;s code.</span>
+
+<span class="s1">2.  **What the Network tab reveals**: The code for the destination route is fetched on-demand, triggered by the click event.</span>
+
+<span class="s1">    -   **Key indicator**: The waterfall shows the JS chunk download starting at the moment of the click.</span>
+
+<span class="s1">3.  **Root cause identified**: We are loading the code *reactively* (in response to a click) instead of *proactively* (in anticipation of a click).</span>
+
+<span class="s1">4.  **What we need**: A way to tell Next.js, &quot;I think the user might click this link soon, so please download the code for it in the background *before* they click.&quot;</span>
+
+<span class="s1">### Solution: Automatic Prefetching with `&lt;Link&gt;`</span>
+
+<span class="s1">This is another area where Next.js provides a powerful, built-in solution. The `&lt;Link&gt;` component automatically handles this for us.</span>
+
+<span class="s1">**By default, `&lt;Link&gt;` prefetches the code for the linked route when the link enters the user&#39;</span><span class="n">s</span><span class="w"> </span><span class="n">viewport</span><span class="p">.</span><span class="o">**</span>
+
+<span class="n">This</span><span class="w"> </span><span class="n">means</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">our</span><span class="w"> </span><span class="n n-Quoted">`Nav`</span><span class="w"> </span><span class="k">component</span><span class="p">,</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">soon</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">it</span><span class="s1">&#39;s visible on the screen, Next.js will start downloading the JavaScript chunks for the `/orders` and `/products` pages in the background with a low priority.</span>
+
+<span class="s1">### Verification: Prefetching in Action</span>
+
+<span class="s1">1.  Disable network throttling.</span>
+<span class="s1">2.  Go to the Network tab in DevTools and clear it.</span>
+<span class="s1">3.  Reload the homepage (`/`).</span>
+
+<span class="s1">**Browser DevTools - Network Tab**:</span>
+<span class="s1">Almost immediately after the page loads, you will see new, low-priority requests for the JavaScript associated with the other pages.</span>
+</code></pre></div>
+
+<h2 id="name-status-type-initiator">Name                         Status  Type      Initiator</h2>
+<p>... initial page chunks ...
+orders-page-....js           200     script    Link (prefetch)
+products-page-....js         200     script    Link (prefetch)</p>
+<div class="codehilite"><pre><span></span><code>The<span class="w"> </span>&quot;Initiator&quot;<span class="w"> </span>column<span class="w"> </span>often<span class="w"> </span>indicates<span class="w"> </span>that<span class="w"> </span>the<span class="w"> </span>prefetch<span class="w"> </span>was<span class="w"> </span>triggered<span class="w"> </span>by<span class="w"> </span>the<span class="w"> </span>`<span class="nt">&lt;Link&gt;</span>`<span class="w"> </span>component.<span class="w"> </span>Now,<span class="w"> </span>when<span class="w"> </span>you<span class="w"> </span>click<span class="w"> </span>the<span class="w"> </span>&quot;Orders&quot;<span class="w"> </span>or<span class="w"> </span>&quot;Products&quot;<span class="w"> </span>link,<span class="w"> </span>the<span class="w"> </span>browser<span class="w"> </span>doesn&#39;t<span class="w"> </span>need<span class="w"> </span>to<span class="w"> </span>fetch<span class="w"> </span>the<span class="w"> </span>code<span class="w"> </span>from<span class="w"> </span>the<span class="w"> </span>network;<span class="w"> </span>it&#39;s<span class="w"> </span>already<span class="w"> </span>in<span class="w"> </span>the<span class="w"> </span>browser&#39;s<span class="w"> </span>cache.<span class="w"> </span>The<span class="w"> </span>navigation<span class="w"> </span>is<span class="w"> </span>instant.
+
+###<span class="w"> </span>When<span class="w"> </span>to<span class="w"> </span>Prefetch,<span class="w"> </span>and<span class="w"> </span>When<span class="w"> </span>Not<span class="w"> </span>To
+
+Automatic<span class="w"> </span>prefetching<span class="w"> </span>is<span class="w"> </span>a<span class="w"> </span>fantastic<span class="w"> </span>default,<span class="w"> </span>but<span class="w"> </span>it&#39;s<span class="w"> </span>not<span class="w"> </span>always<span class="w"> </span>the<span class="w"> </span>right<span class="w"> </span>choice.<span class="w"> </span>You<span class="w"> </span>need<span class="w"> </span>to<span class="w"> </span>make<span class="w"> </span>conscious<span class="w"> </span>decisions<span class="w"> </span>based<span class="w"> </span>on<span class="w"> </span>the<span class="w"> </span>user<span class="w"> </span>experience<span class="w"> </span>and<span class="w"> </span>performance<span class="w"> </span>trade-offs.
+
+####<span class="w"> </span>When<span class="w"> </span>to<span class="w"> </span>use<span class="w"> </span>default<span class="w"> </span>prefetching<span class="w"> </span>(the<span class="w"> </span>happy<span class="w"> </span>path)
+This<span class="w"> </span>is<span class="w"> </span>ideal<span class="w"> </span>for<span class="w"> </span>primary<span class="w"> </span>navigation<span class="w"> </span>and<span class="w"> </span>any<span class="w"> </span>high-likelihood<span class="w"> </span>next<span class="w"> </span>steps.<span class="w"> </span>The<span class="w"> </span>&quot;Orders&quot;<span class="w"> </span>and<span class="w"> </span>&quot;Products&quot;<span class="w"> </span>links<span class="w"> </span>in<span class="w"> </span>our<span class="w"> </span>nav<span class="w"> </span>bar<span class="w"> </span>are<span class="w"> </span>perfect<span class="w"> </span>candidates.<span class="w"> </span>The<span class="w"> </span>cost<span class="w"> </span>of<span class="w"> </span>a<span class="w"> </span>small<span class="w"> </span>background<span class="w"> </span>download<span class="w"> </span>is<span class="w"> </span>well<span class="w"> </span>worth<span class="w"> </span>the<span class="w"> </span>benefit<span class="w"> </span>of<span class="w"> </span>instant<span class="w"> </span>navigation.
+
+####<span class="w"> </span>When<span class="w"> </span>to<span class="w"> </span>disable<span class="w"> </span>prefetching
+You<span class="w"> </span>can<span class="w"> </span>disable<span class="w"> </span>this<span class="w"> </span>behavior<span class="w"> </span>with<span class="w"> </span>the<span class="w"> </span>`prefetch={false}`<span class="w"> </span>prop.
+
+<span class="nt">&lt;code</span><span class="w"> </span><span class="na">language=</span><span class="s">&quot;tsx&quot;</span><span class="nt">&gt;</span>
+<span class="nt">&lt;Link</span><span class="w"> </span><span class="na">href=</span><span class="s">&quot;/rarely-visited-page&quot;</span><span class="w"> </span><span class="na">prefetch=</span><span class="s">{false}</span><span class="nt">&gt;</span>
+<span class="w">  </span>Annual<span class="w"> </span>Report<span class="w"> </span>Generator
+<span class="nt">&lt;/Link&gt;</span>
+</code></pre></div>
+
+<p><strong>Use cases for disabling prefetching</strong>:
+-   <strong>Very Large, Rarely-Visited Pages</strong>: If our "Orders" page included a 5MB mapping library and was only visited by 1% of users, prefetching it for everyone would be a waste of bandwidth.
+-   <strong>Pages with Frequently Changing Data</strong>: Prefetching only fetches the <em>code</em>, not the <em>data</em>. But in some edge cases with rapidly changing UIs, you might want to avoid it.
+-   <strong>UI with Hundreds of Links</strong>: Imagine a dashboard with a table of 500 orders, each linking to its detail page. Prefetching all 500 would clog the user's network connection. In this case, Next.js is smart enough to not prefetch them all, but it's a scenario to be mindful of.</p>
+<h4 id="when-to-prefetch-programmatically">When to prefetch programmatically</h4>
+<p>Sometimes, the best time to prefetch isn't when a link is in the viewport, but in response to another user action. For this, we can use the <code>router.prefetch()</code> method from the <code>useRouter</code> hook.</p>
+<p><strong>Use Case</strong>: Imagine a "Create Product" wizard with multiple steps. When the user successfully completes Step 1, we have very high confidence they will proceed to Step 2. This is the perfect moment to programmatically prefetch the code for Step 2.</p>
+<p><code language="tsx">
+// src/components/Step1Form.tsx
+"use client";</p>
+<p>import { useRouter } from "next/navigation";</p>
+<p>export default function Step1Form() {
+  const router = useRouter();</p>
+<p>// Prefetch Step 2 when the user starts interacting with the form
+  const handleFocus = () =&gt; {
+    router.prefetch('/products/create/step-2');
+  };</p>
+<p>const handleSubmit = (e: React.FormEvent) =&gt; {
+    e.preventDefault();
+    // ... submit form data
+    router.push('/products/create/step-2');
+  };</p>
+<p>return (
+    <form onSubmit={handleSubmit} onFocus={handleFocus}>
+      {/<em> Form fields for step 1 </em>/}
+      <button type="submit">Next Step</button>
+    </form>
+  );
+}</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">### Decision Framework: Which Prefetching Strategy to Use?</span>
+
+<span class="o">|</span><span class="w"> </span><span class="n">Scenario</span><span class="w">                               </span><span class="o">|</span><span class="w"> </span><span class="n">Default</span><span class="w"> </span><span class="err">`</span><span class="o">&lt;</span><span class="n">Link</span><span class="o">&gt;</span><span class="err">`</span><span class="w"> </span><span class="p">(</span><span class="ow">in</span><span class="w"> </span><span class="n">viewport</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="err">`</span><span class="o">&lt;</span><span class="n">Link</span><span class="w"> </span><span class="n">prefetch</span><span class="o">=</span><span class="p">{</span><span class="bp">false</span><span class="p">}</span><span class="o">&gt;</span><span class="err">`</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="err">`</span><span class="n">router</span><span class="o">.</span><span class="n">prefetch</span><span class="p">()</span><span class="err">`</span><span class="w"> </span><span class="p">(</span><span class="n">programmatic</span><span class="p">)</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="o">--------------------------------------</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">------------------------------</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">-------------------------</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">----------------------------------</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="o">**</span><span class="n">Main</span><span class="w"> </span><span class="n">site</span><span class="w"> </span><span class="n">navigation</span><span class="o">**</span><span class="w">               </span><span class="o">|</span><span class="w"> </span><span class="err">✅</span><span class="w"> </span><span class="o">**</span><span class="n">Best</span><span class="w"> </span><span class="n">Choice</span><span class="o">**</span><span class="w">             </span><span class="o">|</span><span class="w"> </span><span class="err">❌</span><span class="w"> </span><span class="n">Slower</span><span class="w"> </span><span class="n">navigation</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="n">Overkill</span><span class="w">                           </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="o">**</span><span class="n">Link</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">heavy</span><span class="p">,</span><span class="w"> </span><span class="n">optional</span><span class="w"> </span><span class="k">tool</span><span class="o">**</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="err">❌</span><span class="w"> </span><span class="n">Wastes</span><span class="w"> </span><span class="n">bandwidth</span><span class="w">            </span><span class="o">|</span><span class="w"> </span><span class="err">✅</span><span class="w"> </span><span class="o">**</span><span class="n">Best</span><span class="w"> </span><span class="n">Choice</span><span class="o">**</span><span class="w">        </span><span class="o">|</span><span class="w"> </span><span class="n">Unnecessary</span><span class="w">                        </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="o">**</span><span class="n">Table</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="mi">100</span><span class="n">s</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">links</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">items</span><span class="o">**</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="err">⚠️</span><span class="w"> </span><span class="n">Okay</span><span class="p">,</span><span class="w"> </span><span class="n">but</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">aware</span><span class="w">          </span><span class="o">|</span><span class="w"> </span><span class="err">✅</span><span class="w"> </span><span class="o">**</span><span class="n">Safe</span><span class="w"> </span><span class="n">Choice</span><span class="o">**</span><span class="w">        </span><span class="o">|</span><span class="w"> </span><span class="n">Too</span><span class="w"> </span><span class="n">complex</span><span class="w">                        </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="o">**</span><span class="n">High</span><span class="o">-</span><span class="n">confidence</span><span class="w"> </span><span class="n">next</span><span class="w"> </span><span class="n">action</span><span class="w"> </span><span class="p">(</span><span class="n">wizard</span><span class="p">)</span><span class="o">**</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="err">✅</span><span class="w"> </span><span class="n">Works</span><span class="w"> </span><span class="n">fine</span><span class="w">                  </span><span class="o">|</span><span class="w"> </span><span class="err">❌</span><span class="w"> </span><span class="n">Slower</span><span class="w"> </span><span class="n">navigation</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="err">✅</span><span class="w"> </span><span class="o">**</span><span class="n">Optimal</span><span class="w"> </span><span class="n">Choice</span><span class="o">**</span><span class="w">              </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="o">**</span><span class="n">Link</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="n">footer</span><span class="o">**</span><span class="w">              </span><span class="o">|</span><span class="w"> </span><span class="err">✅</span><span class="w"> </span><span class="n">Fine</span><span class="p">,</span><span class="w"> </span><span class="n">low</span><span class="w"> </span><span class="n">priority</span><span class="w">          </span><span class="o">|</span><span class="w"> </span><span class="err">❌</span><span class="w"> </span><span class="n">Unnecessary</span><span class="w"> </span><span class="n">optimization</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">Overkill</span><span class="w">                           </span><span class="o">|</span>
+
+<span class="n">By</span><span class="w"> </span><span class="n">understanding</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">applying</span><span class="w"> </span><span class="n">these</span><span class="w"> </span><span class="n">prefetching</span><span class="w"> </span><span class="n">strategies</span><span class="p">,</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">gain</span><span class="w"> </span><span class="n">fine</span><span class="o">-</span><span class="n">grained</span><span class="w"> </span><span class="n">control</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="n">your</span><span class="w"> </span><span class="n">application</span><span class="s1">&#39;s network behavior, ensuring a user experience that feels incredibly fast and responsive.</span>
+
+<span class="c1">## Synthesis - The Complete Journey</span>
+
+<span class="c1">## The Journey: From Problem to Solution</span>
+
+<span class="n">We</span><span class="w"> </span><span class="n">have</span><span class="w"> </span><span class="n">taken</span><span class="w"> </span><span class="n">our</span><span class="w"> </span><span class="n">simple</span><span class="w"> </span><span class="n">E</span><span class="o">-</span><span class="n">commerce</span><span class="w"> </span><span class="n">Admin</span><span class="w"> </span><span class="n">Dashboard</span><span class="w"> </span><span class="n">through</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">series</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">transformations</span><span class="p">,</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="n">each</span><span class="w"> </span><span class="n">step</span><span class="w"> </span><span class="n">addressing</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">specific</span><span class="w"> </span><span class="n">performance</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">user</span><span class="w"> </span><span class="n">experience</span><span class="w"> </span><span class="n">failure</span><span class="o">.</span><span class="w"> </span><span class="n">This</span><span class="w"> </span><span class="n">journey</span><span class="w"> </span><span class="n">reflects</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">real</span><span class="o">-</span><span class="n">world</span><span class="w"> </span><span class="n">process</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">building</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">optimizing</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">modern</span><span class="w"> </span><span class="n">web</span><span class="w"> </span><span class="n">application</span><span class="o">.</span>
+
+<span class="o">|</span><span class="w"> </span><span class="n">Iteration</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">Failure</span><span class="w"> </span><span class="n">Mode</span><span class="w">                               </span><span class="o">|</span><span class="w"> </span><span class="n">Technique</span><span class="w"> </span><span class="n">Applied</span><span class="w">                        </span><span class="o">|</span><span class="w"> </span><span class="n">Result</span><span class="w">                                        </span><span class="o">|</span><span class="w"> </span><span class="n">Performance</span><span class="w"> </span><span class="n">Impact</span><span class="w">                               </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="p">:</span><span class="o">--------</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">:</span><span class="o">-----------------------------------------</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">:</span><span class="o">---------------------------------------</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">:</span><span class="o">--------------------------------------------</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">:</span><span class="o">-----------------------------------------------</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="o">**</span><span class="mi">0</span><span class="o">**</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="o">**</span><span class="n">Monolithic</span><span class="w"> </span><span class="n">Bundle</span><span class="o">**</span><span class="w">                      </span><span class="o">|</span><span class="w"> </span><span class="n">None</span><span class="w"> </span><span class="p">(</span><span class="n">Naive</span><span class="w"> </span><span class="n">Implementation</span><span class="p">)</span><span class="w">              </span><span class="o">|</span><span class="w"> </span><span class="n">Slow</span><span class="w"> </span><span class="n">initial</span><span class="w"> </span><span class="nb">load</span><span class="p">,</span><span class="w"> </span><span class="n">all</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="n">sent</span><span class="w"> </span><span class="n">at</span><span class="w"> </span><span class="n">once</span><span class="o">.</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="n">High</span><span class="w"> </span><span class="n">LCP</span><span class="p">,</span><span class="w"> </span><span class="n">large</span><span class="w"> </span><span class="n">initial</span><span class="w"> </span><span class="n">JS</span><span class="w"> </span><span class="n">bundle</span><span class="w"> </span><span class="p">(</span><span class="o">~</span><span class="mi">525</span><span class="n">KB</span><span class="p">)</span><span class="o">.</span><span class="w">      </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="o">**</span><span class="mi">1</span><span class="o">**</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="o">**</span><span class="n">Slow</span><span class="w"> </span><span class="n">Initial</span><span class="w"> </span><span class="n">Load</span><span class="o">**</span><span class="w">                      </span><span class="o">|</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="n">Splitting</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="err">`</span><span class="n">next</span><span class="o">/</span><span class="n">dynamic</span><span class="err">`</span><span class="w">       </span><span class="o">|</span><span class="w"> </span><span class="n">Drastically</span><span class="w"> </span><span class="n">smaller</span><span class="w"> </span><span class="n">initial</span><span class="w"> </span><span class="n">bundle</span><span class="o">.</span><span class="w">           </span><span class="o">|</span><span class="w"> </span><span class="mi">95</span><span class="o">%</span><span class="w"> </span><span class="n">reduction</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">initial</span><span class="w"> </span><span class="n">bundle</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">faster</span><span class="w"> </span><span class="n">LCP</span><span class="o">.</span><span class="w"> </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="o">**</span><span class="mi">2</span><span class="o">**</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="o">**</span><span class="n">Client</span><span class="o">-</span><span class="n">Side</span><span class="w"> </span><span class="n">Data</span><span class="w"> </span><span class="n">Waterfall</span><span class="o">**</span><span class="w">             </span><span class="o">|</span><span class="w"> </span><span class="n">Server</span><span class="w"> </span><span class="n">Component</span><span class="w"> </span><span class="n">Data</span><span class="w"> </span><span class="n">Fetching</span><span class="w"> </span><span class="p">(</span><span class="err">`</span><span class="n">async</span><span class="err">`</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">Data</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">fetched</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">server</span><span class="p">,</span><span class="w"> </span><span class="n">no</span><span class="w"> </span><span class="n">spinners</span><span class="o">.</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="n">Eliminated</span><span class="w"> </span><span class="n">client</span><span class="o">-</span><span class="n">side</span><span class="w"> </span><span class="n">waterfall</span><span class="p">,</span><span class="w"> </span><span class="n">CLS</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="mf">0.</span><span class="w">      </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="o">**</span><span class="mi">3</span><span class="o">**</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="o">**</span><span class="n">Lost</span><span class="w"> </span><span class="n">User</span><span class="w"> </span><span class="n">Context</span><span class="o">**</span><span class="w"> </span><span class="p">(</span><span class="n">Scroll</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">Focus</span><span class="p">)</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="n">Focus</span><span class="w"> </span><span class="n">Management</span><span class="w"> </span><span class="n">Component</span><span class="w">               </span><span class="o">|</span><span class="w"> </span><span class="n">Scroll</span><span class="w"> </span><span class="n">position</span><span class="w"> </span><span class="n">restored</span><span class="p">,</span><span class="w"> </span><span class="n">focus</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">managed</span><span class="o">.</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="n">Improved</span><span class="w"> </span><span class="n">accessibility</span><span class="w"> </span><span class="p">(</span><span class="n">a11y</span><span class="p">)</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">UX</span><span class="o">.</span><span class="w">            </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="o">**</span><span class="mi">4</span><span class="o">**</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="o">**</span><span class="n">Laggy</span><span class="w"> </span><span class="n">Navigation</span><span class="o">**</span><span class="w">                       </span><span class="o">|</span><span class="w"> </span><span class="err">`</span><span class="o">&lt;</span><span class="n">Link</span><span class="o">&gt;</span><span class="err">`</span><span class="w"> </span><span class="n">Prefetching</span><span class="w"> </span><span class="p">(</span><span class="n">default</span><span class="p">)</span><span class="w">           </span><span class="o">|</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">next</span><span class="w"> </span><span class="n">pages</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">loaded</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">background</span><span class="o">.</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="n">Perceived</span><span class="w"> </span><span class="n">navigation</span><span class="w"> </span><span class="n">becomes</span><span class="w"> </span><span class="n">instantaneous</span><span class="o">.</span><span class="w">      </span><span class="o">|</span>
+
+<span class="c1">### Final Implementation</span>
+
+<span class="n">Here</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">final</span><span class="p">,</span><span class="w"> </span><span class="n">optimized</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">our</span><span class="w"> </span><span class="err">`</span><span class="n">products</span><span class="err">`</span><span class="w"> </span><span class="n">page</span><span class="p">,</span><span class="w"> </span><span class="n">incorporating</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">lessons</span><span class="w"> </span><span class="n">learned</span><span class="o">.</span><span class="w"> </span><span class="n">It</span><span class="s1">&#39;s a Server Component that fetches its own data, and its route is automatically code-split and prefetched by the `Nav` component.</span>
+
+<span class="o">&lt;</span><span class="n">code</span><span class="w"> </span><span class="n">language</span><span class="o">=</span><span class="s2">&quot;tsx&quot;</span><span class="o">&gt;</span>
+<span class="o">//</span><span class="w"> </span><span class="n">src</span><span class="o">/</span><span class="n">app</span><span class="o">/</span><span class="n">products</span><span class="o">/</span><span class="n">page</span><span class="o">.</span><span class="n">tsx</span><span class="w"> </span><span class="p">(</span><span class="n">Final</span><span class="w"> </span><span class="n">Version</span><span class="p">)</span>
+<span class="n">import</span><span class="w"> </span><span class="n">Link</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="s1">&#39;next/link&#39;</span><span class="p">;</span>
+
+<span class="n">interface</span><span class="w"> </span><span class="n">Product</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="n">number</span><span class="p">;</span>
+<span class="w">  </span><span class="n">name</span><span class="p">:</span><span class="w"> </span><span class="n">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">async</span><span class="w"> </span><span class="n">function</span><span class="w"> </span><span class="n">getProducts</span><span class="p">():</span><span class="w"> </span><span class="n">Promise</span><span class="o">&lt;</span><span class="n">Product</span><span class="p">[]</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="n">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">await</span><span class="w"> </span><span class="n">fetch</span><span class="p">(</span><span class="err">`</span><span class="o">$</span><span class="p">{</span><span class="n">process</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">NEXT_PUBLIC_API_URL</span><span class="p">}</span><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">products</span><span class="err">`</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">cache</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;no-store&#39;</span><span class="w"> </span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">res</span><span class="o">.</span><span class="n">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">throw</span><span class="w"> </span><span class="n">new</span><span class="w"> </span><span class="n">Error</span><span class="p">(</span><span class="s1">&#39;Failed to fetch products&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">res</span><span class="o">.</span><span class="n">json</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="n">async</span><span class="w"> </span><span class="n">function</span><span class="w"> </span><span class="n">ProductsPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="n">products</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">await</span><span class="w"> </span><span class="n">getProducts</span><span class="p">();</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="n">div</span><span class="o">&gt;</span>
+<span class="w">      </span><span class="o">&lt;</span><span class="n">h1</span><span class="w"> </span><span class="n">className</span><span class="o">=</span><span class="s2">&quot;text-3xl font-bold mb-6&quot;</span><span class="o">&gt;</span><span class="n">Products</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+<span class="w">      </span><span class="o">&lt;</span><span class="n">ul</span><span class="w"> </span><span class="n">className</span><span class="o">=</span><span class="s2">&quot;space-y-2&quot;</span><span class="o">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="n">products</span><span class="o">.</span><span class="n">map</span><span class="p">((</span><span class="n">product</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="o">&lt;</span><span class="n">li</span><span class="w"> </span><span class="n">key</span><span class="o">=</span><span class="p">{</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">}</span><span class="w"> </span><span class="n">className</span><span class="o">=</span><span class="s2">&quot;p-2 border rounded&quot;</span><span class="o">&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="o">/*</span><span class="w"> </span>
+<span class="w">              </span><span class="o">-</span><span class="w"> </span><span class="n">This</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">prefetched</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="n">enters</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">viewport</span><span class="o">.</span>
+<span class="w">              </span><span class="o">-</span><span class="w"> </span><span class="n">Navigation</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">cause</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="n">refresh</span><span class="o">.</span>
+<span class="w">              </span><span class="o">-</span><span class="w"> </span><span class="n">Scroll</span><span class="w"> </span><span class="n">position</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">restored</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">back</span><span class="o">/</span><span class="n">forward</span><span class="w"> </span><span class="n">navigation</span><span class="o">.</span>
+<span class="w">            </span><span class="o">*/</span><span class="p">}</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="n">Link</span><span class="w"> </span><span class="n">href</span><span class="o">=</span><span class="p">{</span><span class="err">`</span><span class="o">/</span><span class="n">products</span><span class="o">/$</span><span class="p">{</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">}</span><span class="err">`</span><span class="p">}</span><span class="w"> </span><span class="n">className</span><span class="o">=</span><span class="s2">&quot;block&quot;</span><span class="o">&gt;</span>
+<span class="w">              </span><span class="p">{</span><span class="n">product</span><span class="o">.</span><span class="n">name</span><span class="p">}</span>
+<span class="w">            </span><span class="o">&lt;/</span><span class="n">Link</span><span class="o">&gt;</span>
+<span class="w">          </span><span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+<span class="w">    </span><span class="o">&lt;/</span><span class="n">div</span><span class="o">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>And our root layout ensures an accessible experience for all users.</p>
+<p><code language="tsx">
+// src/app/layout.tsx (Final Version)
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import Nav from "@/components/Nav";
+import { RouteFocusManager } from "@/components/RouteFocusManager";</p>
+<p>const inter = Inter({ subsets: ["latin"] });</p>
+<p>export const metadata: Metadata = {
+  title: "Admin Dashboard",
+  description: "E-commerce Admin",
+};</p>
+<p>export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className={inter.className}>
+        <RouteFocusManager />
+        <Nav />
+        <main id="main-content" tabIndex={-1} className="p-8 outline-none">
+          {children}
+        </main>
+      </body>
+    </html>
+  );
+}
+```</p>
+<h3 id="lessons-learned">Lessons Learned</h3>
+<ol>
+<li><strong>Code-Split by Default</strong>: Structure your application around routes. Next.js's file-system based router automatically code-splits your pages. Use <code>next/dynamic</code> for large components <em>within</em> a page that are conditionally rendered.</li>
+<li><strong>Fetch Data on the Server</strong>: Embrace Server Components. Co-locating your data fetching with your components eliminates client-side waterfalls, improves performance, and simplifies your code. Avoid <code>useEffect</code> for data fetching unless you specifically need client-side interactivity with that data.</li>
+<li><strong>Trust the Platform, but Verify</strong>: Next.js provides excellent defaults for routing, like scroll restoration and prefetching. Understand how they work so you can leverage them effectively and know when to opt-out for specific use cases.</li>
+<li><strong>Accessibility is Not an Afterthought</strong>: A performant app that is unusable by a portion of your audience is a failed app. Implement focus management from the start to ensure a robust experience for keyboard and screen reader users.</li>
+<li><strong>Think Proactively, Not Reactively</strong>: Prefetching embodies this principle. By anticipating the user's next move, you can create an experience that feels faster than it has any right to be.</li>
+</ol>
+<p>By mastering these advanced routing patterns, you move beyond simply building applications that <em>work</em> to crafting experiences that are fast, resilient, and a joy to use.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:41:00 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

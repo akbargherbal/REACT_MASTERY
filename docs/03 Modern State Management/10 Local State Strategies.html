@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10 Local State Strategies</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">03 Modern State Management</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-10-local-state-strategies">Chapter 10: Local State Strategies</h1>
+<h2 id="when-usestate-is-enough-most-of-the-time">When useState is enough (most of the time)</h2>
+<h2 id="the-default-choice-usestate">The Default Choice: <code>useState</code></h2>
+<p>In React, state is the memory of your component. It's the data that changes over time and causes your UI to re-render. The most fundamental tool for managing this memory is the <code>useState</code> hook. For the vast majority of components you build, <code>useState</code> is not just sufficient—it's the best tool for the job due to its simplicity and directness.</p>
+<p>The core philosophy of <code>useState</code> is <strong>co-location</strong>: state is declared right next to the JSX that uses it. This makes components easy to understand, debug, and reuse.</p>
+<p>Let's build the anchor example for this chapter: a <code>UserProfileForm</code>. This form will allow a user to edit their profile information. We will build upon and refactor this single component throughout the chapter to explore different state management strategies.</p>
+<h3 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h3>
+<p>Our goal is to create a form with several fields: name, email, bio, role, and a toggle for notifications.</p>
+<p><strong>Project Structure</strong>:</p>
+<p>We'll work within a single page for simplicity.</p>
+<div class="codehilite"><pre><span></span><code>src/
+└── app/
+    └── chapter-10/
+        └── page.tsx   ← Our component will live here
+</code></pre></div>
+
+<p>Here is the initial, "naive" implementation using multiple <code>useState</code> hooks. This is our baseline—it's correct, functional, and often the right way to start.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/chapter-10/page.tsx</span>
+<span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">FormEvent</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfilePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">name</span><span class="p">,</span><span class="w"> </span><span class="nx">setName</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;Jane Doe&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">email</span><span class="p">,</span><span class="w"> </span><span class="nx">setEmail</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;jane.doe@example.com&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">bio</span><span class="p">,</span><span class="w"> </span><span class="nx">setBio</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;A software developer specializing in React.&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">role</span><span class="p">,</span><span class="w"> </span><span class="nx">setRole</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="o">&lt;</span><span class="s1">&#39;user&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;admin&#39;</span><span class="o">&gt;</span><span class="p">(</span><span class="s1">&#39;user&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">notificationsEnabled</span><span class="p">,</span><span class="w"> </span><span class="nx">setNotificationsEnabled</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="kt">FormEvent</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">e</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">formData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="p">,</span><span class="w"> </span><span class="nx">email</span><span class="p">,</span><span class="w"> </span><span class="nx">bio</span><span class="p">,</span><span class="w"> </span><span class="nx">role</span><span class="p">,</span><span class="w"> </span><span class="nx">notificationsEnabled</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Submitting:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">formData</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">alert</span><span class="p">(</span><span class="sb">`Form submitted! Check the console for data.`</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;max-w-2xl mx-auto p-8 bg-gray-50 rounded-lg shadow-md&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-2xl font-bold mb-6&quot;</span><span class="p">&gt;</span><span class="nx">Edit</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="nx">Profile</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;space-y-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">label</span><span class="w"> </span><span class="na">htmlFor</span><span class="o">=</span><span class="s">&quot;name&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;block text-sm font-medium text-gray-700&quot;</span><span class="p">&gt;</span><span class="nx">Name</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">            </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;name&quot;</span>
+<span class="w">            </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span>
+<span class="w">            </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">name</span><span class="p">}</span>
+<span class="w">            </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setName</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">            </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500&quot;</span>
+<span class="w">          </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">label</span><span class="w"> </span><span class="na">htmlFor</span><span class="o">=</span><span class="s">&quot;email&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;block text-sm font-medium text-gray-700&quot;</span><span class="p">&gt;</span><span class="nx">Email</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">            </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;email&quot;</span>
+<span class="w">            </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;email&quot;</span>
+<span class="w">            </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">email</span><span class="p">}</span>
+<span class="w">            </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setEmail</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">            </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500&quot;</span>
+<span class="w">          </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">label</span><span class="w"> </span><span class="na">htmlFor</span><span class="o">=</span><span class="s">&quot;bio&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;block text-sm font-medium text-gray-700&quot;</span><span class="p">&gt;</span><span class="nx">Bio</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">textarea</span>
+<span class="w">            </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;bio&quot;</span>
+<span class="w">            </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">bio</span><span class="p">}</span>
+<span class="w">            </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setBio</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">            </span><span class="na">rows</span><span class="o">=</span><span class="p">{</span><span class="mf">3</span><span class="p">}</span>
+<span class="w">            </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500&quot;</span>
+<span class="w">          </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">label</span><span class="w"> </span><span class="na">htmlFor</span><span class="o">=</span><span class="s">&quot;role&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;block text-sm font-medium text-gray-700&quot;</span><span class="p">&gt;</span><span class="nx">Role</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">select</span>
+<span class="w">            </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;role&quot;</span>
+<span class="w">            </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">role</span><span class="p">}</span>
+<span class="w">            </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setRole</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="s1">&#39;user&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;admin&#39;</span><span class="p">)}</span>
+<span class="w">            </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500&quot;</span>
+<span class="w">          </span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">option</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;user&quot;</span><span class="p">&gt;</span><span class="nx">User</span><span class="p">&lt;/</span><span class="nt">option</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">option</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;admin&quot;</span><span class="p">&gt;</span><span class="nx">Admin</span><span class="p">&lt;/</span><span class="nt">option</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">select</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex items-center&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">            </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;notifications&quot;</span>
+<span class="w">            </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;checkbox&quot;</span>
+<span class="w">            </span><span class="na">checked</span><span class="o">=</span><span class="p">{</span><span class="nx">notificationsEnabled</span><span class="p">}</span>
+<span class="w">            </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setNotificationsEnabled</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">checked</span><span class="p">)}</span>
+<span class="w">            </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded&quot;</span>
+<span class="w">          </span><span class="p">/&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">label</span><span class="w"> </span><span class="na">htmlFor</span><span class="o">=</span><span class="s">&quot;notifications&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;ml-2 block text-sm text-gray-900&quot;</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="nx">Enable</span><span class="w"> </span><span class="nx">Notifications</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span>
+<span class="w">          </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span>
+<span class="w">          </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500&quot;</span>
+<span class="w">        </span><span class="p">&gt;</span>
+<span class="w">          </span><span class="nx">Save</span><span class="w"> </span><span class="nx">Profile</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="analysis-of-the-usestate-approach">Analysis of the <code>useState</code> Approach</h3>
+<p>This code works perfectly. Each piece of state is independent and managed by its own <code>useState</code> hook.</p>
+<p><strong>What <code>useState</code> excels at:</strong></p>
+<ol>
+<li><strong>Simplicity and Readability</strong>: <code>const [value, setValue] = useState(initialValue)</code> is arguably the most intuitive API in React. It clearly states: "Here is a piece of state, and here is the function to change it."</li>
+<li><strong>Independence</strong>: When state variables are not related, managing them separately makes sense. Changing the user's <code>name</code> has no logical connection to their <code>notificationsEnabled</code> setting. <code>useState</code> reflects this separation.</li>
+<li><strong>Performance</strong>: React is highly optimized for <code>useState</code>. When you call <code>setName</code>, React knows that only the components using the <code>name</code> variable <em>might</em> need to re-render.</li>
+</ol>
+<p><strong>When to stick with <code>useState</code>:</strong></p>
+<ul>
+<li>When managing simple, primitive values (strings, numbers, booleans).</li>
+<li>When state updates are independent of each other.</li>
+<li>When the logic to calculate the next state is simple (e.g., <code>setCount(count + 1)</code>).</li>
+<li>In most components you write. <strong><code>useState</code> should be your default.</strong></li>
+</ul>
+<h3 id="limitation-preview">Limitation Preview</h3>
+<p>Our current form is excellent for simple field updates. But what happens when we need to implement more complex state transitions? For example, what if we need a "Reset Form" button that reverts all fields to their original values, or a "Load Data" button that populates the entire form from a mock API call?</p>
+<p>With our current setup, we would need to call all five <code>set...</code> functions in each of those handlers. This can become repetitive and error-prone. This is the exact problem we will tackle in the next section.</p>
+<h2 id="usereducer-for-complex-state-logic">useReducer for complex state logic</h2>
+<h2 id="managing-complexity-with-usereducer">Managing Complexity with <code>useReducer</code></h2>
+<p>As we previewed, our <code>useState</code>-based form is simple and effective, but it has a weakness: its state update logic is scattered. Each <code>onChange</code> handler contains its own logic. If we add more complex actions that affect multiple state variables at once, this decentralized approach becomes a liability.</p>
+<h3 id="iteration-1-the-problem-of-interrelated-state-updates">Iteration 1: The Problem of Interrelated State Updates</h3>
+<p><strong>Current state recap</strong>: Our <code>UserProfileForm</code> uses five separate <code>useState</code> hooks to manage its fields. It works well for individual field changes.</p>
+<p><strong>Current limitation</strong>: There's no centralized place to manage state logic. Actions like "resetting the form" or "loading data" require calling multiple state setters, leading to code duplication and potential bugs if a new field is added but forgotten in one of the handlers.</p>
+<p><strong>New scenario introduction</strong>: Let's add two new buttons to our form:
+1.  <strong>Reset Form</strong>: Reverts all fields to their initial state.
+2.  <strong>Load Sample Data</strong>: Populates the form with data for a different user, simulating an API response.</p>
+<p>Let's first try to implement this using our existing <code>useState</code> setup.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/chapter-10/page.tsx (Conceptual &#39;before&#39; state)</span>
+
+<span class="c1">// ... (imports and component definition)</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">name</span><span class="p">,</span><span class="w"> </span><span class="nx">setName</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;Jane Doe&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// ... (other useState hooks)</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">initialData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Jane Doe&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;jane.doe@example.com&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A software developer specializing in React.&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">role</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;user&#39;</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="kd">const</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">notificationsEnabled</span><span class="o">:</span><span class="w"> </span><span class="kt">true</span><span class="p">,</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleReset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setName</span><span class="p">(</span><span class="nx">initialData</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setEmail</span><span class="p">(</span><span class="nx">initialData</span><span class="p">.</span><span class="nx">email</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setBio</span><span class="p">(</span><span class="nx">initialData</span><span class="p">.</span><span class="nx">bio</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setRole</span><span class="p">(</span><span class="nx">initialData</span><span class="p">.</span><span class="nx">role</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setNotificationsEnabled</span><span class="p">(</span><span class="nx">initialData</span><span class="p">.</span><span class="nx">notificationsEnabled</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleLoadSampleData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">sampleData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;John Smith&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;john.smith@example.com&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Lead Engineer with a passion for TypeScript.&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">role</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;admin&#39;</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="kd">const</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">notificationsEnabled</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="p">,</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">    </span><span class="nx">setName</span><span class="p">(</span><span class="nx">sampleData</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setEmail</span><span class="p">(</span><span class="nx">sampleData</span><span class="p">.</span><span class="nx">email</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setBio</span><span class="p">(</span><span class="nx">sampleData</span><span class="p">.</span><span class="nx">bio</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setRole</span><span class="p">(</span><span class="nx">sampleData</span><span class="p">.</span><span class="nx">role</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setNotificationsEnabled</span><span class="p">(</span><span class="nx">sampleData</span><span class="p">.</span><span class="nx">notificationsEnabled</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="c1">// ... (rest of the component with new buttons)</span>
+<span class="w">  </span><span class="cm">/*</span>
+<span class="cm">  &lt;div className=&quot;flex space-x-2 mt-4&quot;&gt;</span>
+<span class="cm">    &lt;button type=&quot;button&quot; onClick={handleLoadSampleData}&gt;Load Sample Data&lt;/button&gt;</span>
+<span class="cm">    &lt;button type=&quot;button&quot; onClick={handleReset}&gt;Reset&lt;/button&gt;</span>
+<span class="cm">  &lt;/div&gt;</span>
+<span class="cm">  */</span>
+</code></pre></div>
+
+<h3 id="diagnostic-analysis-reading-the-failure">Diagnostic Analysis: Reading the Failure</h3>
+<p>This isn't a runtime failure, but a <strong>maintainability and scalability failure</strong>.</p>
+<p><strong>Browser Behavior</strong>:
+The UI works exactly as expected. Clicking "Reset" resets the form. Clicking "Load Sample Data" loads the new data.</p>
+<p><strong>Code Analysis</strong>:
+The problem lies in the code's structure.
+- <strong>Repetition</strong>: The logic for updating the form state is duplicated. Both <code>handleReset</code> and <code>handleLoadSampleData</code> list out every single state setter.
+- <strong>Fragility</strong>: If we add a new field, say <code>username</code>, we must remember to add <code>const [username, setUsername] = useState('')</code> AND update <code>handleReset</code> AND <code>handleLoadSampleData</code>. Forgetting one of these will introduce a subtle bug where resetting the form doesn't reset the new field.
+- <strong>Lack of Clarity</strong>: The event handlers are cluttered with implementation details (<code>setName</code>, <code>setEmail</code>, etc.). They should ideally describe <em>what</em> the user is doing (e.g., "resetting the form"), not <em>how</em> the state is updated.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: A perfectly working form.</li>
+<li><strong>What the code reveals</strong>: A maintenance problem waiting to happen. The state update logic is scattered and repetitive.</li>
+<li><strong>Root cause identified</strong>: We've coupled the <em>intent</em> of an action (e.g., "reset form") with the low-level <em>mechanics</em> of updating each state slice.</li>
+<li><strong>Why the current approach can't solve this</strong>: <code>useState</code> is designed for independent state slices. It doesn't provide a built-in mechanism for coordinating updates across multiple slices.</li>
+<li><strong>What we need</strong>: A way to centralize all our state update logic into a single place, so that our event handlers can simply declare their intent by dispatching an "action".</li>
+</ol>
+<h3 id="technique-introduced-usereducer">Technique Introduced: <code>useReducer</code></h3>
+<p>The <code>useReducer</code> hook is React's built-in solution for complex state management. It's an alternative to <code>useState</code> that is better suited for managing state objects with multiple sub-values and handling complex, multi-part state transitions.</p>
+<p>It works with three core concepts:
+1.  <strong>State</strong>: A single object that holds all your component's state.
+2.  <strong>Reducer</strong>: A pure function that takes the current <code>state</code> and an <code>action</code> object and returns the <em>new</em> state. It's where all your update logic lives. <code>(currentState, action) =&gt; newState</code>.
+3.  <strong>Dispatch</strong>: A function you call from your event handlers to "dispatch" an action object to the reducer.</p>
+<p>This pattern moves the "how to update" logic from your component's body into the centralized reducer function.</p>
+<h3 id="solution-implementation-refactoring-to-usereducer">Solution Implementation: Refactoring to <code>useReducer</code></h3>
+<p>Let's refactor our <code>UserProfileForm</code>.</p>
+<p><strong>Before</strong> (Multiple <code>useState</code> hooks):</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">name</span><span class="p">,</span><span class="w"> </span><span class="nx">setName</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;Jane Doe&#39;</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">email</span><span class="p">,</span><span class="w"> </span><span class="nx">setEmail</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;jane.doe@example.com&#39;</span><span class="p">);</span>
+<span class="c1">// ... and so on</span>
+</code></pre></div>
+
+<p><strong>After</strong> (A single <code>useReducer</code> hook):</p>
+<p>First, we define the types for our state and actions, and the initial state object.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/chapter-10/reducer.ts (can be in the same file or separate)</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">State</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">role</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;user&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;admin&#39;</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">notificationsEnabled</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// Define the actions our reducer can handle</span>
+<span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">Action</span><span class="w"> </span><span class="o">=</span>
+<span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;UPDATE_FIELD&#39;</span><span class="p">;</span><span class="w"> </span><span class="nx">field</span><span class="o">:</span><span class="w"> </span><span class="kt">keyof</span><span class="w"> </span><span class="nx">State</span><span class="p">;</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;SET_FORM_DATA&#39;</span><span class="p">;</span><span class="w"> </span><span class="nx">payload</span><span class="o">:</span><span class="w"> </span><span class="kt">State</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;RESET&#39;</span><span class="w"> </span><span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">initialState</span><span class="o">:</span><span class="w"> </span><span class="kt">State</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Jane Doe&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;jane.doe@example.com&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A software developer specializing in React.&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">role</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;user&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">notificationsEnabled</span><span class="o">:</span><span class="w"> </span><span class="kt">true</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="c1">// The reducer function contains all state update logic</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">formReducer</span><span class="p">(</span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">State</span><span class="p">,</span><span class="w"> </span><span class="nx">action</span><span class="o">:</span><span class="w"> </span><span class="kt">Action</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">State</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="kr">type</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="s1">&#39;UPDATE_FIELD&#39;</span><span class="o">:</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">...</span><span class="nx">state</span><span class="p">,</span>
+<span class="w">        </span><span class="p">[</span><span class="nx">action</span><span class="p">.</span><span class="nx">field</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">value</span><span class="p">,</span>
+<span class="w">      </span><span class="p">};</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="s1">&#39;SET_FORM_DATA&#39;</span><span class="o">:</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="nx">action</span><span class="p">.</span><span class="nx">payload</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="s1">&#39;RESET&#39;</span><span class="o">:</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="nx">initialState</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">default</span><span class="o">:</span>
+<span class="w">      </span><span class="kt">return</span><span class="w"> </span><span class="nx">state</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, let's update the component to use this reducer.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/chapter-10/page.tsx (Refactored with useReducer)</span>
+<span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useReducer</span><span class="p">,</span><span class="w"> </span><span class="nx">FormEvent</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">formReducer</span><span class="p">,</span><span class="w"> </span><span class="nx">initialState</span><span class="p">,</span><span class="w"> </span><span class="nx">State</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./reducer&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Assuming reducer is in a separate file</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfilePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useReducer</span><span class="p">(</span><span class="nx">formReducer</span><span class="p">,</span><span class="w"> </span><span class="nx">initialState</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="kt">FormEvent</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">e</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Submitting:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">state</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">alert</span><span class="p">(</span><span class="sb">`Form submitted! Check the console for data.`</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleFieldChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">field</span><span class="o">:</span><span class="w"> </span><span class="kt">keyof</span><span class="w"> </span><span class="nx">State</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">dispatch</span><span class="p">({</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;UPDATE_FIELD&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">field</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleLoadSampleData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">sampleData</span><span class="o">:</span><span class="w"> </span><span class="kt">State</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;John Smith&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;john.smith@example.com&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Lead Engineer with a passion for TypeScript.&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">role</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;admin&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">notificationsEnabled</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="p">,</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">    </span><span class="nx">dispatch</span><span class="p">({</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;SET_FORM_DATA&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">payload</span><span class="o">:</span><span class="w"> </span><span class="kt">sampleData</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleReset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">dispatch</span><span class="p">({</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;RESET&#39;</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;max-w-2xl mx-auto p-8 bg-gray-50 rounded-lg shadow-md&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-2xl font-bold mb-6&quot;</span><span class="p">&gt;</span><span class="nx">Edit</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="nx">Profile</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;space-y-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* Name Input */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">label</span><span class="w"> </span><span class="na">htmlFor</span><span class="o">=</span><span class="s">&quot;name&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;block text-sm font-medium text-gray-700&quot;</span><span class="p">&gt;</span><span class="nx">Name</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">            </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;name&quot;</span>
+<span class="w">            </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span>
+<span class="w">            </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span>
+<span class="w">            </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">handleFieldChange</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">            </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500&quot;</span>
+<span class="w">          </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* ... other form fields updated similarly ... */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* Example: Checkbox */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex items-center&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">            </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;notifications&quot;</span>
+<span class="w">            </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;checkbox&quot;</span>
+<span class="w">            </span><span class="na">checked</span><span class="o">=</span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">notificationsEnabled</span><span class="p">}</span>
+<span class="w">            </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">handleFieldChange</span><span class="p">(</span><span class="s1">&#39;notificationsEnabled&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">checked</span><span class="p">)}</span>
+<span class="w">            </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded&quot;</span>
+<span class="w">          </span><span class="p">/&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">label</span><span class="w"> </span><span class="na">htmlFor</span><span class="o">=</span><span class="s">&quot;notifications&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;ml-2 block text-sm text-gray-900&quot;</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="nx">Enable</span><span class="w"> </span><span class="nx">Notifications</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex space-x-2 pt-4&quot;</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;button&quot;</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleLoadSampleData</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex-1 justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50&quot;</span><span class="p">&gt;</span><span class="nx">Load</span><span class="w"> </span><span class="nx">Sample</span><span class="w"> </span><span class="nx">Data</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;button&quot;</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleReset</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex-1 justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50&quot;</span><span class="p">&gt;</span><span class="nx">Reset</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span>
+<span class="w">          </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span>
+<span class="w">          </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500&quot;</span>
+<span class="w">        </span><span class="p">&gt;</span>
+<span class="w">          </span><span class="nx">Save</span><span class="w"> </span><span class="nx">Profile</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification-and-improvement-analysis">Verification and Improvement Analysis</h3>
+<p><strong>Verification</strong>: The form's behavior is identical to the user. All functionality remains.</p>
+<p><strong>Expected vs. Actual Improvement</strong>:
+- <strong>Centralized Logic</strong>: All state update logic is now inside <code>formReducer</code>. If we add a new field, we only need to update the <code>State</code> type and <code>initialState</code>. The <code>RESET</code> and <code>SET_FORM_DATA</code> actions will handle it automatically.
+- <strong>Declarative Handlers</strong>: The event handlers (<code>handleReset</code>, <code>handleLoadSampleData</code>) are now much cleaner. They describe the <em>user's intent</em> by dispatching an action, rather than implementing the state update themselves.
+- <strong>Testability</strong>: The <code>formReducer</code> is a pure function. You can export it and write unit tests for it completely independently of React, by simply passing in a state and an action and asserting the result.</p>
+<h3 id="when-to-apply-this-solution-usestate-vs-usereducer">When to Apply This Solution: <code>useState</code> vs. <code>useReducer</code></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Scenario</th>
+<th style="text-align: left;"><code>useState</code> (Preferred)</th>
+<th style="text-align: left;"><code>useReducer</code> (Consider)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>State Shape</strong></td>
+<td style="text-align: left;">Primitive (string, boolean) or simple object/array.</td>
+<td style="text-align: left;">Complex object with multiple nested values.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>State Updates</strong></td>
+<td style="text-align: left;">Simple, independent updates.</td>
+<td style="text-align: left;">Multiple sub-values are updated together.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Update Logic</strong></td>
+<td style="text-align: left;">Next state is easily calculated from the event.</td>
+<td style="text-align: left;">Next state depends on the previous state in a complex way.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Example</strong></td>
+<td style="text-align: left;">A toggle switch's <code>on</code>/<code>off</code> state.</td>
+<td style="text-align: left;">A multi-step form's state, a shopping cart.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rule of thumb</strong>: Start with <code>useState</code>. When you find yourself writing event handlers that call multiple <code>set...</code> functions, or when the logic for determining the next state becomes complex, it's a strong signal to refactor to <code>useReducer</code>.</p>
+<h3 id="limitation-preview_1">Limitation Preview</h3>
+<p>Our component is now robust and maintainable. However, it's a single, monolithic component. In a real application, we would likely break this form down into smaller, reusable components (<code>&lt;TextInput&gt;</code>, <code>&lt;SelectInput&gt;</code>, <code>&lt;FormActions&gt;</code>).</p>
+<p>When we do that, how will the child components access the <code>state</code> and <code>dispatch</code> function from the parent? We could pass them down as props, but this can lead to a problem called "prop drilling." This is the challenge we'll solve next.</p>
+<h2 id="context-api-use-sparingly">Context API: use sparingly</h2>
+<h2 id="sharing-state-with-the-context-api">Sharing State with the Context API</h2>
+<p>Our <code>UserProfileForm</code> is now well-structured internally thanks to <code>useReducer</code>. But it's still one large component. Good React architecture favors composition—breaking down large components into smaller, focused ones.</p>
+<h3 id="iteration-2-the-problem-of-prop-drilling">Iteration 2: The Problem of Prop Drilling</h3>
+<p><strong>Current state recap</strong>: Our form uses <code>useReducer</code> to manage its state logic in a clean, centralized way.</p>
+<p><strong>Current limitation</strong>: The component is monolithic. If we break it into child components, we'll need a way to provide the form's <code>state</code> and <code>dispatch</code> function to them.</p>
+<p><strong>New scenario introduction</strong>: Let's refactor <code>UserProfileForm</code> into a parent component that orchestrates several smaller children:
+-   <code>UserDetailsSection</code>: Contains the <code>name</code> and <code>email</code> inputs.
+-   <code>UserBioSection</code>: Contains the <code>bio</code> textarea.
+-   <code>FormActions</code>: Contains the "Save", "Reset", and "Load Data" buttons.</p>
+<p>The state and dispatch function will still live in the top-level <code>UserProfilePage</code> component. Let's see what happens when we pass them down as props.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/chapter-10/page-with-prop-drilling.tsx (Conceptual &#39;before&#39; state)</span>
+
+<span class="c1">// Assume UserDetailsSection, UserBioSection, etc. are defined as separate components</span>
+<span class="c1">// that accept state and dispatch (or specific handlers) as props.</span>
+
+<span class="c1">// Example Child Component</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">UserDetailsSection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">({</span><span class="w"> </span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">handleFieldChange</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span><span class="nx">Name</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">          </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span>
+<span class="w">          </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">handleFieldChange</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span><span class="nx">Email</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">          </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">email</span><span class="p">}</span>
+<span class="w">          </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">handleFieldChange</span><span class="p">(</span><span class="s1">&#39;email&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">};</span>
+
+<span class="c1">// Parent Component</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfilePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useReducer</span><span class="p">(</span><span class="nx">formReducer</span><span class="p">,</span><span class="w"> </span><span class="nx">initialState</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleFieldChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">field</span><span class="o">:</span><span class="w"> </span><span class="kt">keyof</span><span class="w"> </span><span class="nx">State</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">dispatch</span><span class="p">({</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;UPDATE_FIELD&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">field</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="c1">// ... other handlers that call dispatch</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* </span>
+<span class="cm">        Here&#39;s the prop drilling. We pass down state and handlers.</span>
+<span class="cm">        If UserDetailsSection had its own children that needed this data,</span>
+<span class="cm">        it would have to pass them down again.</span>
+<span class="cm">      */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">UserDetailsSection</span><span class="w"> </span><span class="na">state</span><span class="o">=</span><span class="p">{</span><span class="nx">state</span><span class="p">}</span><span class="w"> </span><span class="na">handleFieldChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleFieldChange</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">UserBioSection</span><span class="w"> </span><span class="na">state</span><span class="o">=</span><span class="p">{</span><span class="nx">state</span><span class="p">}</span><span class="w"> </span><span class="na">handleFieldChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleFieldChange</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... and so on for other components */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="diagnostic-analysis-reading-the-failure_1">Diagnostic Analysis: Reading the Failure</h3>
+<p>Again, this is not a runtime error but an architectural one.</p>
+<p><strong>Browser Behavior</strong>:
+The application works flawlessly.</p>
+<p><strong>Code Analysis</strong>:
+- <strong>Prop Drilling</strong>: The <code>state</code> object and <code>handleFieldChange</code> function are passed down from <code>UserProfilePage</code> to each child. If we had another layer of nesting, say <code>&lt;FormSection&gt;</code> containing <code>&lt;UserDetailsSection&gt;</code>, then <code>&lt;FormSection&gt;</code> would have to accept those props just to pass them along, even if it doesn't use them itself.
+- <strong>Tight Coupling</strong>: The child components are tightly coupled to the parent. Their prop signatures are dictated by the parent's state structure.
+- <strong>Refactoring Burden</strong>: If we need to pass another piece of data from the parent to a deeply nested child, we have to add it to the prop list of every intermediate component.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: A working form.</li>
+<li><strong>What the code reveals</strong>: A verbose and rigid component structure that is difficult to maintain and refactor.</li>
+<li><strong>Root cause identified</strong>: State needed by deeply nested components is held high up in the tree, forcing intermediate components to act as tunnels for props.</li>
+<li><strong>What we need</strong>: A mechanism to "teleport" data from a provider component to any consumer component deep in the tree, without passing it through every level.</li>
+</ol>
+<h3 id="technique-introduced-the-context-api">Technique Introduced: The Context API</h3>
+<p>React's Context API is designed to solve exactly this problem. It allows a parent component (<code>Provider</code>) to make data available to any component in its subtree (<code>Consumer</code>), no matter how deep, without explicit prop passing.</p>
+<p>It consists of three main parts:
+1.  <code>createContext()</code>: Creates a context object.
+2.  <code>&lt;MyContext.Provider value={...}&gt;</code>: A component that provides a value to all its descendants.
+3.  <code>useContext(MyContext)</code>: A hook that lets a component subscribe to the context and get its value.</p>
+<h3 id="solution-implementation-refactoring-to-use-context">Solution Implementation: Refactoring to use Context</h3>
+<p>Let's create a <code>FormContext</code> and refactor our components.</p>
+<p><strong>Before</strong> (Prop drilling):
+Child components received props: <code>&lt;UserDetailsSection state={state} handleFieldChange={...} /&gt;</code></p>
+<p><strong>After</strong> (Using Context):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/chapter-10/FormContext.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createContext</span><span class="p">,</span><span class="w"> </span><span class="nx">useContext</span><span class="p">,</span><span class="w"> </span><span class="nx">Dispatch</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">State</span><span class="p">,</span><span class="w"> </span><span class="nx">Action</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./reducer&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">FormContextType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kt">State</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">dispatch</span><span class="o">:</span><span class="w"> </span><span class="kt">Dispatch</span><span class="p">&lt;</span><span class="nt">Action</span><span class="p">&gt;;</span>
+<span class="p">};</span>
+
+<span class="c1">// Create the context with a default value (can be null or a mock)</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">FormContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createContext</span><span class="p">&lt;</span><span class="nt">FormContextType</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="c1">// Custom hook for easier consumption</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">useFormContext</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useContext</span><span class="p">(</span><span class="nx">FormContext</span><span class="p">);</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s1">&#39;useFormContext must be used within a FormProvider&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">context</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/chapter-10/page.tsx (Refactored with Context)</span>
+<span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useReducer</span><span class="p">,</span><span class="w"> </span><span class="nx">FormEvent</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">formReducer</span><span class="p">,</span><span class="w"> </span><span class="nx">initialState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./reducer&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">FormContext</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./FormContext&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">UserDetailsSection</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./UserDetailsSection&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Assume these are now separate components</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">FormActions</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./FormActions&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfilePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useReducer</span><span class="p">(</span><span class="nx">formReducer</span><span class="p">,</span><span class="w"> </span><span class="nx">initialState</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="kt">FormEvent</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">e</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Submitting:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">state</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">alert</span><span class="p">(</span><span class="sb">`Form submitted! Check the console for data.`</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">FormContext</span><span class="p">.</span><span class="na">Provider</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;max-w-2xl mx-auto p-8 bg-gray-50 rounded-lg shadow-md&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-2xl font-bold mb-6&quot;</span><span class="p">&gt;</span><span class="nx">Edit</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="nx">Profile</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;space-y-4&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">UserDetailsSection</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="cm">/* Other sections would go here */</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">FormActions</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">FormContext</span><span class="p">.</span><span class="na">Provider</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// src/app/chapter-10/UserDetailsSection.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useFormContext</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./FormContext&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserDetailsSection</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useFormContext</span><span class="p">();</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleFieldChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">field</span><span class="o">:</span><span class="w"> </span><span class="kt">keyof</span><span class="w"> </span><span class="ow">typeof</span><span class="w"> </span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">dispatch</span><span class="p">({</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;UPDATE_FIELD&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">field</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">label</span><span class="w"> </span><span class="na">htmlFor</span><span class="o">=</span><span class="s">&quot;name&quot;</span><span class="p">&gt;</span><span class="nx">Name</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">          </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;name&quot;</span>
+<span class="w">          </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span>
+<span class="w">          </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span>
+<span class="w">          </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">handleFieldChange</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">          </span><span class="err">//</span><span class="w"> </span><span class="na">...</span><span class="w"> </span><span class="na">className</span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... email field ... */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification-and-the-hidden-trap">Verification and The Hidden Trap</h3>
+<p>The form still works perfectly. We've successfully eliminated prop drilling. The child components are now decoupled from their parents; they only need to know about the <code>FormContext</code>.</p>
+<p><strong>But we've introduced a new, more insidious problem: performance.</strong></p>
+<p><strong>New scenario</strong>: Let's analyze what happens when the user types in the "Name" input field.</p>
+<h3 id="diagnostic-analysis-the-performance-failure">Diagnostic Analysis: The Performance Failure</h3>
+<p><strong>Browser Behavior</strong>:
+The UI seems fine on this small form. On a larger, more complex application, it might feel sluggish.</p>
+<p><strong>React DevTools Evidence</strong>:
+Using the React DevTools Profiler, we can record a render while typing a single character into the name field.</p>
+<p><strong>React DevTools - Profiler Tab</strong>:
+-   Recorded render: Typing "s" into the name field.
+-   Components that re-rendered:
+    -   <code>UserProfilePage</code> (because its state changed)
+    -   <code>UserDetailsSection</code> (consumes context, expected)
+    -   <code>UserBioSection</code> (consumes context, <strong>unexpected!</strong>)
+    -   <code>FormActions</code> (consumes context, <strong>unexpected!</strong>)
+-   Reason for re-render for all children: "Context changed".</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: A working form, possibly with subtle input lag on complex pages.</li>
+<li><strong>What DevTools reveals</strong>: When we update <code>state.name</code>, every single component that consumes our <code>FormContext</code> re-renders.</li>
+<li><strong>Root cause identified</strong>: When the <code>value</code> prop of a Context Provider changes, React has no choice but to re-render <strong>all</strong> components that consume that context. It doesn't know which part of the <code>value</code> object changed; it only knows the object reference is new.</li>
+<li><strong>Why this is a problem</strong>: Our <code>FormActions</code> component only needs <code>dispatch</code> (which never changes) and our <code>UserBioSection</code> only needs <code>state.bio</code>. They are re-rendering needlessly on every keystroke in the <code>name</code> field. This is a classic performance bottleneck.</li>
+</ol>
+<h3 id="when-to-apply-context-and-when-to-avoid-it">When to Apply Context (and When to Avoid It)</h3>
+<p>Context is a powerful tool, but it is not a general-purpose state manager.</p>
+<ul>
+<li><strong>What it optimizes for</strong>: Avoiding prop drilling.</li>
+<li><strong>What it sacrifices</strong>: Render performance. All consumers re-render on any change.</li>
+</ul>
+<p><strong>When to choose Context:</strong>
+-   For <strong>low-frequency updates</strong>: Theme (light/dark mode), user authentication status, language/locale settings. Data that changes rarely.
+-   For passing down <strong>stable values</strong>: Functions like <code>dispatch</code> that have a stable identity, or configuration that is set once.</p>
+<p><strong>When to avoid Context:</strong>
+-   For <strong>high-frequency updates</strong>: Form state, mouse coordinates, animation values. Anything that changes on every keystroke or frame.</p>
+<p>This leads us to the final, crucial question: if <code>useState</code> is too simple, <code>useReducer</code> creates a monolith, and <code>Context</code> has performance issues, what is the right way to structure state in a complex application?</p>
+<h2 id="lifting-state-up-vs-pushing-it-down">Lifting state up vs. pushing it down</h2>
+<h2 id="the-fundamental-trade-off-state-placement">The Fundamental Trade-off: State Placement</h2>
+<p>We've journeyed from simple <code>useState</code> to centralized <code>useReducer</code> to shared <code>Context</code>, and at each step, we solved one problem while revealing another. This journey highlights the central question of state management in React: <strong>Where should state live?</strong></p>
+<p>The answer involves a trade-off between two primary strategies: lifting state up and pushing state down.</p>
+<h3 id="the-two-philosophies">The Two Philosophies</h3>
+<h4 id="1-lifting-state-up">1. Lifting State Up</h4>
+<p>This is the strategy of placing state in the lowest common ancestor of all components that need to read or write it.</p>
+<ul>
+<li><strong>Pros</strong>:<ul>
+<li>Creates a "single source of truth."</li>
+<li>Allows sibling components to share and react to the same state.</li>
+<li>Makes state changes predictable and easy to trace.</li>
+</ul>
+</li>
+<li><strong>Cons</strong>:<ul>
+<li>Can lead to prop drilling if not paired with Context.</li>
+<li>Can cause performance issues by forcing a large part of the component tree to re-render, even if only a small part of the state changed. Our <code>Context</code> example was an extreme case of this.</li>
+</ul>
+</li>
+</ul>
+<h4 id="2-pushing-state-down-co-location">2. Pushing State Down (Co-location)</h4>
+<p>This is the strategy of keeping state as close as possible to the component that uses it.</p>
+<ul>
+<li><strong>Pros</strong>:<ul>
+<li><strong>Excellent performance</strong>. State updates are localized, causing only the component that owns the state (and its children) to re-render.</li>
+<li><strong>Encapsulation</strong>. Components manage their own state, making them more reusable and easier to reason about in isolation.</li>
+</ul>
+</li>
+<li><strong>Cons</strong>:<ul>
+<li>Makes it difficult for sibling components to communicate or share state. To do so, you are forced to lift the state up.</li>
+</ul>
+</li>
+</ul>
+<h3 id="iteration-3-finding-the-right-balance">Iteration 3: Finding the Right Balance</h3>
+<p>Our <code>Context</code>-based form suffered because we lifted <em>all</em> the form state up, even though each component only cared about a small slice of it. The solution is not to abandon lifting state, but to be more precise about what we lift.</p>
+<p><strong>A Better Solution: Composition and Callbacks</strong></p>
+<p>Let's refactor our form one last time. The parent <code>UserProfilePage</code> will still own the state using <code>useReducer</code> (because the state logic is complex and shared), but instead of providing the entire <code>state</code> object via Context, it will pass down only the necessary pieces as props. This is a more controlled version of "lifting state up."</p>
+<p><strong>Before</strong> (Context-based, poor performance):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Parent</span>
+<span class="p">&lt;</span><span class="nt">FormContext</span><span class="p">.</span><span class="na">Provider</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">  </span><span class="p">&lt;</span><span class="nt">UserDetailsSection</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="p">&lt;/</span><span class="nt">FormContext</span><span class="p">.</span><span class="na">Provider</span><span class="p">&gt;</span>
+
+<span class="c1">// Child</span>
+<span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useFormContext</span><span class="p">();</span>
+<span class="c1">// ... uses state.name, state.email</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Props-based, performant):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/chapter-10/page.tsx (Final, balanced version)</span>
+<span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useReducer</span><span class="p">,</span><span class="w"> </span><span class="nx">FormEvent</span><span class="p">,</span><span class="w"> </span><span class="nx">useCallback</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">formReducer</span><span class="p">,</span><span class="w"> </span><span class="nx">initialState</span><span class="p">,</span><span class="w"> </span><span class="nx">State</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./reducer&#39;</span><span class="p">;</span>
+
+<span class="c1">// Child components are now &quot;controlled components&quot;</span>
+<span class="c1">// They receive values and callbacks to report changes.</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserDetailsSection</span><span class="p">({</span><span class="w"> </span><span class="nx">name</span><span class="p">,</span><span class="w"> </span><span class="nx">email</span><span class="p">,</span><span class="w"> </span><span class="nx">onFieldChange</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Rendering UserDetailsSection&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span><span class="nx">Name</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">name</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">onFieldChange</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span><span class="nx">Email</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">email</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">onFieldChange</span><span class="p">(</span><span class="s1">&#39;email&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserBioSection</span><span class="p">({</span><span class="w"> </span><span class="nx">bio</span><span class="p">,</span><span class="w"> </span><span class="nx">onFieldChange</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Rendering UserBioSection&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span><span class="nx">Bio</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">textarea</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">bio</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">onFieldChange</span><span class="p">(</span><span class="s1">&#39;bio&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfilePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">dispatch</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useReducer</span><span class="p">(</span><span class="nx">formReducer</span><span class="p">,</span><span class="w"> </span><span class="nx">initialState</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Use useCallback to ensure the function identity is stable between renders,</span>
+<span class="w">  </span><span class="c1">// preventing unnecessary re-renders of children if we were to use React.memo.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleFieldChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useCallback</span><span class="p">((</span><span class="nx">field</span><span class="o">:</span><span class="w"> </span><span class="kt">keyof</span><span class="w"> </span><span class="nx">State</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">dispatch</span><span class="p">({</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;UPDATE_FIELD&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">field</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// dispatch is stable</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="kt">FormEvent</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">e</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Submitting:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">state</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;max-w-2xl mx-auto p-8&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-2xl font-bold mb-6&quot;</span><span class="p">&gt;</span><span class="nx">Edit</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="nx">Profile</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;space-y-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">UserDetailsSection</span><span class="w"> </span>
+<span class="w">          </span><span class="na">name</span><span class="o">=</span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span><span class="w"> </span>
+<span class="w">          </span><span class="na">email</span><span class="o">=</span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">email</span><span class="p">}</span><span class="w"> </span>
+<span class="w">          </span><span class="na">onFieldChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleFieldChange</span><span class="p">}</span><span class="w"> </span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">UserBioSection</span><span class="w"> </span>
+<span class="w">          </span><span class="na">bio</span><span class="o">=</span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">bio</span><span class="p">}</span><span class="w"> </span>
+<span class="w">          </span><span class="na">onFieldChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleFieldChange</span><span class="p">}</span><span class="w"> </span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* ... other components and buttons */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="diagnostic-analysis-the-performance-win">Diagnostic Analysis: The Performance Win</h3>
+<p>If you run this version with the <code>console.log</code> statements and type in the "Name" input, you will see this in the console:</p>
+<div class="codehilite"><pre><span></span><code>Rendering UserDetailsSection
+Rendering UserBioSection
+Rendering UserDetailsSection
+Rendering UserBioSection
+...
+</code></pre></div>
+
+<p>Wait, this is the same behavior as before! Both components re-render. Why? Because when the parent's state changes, React re-renders the parent, which in turn re-renders all its children by default.</p>
+<p>To fix this, we need one final piece: <code>React.memo</code>. <code>memo</code> is a higher-order component that prevents a component from re-rendering if its props haven't changed.</p>
+<p>Let's apply it:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">memo</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">MemoizedUserDetailsSection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">memo</span><span class="p">(</span><span class="nx">UserDetailsSection</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">MemoizedUserBioSection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">memo</span><span class="p">(</span><span class="nx">UserBioSection</span><span class="p">);</span>
+
+<span class="c1">// In UserProfilePage&#39;s return:</span>
+<span class="p">&lt;</span><span class="nt">MemoizedUserDetailsSection</span><span class="w"> </span>
+<span class="w">  </span><span class="na">name</span><span class="o">=</span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span><span class="w"> </span>
+<span class="w">  </span><span class="na">email</span><span class="o">=</span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">email</span><span class="p">}</span><span class="w"> </span>
+<span class="w">  </span><span class="na">onFieldChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleFieldChange</span><span class="p">}</span><span class="w"> </span>
+<span class="p">/&gt;</span>
+<span class="p">&lt;</span><span class="nt">MemoizedUserBioSection</span><span class="w"> </span>
+<span class="w">  </span><span class="na">bio</span><span class="o">=</span><span class="p">{</span><span class="nx">state</span><span class="p">.</span><span class="nx">bio</span><span class="p">}</span><span class="w"> </span>
+<span class="w">  </span><span class="na">onFieldChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleFieldChange</span><span class="p">}</span><span class="w"> </span>
+<span class="p">/&gt;</span>
+</code></pre></div>
+
+<p>Now, when you type in the "Name" input, the console output will be:</p>
+<div class="codehilite"><pre><span></span><code>Rendering UserDetailsSection
+Rendering UserDetailsSection
+Rendering UserDetailsSection
+...
+</code></pre></div>
+
+<p><code>UserBioSection</code> no longer re-renders! We have achieved optimal performance. We lifted the state to the parent but passed down only the necessary props, allowing <code>memo</code> to prevent unnecessary re-renders of sibling components.</p>
+<h3 id="decision-framework-where-should-state-live">Decision Framework: Where Should State Live?</h3>
+<p>Use this flowchart to decide on your state management strategy.</p>
+<ol>
+<li>
+<p><strong>Does this state belong to a single component?</strong></p>
+<ul>
+<li><strong>Yes</strong> -&gt; Keep the state inside that component.<ul>
+<li>Is the state logic complex or are multiple values updated together?<ul>
+<li><strong>Yes</strong> -&gt; Use <code>useReducer</code>.</li>
+<li><strong>No</strong> -&gt; Use <code>useState</code>. (This is the most common case).</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>No, the state needs to be shared between components.</strong></p>
+<ul>
+<li>Are the components siblings?<ul>
+<li><strong>Yes</strong> -&gt; <strong>Lift state up</strong> to their common parent. Pass data down as props and updates up via callbacks. Use <code>React.memo</code> on children to optimize performance.</li>
+</ul>
+</li>
+<li>Are the components far apart in the tree?<ul>
+<li>Does the state change frequently (e.g., form input)?<ul>
+<li><strong>Yes</strong> -&gt; <strong>Avoid Context</strong>. Lift state up as described above, or consider a dedicated state management library (covered in Chapter 11).</li>
+</ul>
+</li>
+<li>Does the state change infrequently (e.g., theme, user auth)?<ul>
+<li><strong>Yes</strong> -&gt; <strong>Context API</strong> is an excellent choice to avoid prop drilling.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h3 id="the-journey-from-problem-to-solution">The Journey: From Problem to Solution</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Iteration</th>
+<th style="text-align: left;">Problem / Failure Mode</th>
+<th style="text-align: left;">Technique Applied</th>
+<th style="text-align: left;">Result</th>
+<th style="text-align: left;">Performance Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">Initial requirement</td>
+<td style="text-align: left;">Multiple <code>useState</code></td>
+<td style="text-align: left;">Works, but scattered logic.</td>
+<td style="text-align: left;">Baseline</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Repetitive, error-prone update logic</td>
+<td style="text-align: left;"><code>useReducer</code></td>
+<td style="text-align: left;">Centralized, robust logic.</td>
+<td style="text-align: left;">Neutral</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Prop drilling in component breakdown</td>
+<td style="text-align: left;"><code>Context API</code></td>
+<td style="text-align: left;">Decoupled components.</td>
+<td style="text-align: left;"><strong>Negative</strong>: Excessive re-renders.</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">Excessive re-renders from Context</td>
+<td style="text-align: left;">Lift State Up + Props + <code>memo</code></td>
+<td style="text-align: left;">Decoupled &amp; performant.</td>
+<td style="text-align: left;"><strong>Optimal</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="lessons-learned">Lessons Learned</h3>
+<ul>
+<li><strong>Start simple</strong>: Always begin with <code>useState</code> and co-located state. It's often all you need.</li>
+<li><strong>Centralize when complex</strong>: Move to <code>useReducer</code> when state transitions become interdependent and complex.</li>
+<li><strong>Use Context for static data</strong>: Context is for avoiding prop drilling of data that rarely changes. It is not a substitute for a state manager.</li>
+<li><strong>Lift state deliberately</strong>: When sharing state between components, lift it to a common ancestor, but pass down only the minimal props required. Combine this with <code>React.memo</code> for performance.</li>
+</ul>
+<p>Mastering local state is about understanding these trade-offs and choosing the simplest, most performant tool for the job at hand.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:40:59 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

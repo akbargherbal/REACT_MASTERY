@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>13 React Router Essentials</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">04 Routing and Navigation</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-13-react-router-essentials">Chapter 13: React Router Essentials</h1>
+<h2 id="client-side-routing-basics">Client-side routing basics</h2>
+<h2 id="the-problem-a-single-page-without-pages">The Problem: A "Single Page" Without Pages</h2>
+<p>Imagine a traditional website from the early 2000s. You click a link, the screen goes white, a spinner appears in your browser tab, and a completely new HTML document is loaded from the server. This is called server-side routing. It's robust, but it can feel slow and disjointed, like flipping through a deck of cards rather than interacting with a fluid application.</p>
+<p>Modern web applications, especially those built with React, aim for a smoother, app-like experience. This is achieved through a Single-Page Application (SPA) architecture. In a SPA, the server sends the initial HTML, CSS, and JavaScript bundle just once. From then on, JavaScript takes over, dynamically rewriting parts of the page as the user interacts with it, without requesting a full new page from the server.</p>
+<p>This creates a new problem: if we're not loading new pages, how do we create the illusion of different "pages" or views? How do we make URLs like <code>/about</code> or <code>/products/123</code> work? How do users share links or use their browser's back and forward buttons?</p>
+<h3 id="a-note-on-nextjs">A Note on Next.js</h3>
+<p>This chapter focuses on <code>react-router-dom</code>, the de-facto standard for routing in client-side rendered (CSR) React applications, such as those created with Vite or Create React App. Next.js provides its own powerful, file-system-based router out of the box. While the core concepts of routing are similar (URLs mapping to components), the implementation is different. We will cover Next.js's App Router in detail in Chapter 15. Understanding React Router is still immensely valuable as it teaches the fundamental principles of client-side navigation and is widely used in the React ecosystem outside of Next.js.</p>
+<h2 id="iteration-0-the-naive-approach-with-state">Iteration 0: The Naive Approach with State</h2>
+<p>Let's build a reference application: a simple product catalog. We'll have a Home page, a Products list page, and an About page.</p>
+<p>A beginner's first instinct might be to manage the "current page" using React state. Let's build this naive version to see exactly why it fails.</p>
+<p>First, let's set up our project structure and components.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+├── components/
+│   ├── Home.tsx
+│   ├── Products.tsx
+│   └── About.tsx
+└── App.tsx
+</code></pre></div>
+
+<p><strong>Component Code</strong>:
+We'll create three simple components to represent our pages.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Home.tsx</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Home</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">Our</span><span class="w"> </span><span class="nx">Store</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Products.tsx</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Products</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Our</span><span class="w"> </span><span class="nx">Products</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/About.tsx</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">About</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">About</span><span class="w"> </span><span class="nx">Us</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, let's wire them together in <code>App.tsx</code> using state to control which component is visible.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/App.tsx - Iteration 0: State-based &quot;Routing&quot;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Home</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Home&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Products</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Products&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">About</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/About&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">Page</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;home&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;products&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;about&#39;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">currentPage</span><span class="p">,</span><span class="w"> </span><span class="nx">setCurrentPage</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Page</span><span class="p">&gt;(</span><span class="s1">&#39;home&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">renderPage</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="nx">currentPage</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">case</span><span class="w"> </span><span class="s1">&#39;home&#39;</span><span class="o">:</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">Home</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="w">      </span><span class="k">case</span><span class="w"> </span><span class="s1">&#39;products&#39;</span><span class="o">:</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">Products</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="w">      </span><span class="k">case</span><span class="w"> </span><span class="s1">&#39;about&#39;</span><span class="o">:</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">About</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="w">      </span><span class="nx">default</span><span class="o">:</span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">Home</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCurrentPage</span><span class="p">(</span><span class="s1">&#39;home&#39;</span><span class="p">)}&gt;</span><span class="nx">Home</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCurrentPage</span><span class="p">(</span><span class="s1">&#39;products&#39;</span><span class="p">)}&gt;</span><span class="nx">Products</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCurrentPage</span><span class="p">(</span><span class="s1">&#39;about&#39;</span><span class="p">)}&gt;</span><span class="nx">About</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">hr</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">renderPage</span><span class="p">()}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">App</span><span class="p">;</span>
+</code></pre></div>
+
+<p>This code <em>works</em> in the sense that you can click the buttons and the content changes. But it fails as a web application. Let's diagnose why.</p>
+<h3 id="diagnostic-analysis-reading-the-failure">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+- The UI updates correctly when you click the buttons.
+- The URL in the browser's address bar <strong>never changes</strong>. It always stays at <code>http://localhost:3000/</code>.
+- Clicking the browser's "Back" button doesn't navigate to the previous view; it takes you to the site you were on before you loaded the React app.
+- Refreshing the page (e.g., while on the "About" view) resets the application to the "Home" view, because the <code>currentPage</code> state is re-initialized to <code>'home'</code>.
+- You cannot share a link to a specific page. If you copy the URL and send it to someone, they will always land on the Home page.</p>
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code>(No errors or warnings)
+</code></pre></div>
+
+<p>The console is silent because, from React's perspective, nothing is wrong. We are just updating state and re-rendering, which is what React is designed to do.</p>
+<p><strong>React DevTools Evidence</strong>:
+- <strong>Component Tree</strong>: The <code>App</code> component's <code>currentPage</code> state hook updates correctly on button clicks (e.g., from <code>'home'</code> to <code>'products'</code>).
+- <strong>Render Count</strong>: Only the <code>App</code> component and the currently rendered page component re-render on navigation. This part is efficient.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: The application feels broken. Core browser features like the back button, refresh, and link sharing do not work as expected.</p>
+<ul>
+<li>Expected: The URL should update to reflect the current view (e.g., <code>/products</code>), and browser navigation should work.</li>
+<li>Actual: The URL is static, and browser navigation is broken.</li>
+</ul>
+</li>
+<li>
+<p><strong>What the console reveals</strong>: Nothing. This is a logical failure, not a syntax or runtime error.</p>
+</li>
+<li>
+<p><strong>What DevTools shows</strong>: React is doing its job correctly based on the state we've given it. The problem isn't in React's rendering logic.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: The application's internal state (<code>currentPage</code>) is completely disconnected from the browser's URL and its history stack. The UI is a black box to the browser.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: We have no mechanism to read from or write to the browser's address bar. We are not participating in the browser's navigation system; we are fighting against it.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A way to synchronize our component state with the browser's URL. We need a library that listens for URL changes (from user typing, back/forward buttons) and maps them to specific components, and also updates the URL when we navigate within the app. This is precisely what a client-side router does.</p>
+</li>
+</ol>
+<h2 id="routes-links-and-navigation">Routes, links, and navigation</h2>
+<h2 id="iteration-1-introducing-react-router">Iteration 1: Introducing React Router</h2>
+<p>React Router is the standard library for routing in React. It provides a collection of components and hooks that connect your application's UI to the browser's URL.</p>
+<h3 id="setup">Setup</h3>
+<p>First, let's add it to our project.</p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>react-router-dom
+</code></pre></div>
+
+<p>Now, we'll refactor our <code>App.tsx</code> to use React Router's core components: <code>BrowserRouter</code>, <code>Routes</code>, and <code>Route</code>.</p>
+<ul>
+<li><code>BrowserRouter</code>: This component should wrap your entire application. It uses the HTML5 History API (pushState, replaceState, and the popstate event) to keep your UI in sync with the URL.</li>
+<li><code>Routes</code>: This component is a container for a collection of <code>Route</code>s. It intelligently looks at all its child <code>Route</code> elements to find the best match for the current URL.</li>
+<li><code>Route</code>: This is the core mapping component. It takes a <code>path</code> prop (the URL path) and an <code>element</code> prop (the React component to render when the path matches).</li>
+</ul>
+<h3 id="refactoring-apptsx">Refactoring <code>App.tsx</code></h3>
+<p>Let's replace our state-based logic with a proper routing setup.</p>
+<p><strong>Before</strong> (Iteration 0):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/App.tsx - State-based &quot;Routing&quot;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Home</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Home&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Products</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Products&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">About</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/About&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">Page</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;home&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;products&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;about&#39;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">currentPage</span><span class="p">,</span><span class="w"> </span><span class="nx">setCurrentPage</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Page</span><span class="p">&gt;(</span><span class="s1">&#39;home&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// ... state-based rendering logic ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 1):
+We need to wrap our <code>App</code> in <code>BrowserRouter</code>. This is typically done in the entry point of your application, <code>src/index.tsx</code> or <code>src/main.tsx</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/index.tsx (or main.tsx)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ReactDOM</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-dom/client&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">BrowserRouter</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-router-dom&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">App</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./App&#39;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">root</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">ReactDOM</span><span class="p">.</span><span class="nx">createRoot</span><span class="p">(</span>
+<span class="w">  </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;root&#39;</span><span class="p">)</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">HTMLElement</span>
+<span class="p">);</span>
+<span class="nx">root</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span>
+<span class="w">  </span><span class="p">&lt;</span><span class="nt">React</span><span class="p">.</span><span class="na">StrictMode</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">BrowserRouter</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">App</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">BrowserRouter</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">&lt;/</span><span class="nt">React</span><span class="p">.</span><span class="na">StrictMode</span><span class="p">&gt;</span>
+<span class="p">);</span>
+</code></pre></div>
+
+<p>Now, we can define our routes in <code>App.tsx</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/App.tsx - Iteration 1: Basic Routing</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Routes</span><span class="p">,</span><span class="w"> </span><span class="nx">Route</span><span class="p">,</span><span class="w"> </span><span class="nx">Link</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-router-dom&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Home</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Home&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Products</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Products&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">About</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/About&#39;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* Replace buttons with Link components */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">to</span><span class="o">=</span><span class="s">&quot;/&quot;</span><span class="p">&gt;</span><span class="nx">Home</span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span><span class="w"> </span><span class="o">|</span><span class="p">{</span><span class="s1">&#39; &#39;</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">to</span><span class="o">=</span><span class="s">&quot;/products&quot;</span><span class="p">&gt;</span><span class="nx">Products</span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span><span class="w"> </span><span class="o">|</span><span class="p">{</span><span class="s1">&#39; &#39;</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">to</span><span class="o">=</span><span class="s">&quot;/about&quot;</span><span class="p">&gt;</span><span class="nx">About</span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">hr</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Routes</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;/&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Home</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;/products&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Products</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;/about&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">About</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">Routes</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">App</span><span class="p">;</span>
+</code></pre></div>
+
+<h3 id="the-link-component">The <code>&lt;Link&gt;</code> Component</h3>
+<p>Notice we replaced the <code>&lt;button&gt;</code> elements with <code>&lt;Link&gt;</code>. This is critical.</p>
+<ul>
+<li>An <code>&lt;a&gt;</code> tag (<code>&lt;a href="/products"&gt;</code>) would trigger a full page reload, defeating the purpose of a SPA.</li>
+<li>A <code>&lt;button&gt;</code> with an <code>onClick</code> handler is what we used in our naive approach, which doesn't update the URL.</li>
+<li>The <code>&lt;Link&gt;</code> component from <code>react-router-dom</code> is the solution. When clicked, it:<ol>
+<li>Prevents the browser's default behavior of a full page navigation.</li>
+<li>Updates the URL in the address bar using the History API.</li>
+<li>Notifies the rest of React Router that the URL has changed, causing the <code>&lt;Routes&gt;</code> component to re-evaluate and render the matching <code>&lt;Route&gt;</code>.</li>
+</ol>
+</li>
+</ul>
+<p><strong>Verification</strong>:
+Run the app now.
+-   Clicking the "Products" link changes the URL to <code>/products</code> without a page refresh.
+-   The <code>&lt;Products /&gt;</code> component is rendered.
+-   The browser's back and forward buttons now work correctly, cycling through your navigation history.
+-   You can refresh the page at <code>/products</code>, and it will correctly load with the <code>&lt;Products /&gt;</code> component visible.
+-   You can copy the URL <code>/products</code>, open it in a new tab, and it will take you directly to the products page.</p>
+<p>We have successfully solved all the problems from our initial implementation.</p>
+<h3 id="programmatic-navigation-with-usenavigate">Programmatic Navigation with <code>useNavigate</code></h3>
+<p>Sometimes you need to navigate based on an action, not just a user clicking a link. For example, after a user submits a form, you might want to redirect them to their dashboard. This is called programmatic navigation.</p>
+<p>React Router provides the <code>useNavigate</code> hook for this.</p>
+<p>Let's add a "Go Home" button to our <code>About</code> page to demonstrate.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/About.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useNavigate</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-router-dom&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">About</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">navigate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useNavigate</span><span class="p">();</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleGoHomeClick</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Navigating home...&#39;</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">navigate</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">);</span><span class="w"> </span><span class="c1">// Navigate to the home page</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">About</span><span class="w"> </span><span class="nx">Us</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleGoHomeClick</span><span class="p">}&gt;</span><span class="nx">Go</span><span class="w"> </span><span class="nx">Home</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>When you click the "Go Home" button, the <code>navigate</code> function is called, which updates the URL and triggers the route change, just as if you had clicked a <code>&lt;Link to="/"&gt;</code>.</p>
+<h2 id="url-parameters-and-query-strings">URL parameters and query strings</h2>
+<h2 id="iteration-2-handling-dynamic-data">Iteration 2: Handling Dynamic Data</h2>
+<p>Our product catalog is static. We have a single page for all products. In a real application, we'd want to click on a product and see a detailed view for that specific item. We can't create a new route in our code for every single product in our database. We need dynamic routes.</p>
+<p>This is where URL parameters come in. A URL parameter is a dynamic segment of a URL path. For example, in <code>/products/123</code>, <code>123</code> is a parameter representing the product's ID.</p>
+<h3 id="setting-up-product-data">Setting up Product Data</h3>
+<p>First, let's create some mock product data.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/data/products.ts</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">Product</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">products</span><span class="o">:</span><span class="w"> </span><span class="kt">Product</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">1</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;React T-Shirt&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A cool shirt for React devs.&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">25.99</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">2</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Vue Mug&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A mug for the progressive framework.&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">15.50</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">3</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Angular Cap&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A cap for enterprise-grade apps.&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">20.00</span><span class="w"> </span><span class="p">},</span>
+<span class="p">];</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">getProductById</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Product</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">products</span><span class="p">.</span><span class="nx">find</span><span class="p">(</span><span class="nx">p</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">id</span><span class="p">);</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>Now, let's update our <code>Products</code> component to list these products and link to their detail pages.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Products.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Link</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-router-dom&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">products</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../data/products&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Products</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Our</span><span class="w"> </span><span class="nx">Products</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">products</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">product</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">to</span><span class="o">=</span><span class="p">{</span><span class="sb">`/products/</span><span class="si">${</span><span class="nx">product</span><span class="p">.</span><span class="nx">id</span><span class="si">}</span><span class="sb">`</span><span class="p">}&gt;</span>
+<span class="w">              </span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>If you run this now and click on a product link, you'll get a blank page. Why?</p>
+<h3 id="diagnostic-analysis-the-unmatched-route">Diagnostic Analysis: The Unmatched Route</h3>
+<p><strong>Browser Behavior</strong>:
+- You are on the <code>/products</code> page and see the list of products.
+- You click on "React T-Shirt".
+- The URL changes to <code>/products/1</code>.
+- The main content area of the page becomes blank. The navigation links are still visible.</p>
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">Warning</span><span class="o">:</span><span class="w"> </span><span class="n">No</span><span class="w"> </span><span class="n">routes</span><span class="w"> </span><span class="n">matched</span><span class="w"> </span><span class="n">location</span><span class="w"> </span><span class="s2">&quot;/products/1&quot;</span>
+</code></pre></div>
+
+<p>React Router gives us a very helpful warning here.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: A broken link. The app navigates to a new URL, but nothing renders.</p>
+</li>
+<li>
+<p><strong>What the console reveals</strong>: The root cause is explicitly stated: React Router has no <code>Route</code> definition that matches the path <code>/products/1</code>. Our current routes are <code>/</code>, <code>/products</code>, and <code>/about</code>.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: We have not defined a route that can handle dynamic segments like <code>/products/:id</code>.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A way to define a route pattern that matches any product ID, and a way to extract that ID from the URL within the component so we can fetch the correct data.</p>
+</li>
+</ol>
+<h3 id="implementing-dynamic-routes-with-useparams">Implementing Dynamic Routes with <code>useParams</code></h3>
+<p>React Router allows you to define URL parameters in your route path using a colon, like <code>:productId</code>.</p>
+<p>First, let's create the <code>ProductDetail</code> component. It will use the <code>useParams</code> hook to access the dynamic parts of the URL.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/ProductDetail.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useParams</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-router-dom&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">getProductById</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../data/products&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDetail</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// useParams returns an object of key/value pairs of URL parameters</span>
+<span class="w">  </span><span class="c1">// e.g., for a path &quot;/products/1&quot;, params will be { productId: &quot;1&quot; }</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">productId</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useParams</span><span class="o">&lt;</span><span class="p">{</span><span class="w"> </span><span class="nx">productId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">}</span><span class="o">&gt;</span><span class="p">();</span>
+
+<span class="w">  </span><span class="c1">// Note: URL params are always strings! We need to parse it.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">getProductById</span><span class="p">(</span><span class="nb">Number</span><span class="p">(</span><span class="nx">productId</span><span class="p">));</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">product</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Product</span><span class="w"> </span><span class="nx">not</span><span class="w"> </span><span class="nx">found</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">description</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Price</span><span class="o">:</span><span class="w"> </span><span class="kt">$</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">price</span><span class="p">.</span><span class="nx">toFixed</span><span class="p">(</span><span class="mf">2</span><span class="p">)}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, we add the new dynamic route to our <code>App.tsx</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/App.tsx - Iteration 2: Adding a dynamic route</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Routes</span><span class="p">,</span><span class="w"> </span><span class="nx">Route</span><span class="p">,</span><span class="w"> </span><span class="nx">Link</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-router-dom&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Home</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Home&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Products</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Products&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">About</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/About&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ProductDetail</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/ProductDetail&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// &lt;-- Import</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* ... nav links ... */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">hr</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Routes</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;/&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Home</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;/products&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Products</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="cm">/* This is the dynamic route. :productId is a URL parameter. */</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;/products/:productId&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">ProductDetail</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;/about&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">About</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">Routes</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">App</span><span class="p">;</span>
+</code></pre></div>
+
+<p><strong>Verification</strong>:
+Now, when you click a product link:
+1.  The URL changes to <code>/products/1</code>.
+2.  React Router matches this URL with the <code>&lt;Route path="/products/:productId" ... /&gt;</code>.
+3.  It renders the <code>&lt;ProductDetail /&gt;</code> component.
+4.  Inside <code>ProductDetail</code>, <code>useParams()</code> returns <code>{ productId: '1' }</code>.
+5.  The component uses this ID to fetch and display the correct product data.</p>
+<h3 id="filtering-with-query-strings">Filtering with Query Strings</h3>
+<p>What if we want to filter or sort our products? For example, <code>/products?sort=price&amp;order=desc</code>. These key-value pairs after the <code>?</code> are called query strings (or search parameters). They are ideal for optional data that modifies the state of a view.</p>
+<p>React Router provides the <code>useSearchParams</code> hook to work with them. It works much like <code>useState</code>, returning the current search params and a function to update them.</p>
+<p>Let's modify our <code>Products</code> component to allow sorting.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Products.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Link</span><span class="p">,</span><span class="w"> </span><span class="nx">useSearchParams</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-router-dom&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">products</span><span class="p">,</span><span class="w"> </span><span class="nx">Product</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../data/products&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Products</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">searchParams</span><span class="p">,</span><span class="w"> </span><span class="nx">setSearchParams</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useSearchParams</span><span class="p">();</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">sortOrder</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">searchParams</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;sort&#39;</span><span class="p">);</span><span class="w"> </span><span class="c1">// e.g., &#39;asc&#39; or &#39;desc&#39;</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">sortedProducts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[...</span><span class="nx">products</span><span class="p">].</span><span class="nx">sort</span><span class="p">((</span><span class="nx">a</span><span class="p">,</span><span class="w"> </span><span class="nx">b</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">sortOrder</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;asc&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="nx">a</span><span class="p">.</span><span class="nx">name</span><span class="p">.</span><span class="nx">localeCompare</span><span class="p">(</span><span class="nx">b</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">sortOrder</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;desc&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="nx">b</span><span class="p">.</span><span class="nx">name</span><span class="p">.</span><span class="nx">localeCompare</span><span class="p">(</span><span class="nx">a</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span><span class="w"> </span><span class="c1">// No sorting</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">order</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;asc&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;desc&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setSearchParams</span><span class="p">({</span><span class="w"> </span><span class="nx">sort</span><span class="o">:</span><span class="w"> </span><span class="kt">order</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Our</span><span class="w"> </span><span class="nx">Products</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">handleSort</span><span class="p">(</span><span class="s1">&#39;asc&#39;</span><span class="p">)}&gt;</span><span class="nx">Sort</span><span class="w"> </span><span class="nx">A</span><span class="o">-</span><span class="nx">Z</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">handleSort</span><span class="p">(</span><span class="s1">&#39;desc&#39;</span><span class="p">)}&gt;</span><span class="nx">Sort</span><span class="w"> </span><span class="nx">Z</span><span class="o">-</span><span class="nx">A</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">sortedProducts</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">product</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">to</span><span class="o">=</span><span class="p">{</span><span class="sb">`/products/</span><span class="si">${</span><span class="nx">product</span><span class="p">.</span><span class="nx">id</span><span class="si">}</span><span class="sb">`</span><span class="p">}&gt;</span>
+<span class="w">              </span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, when you click the sort buttons:
+-   <code>setSearchParams</code> is called, which updates the URL to <code>/products?sort=asc</code> (for example).
+-   This causes the <code>Products</code> component to re-render.
+-   On re-render, <code>useSearchParams</code> provides the new <code>searchParams</code> object.
+-   <code>searchParams.get('sort')</code> reads the value, and the sorting logic is applied.</p>
+<p>This is powerful because the filtered/sorted state is now encoded in the URL, making it shareable and bookmarkable.</p>
+<h2 id="nested-routes-and-layouts">Nested routes and layouts</h2>
+<h2 id="iteration-3-creating-a-consistent-layout">Iteration 3: Creating a Consistent Layout</h2>
+<p>Look at our <code>App.tsx</code>. The <code>nav</code> and <code>hr</code> elements are present on every single page. What if we wanted a more complex layout, like a header, sidebar, and footer? We would have to include those components inside <code>Home</code>, <code>Products</code>, <code>About</code>, etc. This violates the DRY (Don't Repeat Yourself) principle.</p>
+<h3 id="the-problem-repetitive-layouts">The Problem: Repetitive Layouts</h3>
+<p>Currently, our layout is defined once in <code>App.tsx</code>. But if the layout itself were a component, we'd be tempted to do this:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// A common but inefficient pattern</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">Home</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">Layout</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">Layout</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">Products</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">Layout</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Our</span><span class="w"> </span><span class="nx">Products</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">Layout</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This is bad because the <code>Layout</code> component would unmount and remount on every navigation, potentially losing its own state (like a search term in a header search bar).</p>
+<p>React Router provides a much more elegant solution: <strong>nested routes</strong> and the <code>&lt;Outlet /&gt;</code> component.</p>
+<p>The idea is to create a parent "layout route" that renders the shared UI, and then specify a placeholder where child routes should be rendered.</p>
+<h3 id="implementing-a-layout-route">Implementing a Layout Route</h3>
+<p>First, let's create a <code>Layout</code> component. The special part is the <code>&lt;Outlet /&gt;</code> component from <code>react-router-dom</code>. It acts as a placeholder, rendering the matched child route's element.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Layout.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Link</span><span class="p">,</span><span class="w"> </span><span class="nx">Outlet</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-router-dom&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Layout</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">header</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">My</span><span class="w"> </span><span class="nx">Awesome</span><span class="w"> </span><span class="nx">Store</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">to</span><span class="o">=</span><span class="s">&quot;/&quot;</span><span class="p">&gt;</span><span class="nx">Home</span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span><span class="w"> </span><span class="o">|</span><span class="p">{</span><span class="s1">&#39; &#39;</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">to</span><span class="o">=</span><span class="s">&quot;/products&quot;</span><span class="p">&gt;</span><span class="nx">Products</span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span><span class="w"> </span><span class="o">|</span><span class="p">{</span><span class="s1">&#39; &#39;</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">to</span><span class="o">=</span><span class="s">&quot;/about&quot;</span><span class="p">&gt;</span><span class="nx">About</span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">header</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">hr</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* Child routes will be rendered here */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Outlet</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">hr</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">footer</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="err">©</span><span class="w"> </span><span class="mf">2024</span><span class="w"> </span><span class="nx">My</span><span class="w"> </span><span class="nx">Awesome</span><span class="w"> </span><span class="nx">Store</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">footer</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, we refactor our <code>App.tsx</code> to use this layout route. We'll nest the page routes <em>inside</em> the layout route.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/App.tsx - Iteration 3: Nested Routes</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Routes</span><span class="p">,</span><span class="w"> </span><span class="nx">Route</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-router-dom&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Home</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Home&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Products</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Products&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">About</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/About&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ProductDetail</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/ProductDetail&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Layout</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Layout&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// &lt;-- Import</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">Routes</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* The Layout component is now the element for the parent route */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;/&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Layout</span><span class="w"> </span><span class="p">/&gt;}&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* Child routes. Their paths are relative to the parent. */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* The &#39;index&#39; route renders at the parent&#39;s path (&#39;/&#39;) */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">index</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Home</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;products&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Products</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;products/:productId&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">ProductDetail</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;about&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">About</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">Route</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">Routes</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">App</span><span class="p">;</span>
+</code></pre></div>
+
+<h3 id="key-concepts-in-this-refactor">Key Concepts in this Refactor</h3>
+<ol>
+<li><strong>Parent Route</strong>: We create a <code>&lt;Route path="/" element={&lt;Layout /&gt;}&gt;</code>. This route will always match when the URL starts with <code>/</code>.</li>
+<li><strong>Child Routes</strong>: The other routes are nested inside. Their paths are now relative to the parent. For example, <code>path="products"</code> combined with the parent's <code>/</code> becomes <code>/products</code>.</li>
+<li><strong>Index Route</strong>: The <code>&lt;Route index ... /&gt;</code> is special. It renders when the URL exactly matches the parent's path. So, when the user is at <code>/</code>, the <code>&lt;Layout /&gt;</code> renders, and its <code>&lt;Outlet /&gt;</code> is filled with the <code>&lt;Home /&gt;</code> component.</li>
+<li><strong><code>&lt;Outlet /&gt;</code></strong>: This is the magic. The <code>&lt;Layout /&gt;</code> component renders the header, nav, and footer. The <code>&lt;Outlet /&gt;</code> component within it is replaced by <code>&lt;Home /&gt;</code>, <code>&lt;Products /&gt;</code>, or <code>&lt;About /&gt;</code> depending on which child route matches.</li>
+</ol>
+<p><strong>Verification</strong>:
+The application looks and behaves exactly as before, but our code is now much cleaner and more maintainable. The <code>Layout</code> component will persist across navigations between its child routes, preserving any state it might have.</p>
+<h3 id="common-failure-modes-and-their-signatures">Common Failure Modes and Their Signatures</h3>
+<h4 id="symptom-layout-renders-but-the-page-content-is-blank">Symptom: Layout renders, but the page content is blank.</h4>
+<p><strong>Browser behavior</strong>:
+You see the header and footer from your <code>Layout</code> component, but the main content area where the page component should be is empty.</p>
+<p><strong>Console pattern</strong>:</p>
+<div class="codehilite"><pre><span></span><code>(No errors or warnings)
+</code></pre></div>
+
+<p><strong>DevTools clues</strong>:
+- In the Components tab, you see your <code>Layout</code> component in the tree, but the component you expect to see inside it (e.g., <code>Home</code>) is not there.</p>
+<p><strong>Root cause</strong>: You forgot to add <code>&lt;Outlet /&gt;</code> inside your layout component. Without it, React Router has nowhere to render the child route's element.</p>
+<p><strong>Solution</strong>: Ensure your <code>Layout.tsx</code> component includes <code>&lt;Outlet /&gt;</code> where you want the child content to appear.</p>
+<h2 id="protected-routes">Protected routes</h2>
+<h2 id="iteration-4-protecting-content">Iteration 4: Protecting Content</h2>
+<p>Most applications have areas that should only be accessible to authenticated users, like a user profile or an admin dashboard. We need a way to create "protected routes".</p>
+<h3 id="the-goal">The Goal</h3>
+<p>We want to add an <code>/admin</code> route. If a user is logged in, they should see the admin dashboard. If they are not logged in and try to access <code>/admin</code>, they should be redirected to a <code>/login</code> page.</p>
+<h3 id="simulating-authentication">Simulating Authentication</h3>
+<p>For this example, we won't build a full authentication system. We'll use React Context to provide a simple, app-wide "auth" state.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/context/AuthContext.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createContext</span><span class="p">,</span><span class="w"> </span><span class="nx">useContext</span><span class="p">,</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">ReactNode</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">AuthContextType</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">isAuthenticated</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">login</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">logout</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">AuthContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createContext</span><span class="p">&lt;</span><span class="nt">AuthContextType</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">AuthProvider</span><span class="p">({</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">children</span><span class="o">:</span><span class="w"> </span><span class="kt">ReactNode</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isAuthenticated</span><span class="p">,</span><span class="w"> </span><span class="nx">setIsAuthenticated</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">login</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setIsAuthenticated</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">logout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setIsAuthenticated</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">AuthContext</span><span class="p">.</span><span class="na">Provider</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">isAuthenticated</span><span class="p">,</span><span class="w"> </span><span class="nx">login</span><span class="p">,</span><span class="w"> </span><span class="nx">logout</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">children</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">AuthContext</span><span class="p">.</span><span class="na">Provider</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">useAuth</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useContext</span><span class="p">(</span><span class="nx">AuthContext</span><span class="p">);</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s1">&#39;useAuth must be used within an AuthProvider&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">context</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>We need to wrap our application with this provider. The best place is in <code>index.tsx</code>, surrounding the <code>BrowserRouter</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/index.tsx</span>
+<span class="c1">// ... imports</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">AuthProvider</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./context/AuthContext&#39;</span><span class="p">;</span>
+
+<span class="nx">root</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span>
+<span class="w">  </span><span class="p">&lt;</span><span class="nt">React</span><span class="p">.</span><span class="na">StrictMode</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">AuthProvider</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">BrowserRouter</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">App</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">BrowserRouter</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">AuthProvider</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">&lt;/</span><span class="nt">React</span><span class="p">.</span><span class="na">StrictMode</span><span class="p">&gt;</span>
+<span class="p">);</span>
+</code></pre></div>
+
+<p>Next, let's create the <code>Login</code> and <code>AdminDashboard</code> components.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Login.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useNavigate</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-router-dom&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useAuth</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../context/AuthContext&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Login</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">navigate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useNavigate</span><span class="p">();</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">login</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useAuth</span><span class="p">();</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleLogin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">login</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">navigate</span><span class="p">(</span><span class="s1">&#39;/admin&#39;</span><span class="p">);</span><span class="w"> </span><span class="c1">// Redirect to admin after login</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Login</span><span class="w"> </span><span class="nx">Page</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">You</span><span class="w"> </span><span class="nx">must</span><span class="w"> </span><span class="nx">log</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">view</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">admin</span><span class="w"> </span><span class="nx">page</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleLogin</span><span class="p">}&gt;</span><span class="nx">Log</span><span class="w"> </span><span class="nx">In</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/AdminDashboard.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useAuth</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../context/AuthContext&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useNavigate</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-router-dom&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">AdminDashboard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">logout</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useAuth</span><span class="p">();</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">navigate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useNavigate</span><span class="p">();</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleLogout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">logout</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">navigate</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Admin</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="p">,</span><span class="w"> </span><span class="nx">admin</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleLogout</span><span class="p">}&gt;</span><span class="nx">Log</span><span class="w"> </span><span class="nx">Out</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="creating-the-protectedroute-component">Creating the <code>ProtectedRoute</code> Component</h3>
+<p>Now for the core logic. We'll create a wrapper component called <code>ProtectedRoute</code>. Its job is to check the authentication status. If the user is authenticated, it renders its <code>children</code>. If not, it uses the <code>&lt;Navigate&gt;</code> component from React Router to perform a declarative redirect.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/ProtectedRoute.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Navigate</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-router-dom&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useAuth</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../context/AuthContext&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProtectedRoute</span><span class="p">({</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">children</span><span class="o">:</span><span class="w"> </span><span class="kt">JSX.Element</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">isAuthenticated</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useAuth</span><span class="p">();</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">isAuthenticated</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Redirect them to the /login page, but save the current location they were</span>
+<span class="w">    </span><span class="c1">// trying to go to. This allows us to send them back after they log in.</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">Navigate</span><span class="w"> </span><span class="na">to</span><span class="o">=</span><span class="s">&quot;/login&quot;</span><span class="w"> </span><span class="na">replace</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">children</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>The <code>&lt;Navigate&gt;</code> component is special. When rendered, it immediately changes the location. The <code>replace</code> prop is important; it replaces the current entry in the history stack instead of pushing a new one. This means when the user clicks the "back" button from the login page, they won't go back to the protected page they were just redirected from (which would cause another redirect loop).</p>
+<h3 id="updating-the-routes">Updating the Routes</h3>
+<p>Finally, let's add the new routes to <code>App.tsx</code> and wrap the admin route with our <code>ProtectedRoute</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/App.tsx - Iteration 4: Protected Routes</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Routes</span><span class="p">,</span><span class="w"> </span><span class="nx">Route</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-router-dom&#39;</span><span class="p">;</span>
+<span class="c1">// ... other component imports</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Login</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Login&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">AdminDashboard</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/AdminDashboard&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ProtectedRoute</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/ProtectedRoute&#39;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">Routes</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;/&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Layout</span><span class="w"> </span><span class="p">/&gt;}&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">index</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Home</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;products&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Products</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;products/:productId&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">ProductDetail</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;about&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">About</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+
+<span class="w">        </span><span class="p">{</span><span class="cm">/* Public login route */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;login&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Login</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+
+<span class="w">        </span><span class="p">{</span><span class="cm">/* Protected admin route */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span>
+<span class="w">          </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;admin&quot;</span><span class="w"> </span>
+<span class="w">          </span><span class="na">element</span><span class="o">=</span><span class="p">{</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">ProtectedRoute</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">AdminDashboard</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">ProtectedRoute</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">}</span><span class="w"> </span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">Route</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">Routes</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">App</span><span class="p">;</span>
+</code></pre></div>
+
+<p><strong>Verification</strong>:
+1.  Try to navigate directly to <code>/admin</code> by typing it in the URL bar. You will be instantly redirected to <code>/login</code>.
+2.  Click the "Log In" button on the <code>/login</code> page.
+3.  You are now redirected to <code>/admin</code> and can see the dashboard.
+4.  Refresh the page. You stay on the admin dashboard (because our simple auth state is lost on refresh, a real app would use localStorage or cookies to persist it, but the routing logic holds).
+5.  Click "Log Out". You are redirected back to the home page. If you try to go to <code>/admin</code> again, you are sent back to <code>/login</code>.</p>
+<p>The protection mechanism works perfectly.</p>
+<h3 id="the-journey-from-problem-to-solution">The Journey: From Problem to Solution</h3>
+<table>
+<thead>
+<tr>
+<th>Iteration</th>
+<th>Failure Mode</th>
+<th>Technique Applied</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>No shareable URLs, no browser history integration</td>
+<td>State-based component switching</td>
+<td>A "working" UI that breaks fundamental web expectations.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Full page reloads with <code>&lt;a&gt;</code> tags</td>
+<td><code>BrowserRouter</code>, <code>Routes</code>, <code>Route</code>, <code>Link</code></td>
+<td>True client-side navigation with URL synchronization.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Cannot represent unique items (e.g., products)</td>
+<td>URL Parameters (<code>:id</code>) and <code>useParams</code> hook</td>
+<td>Dynamic pages based on URL segments.</td>
+</tr>
+<tr>
+<td>2.5</td>
+<td>Cannot represent view state (e.g., sorting)</td>
+<td>Query Strings (<code>?sort=</code>) and <code>useSearchParams</code></td>
+<td>Shareable URLs that capture the state of the UI (filters, sorts).</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Repetitive layout code in every page component</td>
+<td>Nested Routes and the <code>&lt;Outlet /&gt;</code> component</td>
+<td>Clean, maintainable layouts that persist state across navigations.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>All pages are publicly accessible</td>
+<td>Custom <code>ProtectedRoute</code> with <code>&lt;Navigate&gt;</code></td>
+<td>Secure sections of the app accessible only to authenticated users.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="final-implementation">Final Implementation</h3>
+<p>Here is the final, complete <code>App.tsx</code> incorporating all the concepts we've learned.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/App.tsx - Final Version</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Routes</span><span class="p">,</span><span class="w"> </span><span class="nx">Route</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-router-dom&#39;</span><span class="p">;</span>
+
+<span class="c1">// Layout and Page Components</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Layout</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Layout&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Home</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Home&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Products</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Products&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ProductDetail</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/ProductDetail&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">About</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/About&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Login</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/Login&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">AdminDashboard</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/AdminDashboard&#39;</span><span class="p">;</span>
+
+<span class="c1">// Auth Wrapper</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">ProtectedRoute</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/ProtectedRoute&#39;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">Routes</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Parent layout route */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;/&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Layout</span><span class="w"> </span><span class="p">/&gt;}&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* Public child routes */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">index</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Home</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;products&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Products</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;products/:productId&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">ProductDetail</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;about&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">About</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;login&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">Login</span><span class="w"> </span><span class="p">/&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+
+<span class="w">        </span><span class="p">{</span><span class="cm">/* Protected child route */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span>
+<span class="w">          </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;admin&quot;</span><span class="w"> </span>
+<span class="w">          </span><span class="na">element</span><span class="o">=</span><span class="p">{</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">ProtectedRoute</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">AdminDashboard</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">ProtectedRoute</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">}</span><span class="w"> </span>
+<span class="w">        </span><span class="p">/&gt;</span>
+
+<span class="w">        </span><span class="p">{</span><span class="cm">/* Optional: Add a 404 Not Found route */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Route</span><span class="w"> </span><span class="na">path</span><span class="o">=</span><span class="s">&quot;*&quot;</span><span class="w"> </span><span class="na">element</span><span class="o">=</span><span class="p">{&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">404</span><span class="o">:</span><span class="w"> </span><span class="kt">Page</span><span class="w"> </span><span class="nx">Not</span><span class="w"> </span><span class="nx">Found</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">Route</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">Routes</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">App</span><span class="p">;</span>
+</code></pre></div>
+
+<p>This structure provides a robust, maintainable, and feature-complete routing setup for a client-side React application, serving as a strong foundation for building complex SPAs.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:40:59 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

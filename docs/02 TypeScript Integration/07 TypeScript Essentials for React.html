@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>07 TypeScript Essentials for React</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">02 TypeScript Integration</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-7-typescript-essentials-for-react">Chapter 7: TypeScript Essentials for React</h1>
+<h2 id="why-typescript-is-worth-the-initial-friction">Why TypeScript is worth the initial friction</h2>
+<h2 id="the-promise-and-the-price">The Promise and the Price</h2>
+<p>TypeScript is JavaScript with static types. This means you declare the "shape" of your data, and TypeScript's compiler checks your code against these shapes before it ever runs.</p>
+<p>The "price" is an initial learning curve. You have to write a bit more code and learn some new syntax. The "promise" is a massive reduction in a specific, painful class of bugs: runtime errors caused by incorrect data types. It transforms these bugs from runtime surprises for your users into compile-time errors for you, the developer.</p>
+<p>Let's see a classic JavaScript bug that TypeScript eradicates.</p>
+<h3 id="the-silent-failure-of-javascript">The Silent Failure of JavaScript</h3>
+<p>Imagine a simple component that displays a user's initials.</p>
+<p><strong>Anchor Example</strong>: We'll start with a <code>UserAvatar</code> component written in plain JavaScript. This component will be our reference point as we explore TypeScript.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserAvatar.jsx</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserAvatar</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Assumes &#39;user&#39; is an object with &#39;firstName&#39; and &#39;lastName&#39;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">firstNameInitial</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">firstName</span><span class="p">.</span><span class="nx">charAt</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">lastNameInitial</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">lastName</span><span class="p">.</span><span class="nx">charAt</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;avatar&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">firstNameInitial</span><span class="p">}{</span><span class="nx">lastNameInitial</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">UserAvatar</span><span class="p">;</span>
+</code></pre></div>
+
+<p>This code works perfectly if you use it correctly:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.jsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">UserAvatar</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/components/UserAvatar&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">currentUser</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">firstName</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Jane&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">lastName</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Doe&#39;</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">UserAvatar</span><span class="w"> </span><span class="na">user</span><span class="o">=</span><span class="p">{</span><span class="nx">currentUser</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;;</span><span class="w"> </span><span class="c1">// Renders &quot;JD&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>But what happens when the data isn't what we expect? Let's say an API call returns a user object, but the <code>lastName</code> is <code>null</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.jsx (with problematic data)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">UserAvatar</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/components/UserAvatar&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Data from a hypothetical API that sometimes returns nulls</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">userFromApi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">firstName</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;John&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">lastName</span><span class="o">:</span><span class="w"> </span><span class="kc">null</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">UserAvatar</span><span class="w"> </span><span class="na">user</span><span class="o">=</span><span class="p">{</span><span class="nx">userFromApi</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Let's run this and see what happens.</p>
+<h3 id="diagnostic-analysis-reading-the-failure">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+The entire application crashes. The user sees a white screen, or Next.js's error overlay.</p>
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">TypeError</span><span class="o">:</span><span class="w"> </span><span class="n">Cannot</span><span class="w"> </span><span class="n">read</span><span class="w"> </span><span class="n">properties</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="kc">null</span><span class="w"> </span><span class="o">(</span><span class="n">reading</span><span class="w"> </span><span class="s1">&#39;charAt&#39;</span><span class="o">)</span>
+<span class="w">  </span><span class="n">at</span><span class="w"> </span><span class="n">UserAvatar</span><span class="w"> </span><span class="o">(</span><span class="n">UserAvatar</span><span class="o">.</span><span class="na">jsx</span><span class="o">:</span><span class="mi">5</span><span class="o">:</span><span class="mi">1</span><span class="o">)</span>
+<span class="w">  </span><span class="n">at</span><span class="w"> </span><span class="n">renderWithHooks</span><span class="w"> </span><span class="o">(...)</span>
+<span class="w">  </span><span class="o">...</span>
+</code></pre></div>
+
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: The app is broken. They can't see their page.</li>
+<li><strong>What the console reveals</strong>: The error <code>TypeError: Cannot read properties of null (reading 'charAt')</code> is explicit. It tells us we tried to call the <code>.charAt()</code> method on something that was <code>null</code>. The stack trace points directly to line 5 of <code>UserAvatar.jsx</code>: <code>const lastNameInitial = user.lastName.charAt(0);</code>.</li>
+<li><strong>Root cause identified</strong>: The component implicitly assumes <code>user.lastName</code> will always be a string, but it received <code>null</code>.</li>
+<li><strong>Why the current approach can't solve this</strong>: Plain JavaScript has no built-in mechanism to enforce the "shape" of the <code>user</code> prop. The error only occurs when the code <em>runs</em> with bad data. We could add manual checks (e.g., <code>if (user &amp;amp;&amp;amp; user.lastName)</code>), but this is tedious, error-prone, and doesn't prevent a developer from passing a completely wrong data type, like a number.</li>
+<li><strong>What we need</strong>: A way to declare our expectations for the <code>user</code> prop and have our tools check for violations <em>before</em> the code ever reaches the browser. This is precisely what TypeScript provides.</li>
+</ol>
+<p>TypeScript acts as a contract. You define the contract for your component's props, and the TypeScript compiler ensures that anyone using your component adheres to that contract. This moves error detection from runtime (in the user's browser) to compile-time (in your code editor), which is fundamentally safer, faster, and cheaper to fix.</p>
+<h2 id="setting-up-typescript-in-your-react-project">Setting up TypeScript in your React project</h2>
+<h2 id="integrating-typescript">Integrating TypeScript</h2>
+<p>The best way to start a new React/Next.js project with TypeScript is to let the framework handle the setup.</p>
+<h3 id="creating-a-new-project">Creating a New Project</h3>
+<p>When you create a new Next.js app, it will ask if you want to use TypeScript. Simply answer "Yes".</p>
+<div class="codehilite"><pre><span></span><code>npx<span class="w"> </span>create-next-app@latest<span class="w"> </span>my-typescript-app
+<span class="c1"># ✔ Would you like to use TypeScript? … No / Yes</span>
+<span class="c1"># Select Yes</span>
+</code></pre></div>
+
+<p>This command scaffolds a new project with all the necessary configurations for TypeScript.</p>
+<h3 id="key-files-and-concepts">Key Files and Concepts</h3>
+<p>The setup process creates a few important files and establishes some conventions:</p>
+<ol>
+<li>
+<p><strong><code>tsconfig.json</code></strong>: This is the TypeScript compiler configuration file. It lives in the root of your project and tells the compiler how to treat your code. For now, the default settings are excellent. Key options include:</p>
+<ul>
+<li><code>"target": "es5"</code>: Compiles your modern JavaScript down to an older version (ES5) for better browser compatibility.</li>
+<li><code>"lib": ["dom", "dom.iterable", "esnext"]</code>: Includes standard type definitions for browser DOM APIs and modern JavaScript features.</li>
+<li><code>"jsx": "preserve"</code>: Tells TypeScript to leave JSX syntax alone so that Next.js's compiler (Babel) can handle it.</li>
+<li><code>"strict": true</code>: Enables a wide range of type-checking behaviors that result in more robust programs. <strong>Always leave this on.</strong></li>
+<li><code>"paths": { "@/*": ["./src/*"] }</code>: Configures the <code>@/</code> path alias for cleaner imports.</li>
+</ul>
+</li>
+<li>
+<p><strong>File Extensions</strong>: Your component files will now use the <code>.tsx</code> extension instead of <code>.js</code> or <code>.jsx</code>. This tells TypeScript that the file contains JSX syntax. Non-component TypeScript files (like utility functions or type definitions) use the <code>.ts</code> extension.</p>
+</li>
+<li>
+<p><strong>Type Definitions for Libraries</strong>: Libraries like React and Node.js are written in JavaScript. To use them in a TypeScript project, we need type definition files that describe their APIs. These are typically hosted on a community-managed repository called DefinitelyTyped and are installed as <code>@types/*</code> packages. <code>create-next-app</code> handles this for you, adding <code>@types/react</code>, <code>@types/node</code>, and <code>@types/react-dom</code> to your <code>package.json</code>.</p>
+</li>
+</ol>
+<p>With this setup, you're ready to start writing typed React components.</p>
+<h2 id="typing-props-state-and-events">Typing props, state, and events</h2>
+<h2 id="the-core-workflow-props-state-and-events">The Core Workflow: Props, State, and Events</h2>
+<p>This is where you'll spend 90% of your time with TypeScript in React. We'll build a more complex component and progressively add types to make it robust.</p>
+<p><strong>Anchor Example</strong>: A <code>UserProfileCard</code> component. It will receive a <code>userId</code>, fetch user data, manage loading and error states, and allow an action via a button click.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="nx">src</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="nx">components</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">.</span><span class="nx">tsx</span><span class="w">  </span><span class="err">←</span><span class="w"> </span><span class="nx">Our</span><span class="w"> </span><span class="nx">reference</span><span class="w"> </span><span class="nx">implementation</span>
+<span class="err">└──</span><span class="w"> </span><span class="nx">app</span><span class="o">/</span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="nx">page</span><span class="p">.</span><span class="nx">tsx</span>
+</code></pre></div>
+
+<h3 id="iteration-0-the-fragile-javascript-implementation">Iteration 0: The Fragile JavaScript Implementation</h3>
+<p>First, let's build the component in plain JavaScript (<code>.jsx</code>) to see its weaknesses. It fetches user data based on a <code>userId</code> prop.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.jsx (JavaScript version)</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">loading</span><span class="p">,</span><span class="w"> </span><span class="nx">setLoading</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="nx">setError</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">fetchUser</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setLoading</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">        </span><span class="c1">// This is a mock fetch. In a real app, it would be a network request.</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">resolve</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">resolve</span><span class="p">({</span>
+<span class="w">          </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="nx">userId</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Jane Doe&#39;</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;jane.doe@example.com&#39;</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">role</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Admin&#39;</span>
+<span class="w">        </span><span class="p">}),</span><span class="w"> </span><span class="mf">1000</span><span class="p">));</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">response</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setError</span><span class="p">(</span><span class="s1">&#39;Failed to fetch user.&#39;</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">finally</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setLoading</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nx">fetchUser</span><span class="p">();</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleDeactivate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Let&#39;s say we want to get a data attribute from the button</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Deactivating user:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">event</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">dataset</span><span class="p">.</span><span class="nx">userId</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">loading</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">profile</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">error</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;card&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Email</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Role</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">role</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleDeactivate</span><span class="p">}</span><span class="w"> </span><span class="na">data-user-id</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="nx">Deactivate</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">;</span>
+</code></pre></div>
+
+<p>This component works, but it's a minefield of potential runtime errors. Let's convert it to TypeScript and fix them one by one.</p>
+<h3 id="iteration-1-typing-component-props">Iteration 1: Typing Component Props</h3>
+<p>First, rename the file from <code>UserProfileCard.jsx</code> to <code>UserProfileCard.tsx</code>. Immediately, your editor might show some squiggly lines.</p>
+<p><strong>Current Limitation</strong>: The <code>userId</code> prop has an implicit <code>any</code> type. This means we could pass anything to it—a number, an object, <code>null</code>—and TypeScript wouldn't complain. This defeats the purpose of using TypeScript.</p>
+<p><strong>New Scenario</strong>: What happens if a developer uses our component but forgets the <code>userId</code> prop or passes the wrong type?</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx (Incorrect usage)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/components/UserProfileCard&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Scenario 1: Forgot the prop</span>
+<span class="w">  </span><span class="c1">// return &lt;UserProfileCard /&gt;;</span>
+
+<span class="w">  </span><span class="c1">// Scenario 2: Passed a number instead of a string</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">UserProfileCard</span><span class="w"> </span><span class="na">userId</span><span class="o">=</span><span class="p">{</span><span class="mf">123</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="diagnostic-analysis-reading-the-failure-props">Diagnostic Analysis: Reading the Failure (Props)</h3>
+<p><strong>Browser Behavior</strong>:
+The component might render the loading state forever or crash, depending on how the <code>fetch</code> logic handles a non-string <code>userId</code>. In our mock example, it might appear to work, but a real API would likely fail.</p>
+<p><strong>Terminal Output</strong> (from the Next.js dev server):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># With strict mode, TypeScript will complain about the implicit &#39;any&#39; type</span>
+src/components/UserProfileCard.tsx:4:29<span class="w"> </span>-<span class="w"> </span>error<span class="w"> </span>TS7031:
+Binding<span class="w"> </span>element<span class="w"> </span><span class="s1">&#39;userId&#39;</span><span class="w"> </span>implicitly<span class="w"> </span>has<span class="w"> </span>an<span class="w"> </span><span class="s1">&#39;any&#39;</span><span class="w"> </span>type.
+
+<span class="m">4</span><span class="w"> </span><span class="k">function</span><span class="w"> </span>UserProfileCard<span class="o">({</span><span class="w"> </span>userId<span class="w"> </span><span class="o">})</span><span class="w"> </span><span class="o">{</span>
+<span class="w">                              </span>~~~~~~
+</code></pre></div>
+
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: Unpredictable behavior. The component might not load data correctly.</li>
+<li><strong>What the console reveals</strong>: TypeScript is telling us directly: "I don't know what <code>userId</code> is supposed to be. You need to define its type."</li>
+<li><strong>Root cause identified</strong>: The component's props are not explicitly typed.</li>
+<li><strong>What we need</strong>: A way to define a "contract" for <code>UserProfileCard</code>'s props.</li>
+</ol>
+<p><strong>Technique Introduced</strong>: Using <code>interface</code> or <code>type</code> to define the shape of props.</p>
+<ul>
+<li><code>interface</code>: An extensible way to define the shape of an object. Can be implemented by classes or extended by other interfaces.</li>
+<li><code>type</code>: A more general type alias. Can represent primitives, unions, tuples, and objects.</li>
+</ul>
+<p>For component props, they are largely interchangeable. A common convention is to use <code>interface</code> for public API shapes (like props) and <code>type</code> for more specific, internal types.</p>
+<p><strong>Solution Implementation</strong>: Let's define an interface for our props.</p>
+<p><strong>Before</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="c1">// Define the shape of the props object</span>
+<span class="kd">interface</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Apply the type to the component&#39;s props</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... rest of the component is the same for now</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">loading</span><span class="p">,</span><span class="w"> </span><span class="nx">setLoading</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="nx">setError</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">;</span>
+</code></pre></div>
+
+<p><strong>Verification</strong>: Now, let's go back to our incorrect usage in <code>page.tsx</code>.</p>
+<p><strong>Editor (VS Code) Evidence</strong>:
+When trying to use <code>&lt;UserProfileCard userId={123} /&gt;</code>, you'll see a red squiggly line under <code>userId</code> with the error:
+<code>Type 'number' is not assignable to type 'string'.</code></p>
+<p>When trying to use <code>&lt;UserProfileCard /&gt;</code>, you'll see an error on the component name:
+<code>Property 'userId' is missing in type '{}' but required in type 'UserProfileCardProps'.</code></p>
+<p><strong>Improvement</strong>: The error is now caught <em>in the editor</em> before we even save the file. We've moved the bug from a potential runtime issue to an immediate compile-time error.</p>
+<h3 id="iteration-2-typing-state">Iteration 2: Typing State</h3>
+<p><strong>Current Limitation</strong>: Our state variables (<code>user</code>, <code>loading</code>, <code>error</code>) are inferred by TypeScript from their initial values.
+- <code>loading</code> is inferred as <code>boolean</code>. This is correct.
+- <code>error</code> is inferred as <code>string | null</code>. This is also correct.
+- <code>user</code> is inferred as <code>any</code> or <code>null</code> because it starts as <code>null</code>. When we call <code>setUser(response)</code>, TypeScript doesn't know the shape of the <code>response</code> object. This means we get no autocompletion for <code>user.name</code> and no safety if we try to access a non-existent property.</p>
+<p><strong>New Scenario</strong>: What happens if we make a typo and try to access <code>user.username</code> instead of <code>user.name</code>?</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Inside UserProfileCard.tsx</span>
+<span class="c1">// ...</span>
+<span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;card&quot;</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">username</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span><span class="cm">/* Typo! Should be user.name */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">  </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">);</span>
+</code></pre></div>
+
+<h3 id="diagnostic-analysis-reading-the-failure-state">Diagnostic Analysis: Reading the Failure (State)</h3>
+<p><strong>Browser Behavior</strong>:
+The component renders without the user's name. The <code>&lt;h2&gt;</code> tag is empty. If <code>user</code> were null, the app would crash.</p>
+<p><strong>Browser Console Output</strong>:
+If <code>user</code> is not null, you see no error. The property access <code>user.username</code> just returns <code>undefined</code>, which React renders as nothing. This is a silent bug.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: Missing data on the screen.</li>
+<li><strong>What the console reveals</strong>: Nothing. This is the worst kind of bug—one that fails silently.</li>
+<li><strong>Root cause identified</strong>: TypeScript has no information about the shape of the <code>user</code> object in our state, so it cannot validate property access.</li>
+<li><strong>What we need</strong>: A way to tell <code>useState</code> what kind of data it will hold.</li>
+</ol>
+<p><strong>Technique Introduced</strong>: Using generics with <code>useState</code> to specify the state's type. The syntax is <code>useState&lt;Type&gt;(initialValue)</code>.</p>
+<p><strong>Solution Implementation</strong>: We'll define a <code>User</code> type and use it to type our state.</p>
+<p><strong>Before</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx</span>
+<span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+<span class="c1">// ...</span>
+<span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+</code></pre></div>
+
+<p><strong>After</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx</span>
+
+<span class="c1">// Define the shape of our user data</span>
+<span class="kd">interface</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">role</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Admin&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;User&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;Guest&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Union type for specific roles</span>
+<span class="p">}</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Tell useState it will hold a User object or null</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">loading</span><span class="p">,</span><span class="w"> </span><span class="nx">setLoading</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="nx">setError</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">string</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span><span class="w"> </span><span class="c1">// Explicitly typing for clarity</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">fetchUser</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setLoading</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">        </span><span class="c1">// Mock fetch now returns a typed object</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="o">:</span><span class="w"> </span><span class="kt">User</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">resolve</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">resolve</span><span class="p">({</span>
+<span class="w">          </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">userId</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Jane Doe&#39;</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;jane.doe@example.com&#39;</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">role</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Admin&#39;</span>
+<span class="w">        </span><span class="p">}),</span><span class="w"> </span><span class="mf">1000</span><span class="p">));</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">response</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setError</span><span class="p">(</span><span class="s1">&#39;Failed to fetch user.&#39;</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">finally</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setLoading</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nx">fetchUser</span><span class="p">();</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="c1">// ...</span>
+
+<span class="w">  </span><span class="c1">// Now, TypeScript will check property access on `user`</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// This check is now enforced by TypeScript!</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;card&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span><span class="w"> </span><span class="c1">// Or some other fallback</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Verification</strong>: With the typo <code>user.username</code>, the editor immediately shows an error:
+<code>Property 'username' does not exist on type 'User'. Did you mean 'name'?</code></p>
+<p>TypeScript is not only catching the error but also suggesting the fix! Furthermore, because <code>user</code> can be <code>null</code>, TypeScript will now force you to check if <code>user</code> exists before you can access its properties, preventing the "cannot read properties of null" runtime error.</p>
+<h3 id="iteration-3-typing-events">Iteration 3: Typing Events</h3>
+<p><strong>Current Limitation</strong>: In our <code>handleDeactivate</code> function, the <code>event</code> parameter is implicitly <code>any</code>. We have no type safety or autocompletion when working with it.</p>
+<p><strong>New Scenario</strong>: What if we try to access a property that doesn't exist on a button click event, like <code>event.target.value</code>? In JavaScript, this would return <code>undefined</code>. In TypeScript, we can do better.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Inside UserProfileCard.tsx</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">handleDeactivate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// `event` is implicitly &#39;any&#39;</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Input value:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">event</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">);</span><span class="w"> </span><span class="c1">// Buttons don&#39;t have a `value` property like inputs do</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="diagnostic-analysis-reading-the-failure-events">Diagnostic Analysis: Reading the Failure (Events)</h3>
+<p><strong>Editor Behavior</strong>:
+With the default <code>tsconfig.json</code>, TypeScript will flag <code>event</code> as having an implicit <code>any</code> type. If we were to manually type it as <code>any</code>, we would get no help.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>Root cause identified</strong>: The event handler's parameter is not typed.</li>
+<li><strong>What we need</strong>: A way to tell TypeScript the exact type of event we expect.</li>
+</ol>
+<p><strong>Technique Introduced</strong>: Using React's synthetic event types. React wraps the browser's native events in a synthetic event system for cross-browser consistency. TypeScript provides types for these.</p>
+<p>Common event types include:
+-   <code>React.MouseEvent</code>: For <code>onClick</code>, <code>onMouseDown</code>, etc.
+-   <code>React.ChangeEvent</code>: For <code>onChange</code> on form inputs.
+-   <code>React.FormEvent</code>: For <code>onSubmit</code> on forms.
+-   <code>React.KeyboardEvent</code>: For <code>onKeyDown</code>, <code>onKeyUp</code>, etc.</p>
+<p>These types are also generic. You can specify the HTML element the event originated from for even more specific typing, e.g., <code>React.MouseEvent&lt;HTMLButtonElement&gt;</code>.</p>
+<p><strong>Solution Implementation</strong>: Let's apply the correct type to our handler.</p>
+<p><strong>Before</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">handleDeactivate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Deactivating user:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">event</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">dataset</span><span class="p">.</span><span class="nx">userId</span><span class="p">);</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p><strong>After</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Inside UserProfileCard.tsx</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">handleDeactivate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="kt">React.MouseEvent</span><span class="p">&lt;</span><span class="nt">HTMLButtonElement</span><span class="p">&gt;)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Now `event` is fully typed.</span>
+<span class="w">  </span><span class="c1">// `event.currentTarget` is known to be an HTMLButtonElement.</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Deactivating user:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">event</span><span class="p">.</span><span class="nx">currentTarget</span><span class="p">.</span><span class="nx">dataset</span><span class="p">.</span><span class="nx">userId</span><span class="p">);</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p><em>Note: It's often safer to use <code>event.currentTarget</code> instead of <code>event.target</code>. <code>currentTarget</code> is always the element the event listener is attached to, while <code>target</code> can be a child element inside it.</em></p>
+<p><strong>Verification</strong>:
+-   <strong>Autocompletion</strong>: When you type <code>event.</code>, your editor will now show a list of valid properties for a mouse event (<code>clientX</code>, <code>clientY</code>, <code>altKey</code>, etc.).
+-   <strong>Type Safety</strong>: If you try to access <code>event.currentTarget.value</code>, TypeScript will show an error: <code>Property 'value' does not exist on type 'HTMLButtonElement'</code>.</p>
+<h3 id="final-implementation-iteration-3">Final Implementation (Iteration 3)</h3>
+<p>Here is our fully-typed, robust component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="c1">// 1. Define types for props and state</span>
+<span class="kd">interface</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">role</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Admin&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;User&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;Guest&#39;</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// 2. Type state with generics</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">loading</span><span class="p">,</span><span class="w"> </span><span class="nx">setLoading</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="nx">setError</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">string</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">fetchUser</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setLoading</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">setError</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="o">:</span><span class="w"> </span><span class="kt">User</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">resolve</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">resolve</span><span class="p">({</span>
+<span class="w">          </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">userId</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Jane Doe&#39;</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;jane.doe@example.com&#39;</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">role</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Admin&#39;</span>
+<span class="w">        </span><span class="p">}),</span><span class="w"> </span><span class="mf">1000</span><span class="p">));</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">response</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setError</span><span class="p">(</span><span class="s1">&#39;Failed to fetch user.&#39;</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">finally</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setLoading</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nx">fetchUser</span><span class="p">();</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="c1">// 3. Type event handlers</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleDeactivate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="kt">React.MouseEvent</span><span class="p">&lt;</span><span class="nt">HTMLButtonElement</span><span class="p">&gt;)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Deactivating user:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">event</span><span class="p">.</span><span class="nx">currentTarget</span><span class="p">.</span><span class="nx">dataset</span><span class="p">.</span><span class="nx">userId</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">alert</span><span class="p">(</span><span class="sb">`Deactivated user </span><span class="si">${</span><span class="nx">user</span><span class="o">?</span><span class="p">.</span><span class="nx">name</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">loading</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">profile</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">error</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+
+<span class="w">  </span><span class="c1">// TypeScript enforces this check because `user` can be `null`</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">No</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="nx">found</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;card&quot;</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1px solid #ccc&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;16px&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">borderRadius</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;8px&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Email</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Role</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">role</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleDeactivate</span><span class="p">}</span><span class="w"> </span><span class="na">data-user-id</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="nx">Deactivate</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">;</span>
+</code></pre></div>
+
+<h2 id="generic-components">Generic components</h2>
+<h2 id="building-reusable-type-safe-components">Building Reusable, Type-Safe Components</h2>
+<p>Sometimes you want to create a component that can work with a variety of data types while still maintaining type safety. This is where generics come in.</p>
+<p><strong>Anchor Example</strong>: A <code>DataTable</code> component. We want it to be able to display a list of users, products, orders, or anything else, without having to rewrite the component for each data type.</p>
+<h3 id="iteration-0-the-single-purpose-component">Iteration 0: The Single-Purpose Component</h3>
+<p>Let's start with a <code>UserDataTable</code> that only works for our <code>User</code> type.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserDataTable.tsx</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">UserDataTableProps</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">items</span><span class="o">:</span><span class="w"> </span><span class="kt">User</span><span class="p">[];</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserDataTable</span><span class="p">({</span><span class="w"> </span><span class="nx">items</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">UserDataTableProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">th</span><span class="p">&gt;</span><span class="nx">ID</span><span class="p">&lt;/</span><span class="nt">th</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">th</span><span class="p">&gt;</span><span class="nx">Name</span><span class="p">&lt;/</span><span class="nt">th</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">th</span><span class="p">&gt;</span><span class="nx">Email</span><span class="p">&lt;/</span><span class="nt">th</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">items</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">item</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">tr</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">item</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">td</span><span class="p">&gt;{</span><span class="nx">item</span><span class="p">.</span><span class="nx">id</span><span class="p">}&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">td</span><span class="p">&gt;{</span><span class="nx">item</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">td</span><span class="p">&gt;{</span><span class="nx">item</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This works perfectly for users. But what if we now need a table for products?</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">interface</span><span class="w"> </span><span class="nx">Product</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">sku</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Current Limitation</strong>: Our <code>UserDataTable</code> is completely coupled to the <code>User</code> type. To create a product table, we'd have to copy, paste, and rename everything to <code>ProductDataTable</code>, violating the Don't Repeat Yourself (DRY) principle.</p>
+<p><strong>What we need</strong>: A way to create a <code>DataTable</code> component that is agnostic about the <em>type</em> of data it displays, but still understands the <em>shape</em> of that data enough to render it.</p>
+<h3 id="iteration-1-creating-a-generic-datatable">Iteration 1: Creating a Generic <code>DataTable</code></h3>
+<p><strong>Technique Introduced</strong>: Generic Components with <code>&lt;T&gt;</code>.</p>
+<p>A generic component uses a type parameter (conventionally <code>T</code>, for Type) as a placeholder for a specific type that will be provided when the component is used.</p>
+<p>We also need a way to tell our component what to render for each column. We can't hardcode <code>item.name</code> and <code>item.email</code> anymore. We'll pass in a configuration object that defines the columns.</p>
+<p><strong>Solution Implementation</strong>: Let's refactor <code>UserDataTable</code> into a generic <code>DataTable</code>.</p>
+<p><strong>Before</strong>: The rigid <code>UserDataTable</code>.</p>
+<p><strong>After</strong>: The flexible, generic <code>DataTable</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/DataTable.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="c1">// 1. Define a generic Column configuration type</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">ColumnDefinition</span><span class="p">&lt;</span><span class="nt">T</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">keyof</span><span class="w"> </span><span class="nx">T</span><span class="p">;</span><span class="w"> </span><span class="c1">// The key of the data object</span>
+<span class="w">  </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="c1">// The text to display in the table header</span>
+<span class="w">  </span><span class="nx">render</span><span class="o">?:</span><span class="w"> </span><span class="p">(</span><span class="nx">item</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">ReactNode</span><span class="p">;</span><span class="w"> </span><span class="c1">// Optional custom render function</span>
+<span class="p">}</span>
+
+<span class="c1">// 2. Define the generic props for the DataTable</span>
+<span class="c1">// T is a placeholder for our data type (e.g., User, Product)</span>
+<span class="c1">// We add a constraint: T must be an object with an `id` property</span>
+<span class="kd">interface</span><span class="w"> </span><span class="nx">DataTableProps</span><span class="p">&lt;</span><span class="nt">T</span><span class="w"> </span><span class="na">extends</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">id</span><span class="err">:</span><span class="w"> </span><span class="na">string</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">number</span><span class="w"> </span><span class="p">}&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">items</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">[];</span>
+<span class="w">  </span><span class="nx">columns</span><span class="o">:</span><span class="w"> </span><span class="kt">ColumnDefinition</span><span class="p">&lt;</span><span class="nt">T</span><span class="p">&gt;[];</span>
+<span class="p">}</span>
+
+<span class="c1">// 3. Define the generic component</span>
+<span class="c1">// We use &lt;T extends { id: string | number }&gt; to ensure `item.id` exists for the `key` prop</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">DataTable</span><span class="p">&lt;</span><span class="nt">T</span><span class="w"> </span><span class="na">extends</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">id</span><span class="err">:</span><span class="w"> </span><span class="na">string</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">number</span><span class="w"> </span><span class="p">}&gt;({</span>
+<span class="w">  </span><span class="nx">items</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">columns</span><span class="p">,</span>
+<span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">DataTableProps</span><span class="p">&lt;</span><span class="nt">T</span><span class="p">&gt;)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">columns</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">col</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">th</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nb">String</span><span class="p">(</span><span class="nx">col</span><span class="p">.</span><span class="nx">key</span><span class="p">)}&gt;{</span><span class="nx">col</span><span class="p">.</span><span class="nx">header</span><span class="p">}&lt;/</span><span class="nt">th</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">))}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">items</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">item</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">tr</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">item</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">columns</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">col</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">td</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nb">String</span><span class="p">(</span><span class="nx">col</span><span class="p">.</span><span class="nx">key</span><span class="p">)}&gt;</span>
+<span class="w">                </span><span class="p">{</span><span class="nx">col</span><span class="p">.</span><span class="nx">render</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">col</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="nx">item</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">item</span><span class="p">[</span><span class="nx">col</span><span class="p">.</span><span class="nx">key</span><span class="p">]</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">ReactNode</span><span class="p">)}</span>
+<span class="w">              </span><span class="p">&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">))}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification-using-the-generic-component">Verification: Using the Generic Component</h3>
+<p>Now we can use this single <code>DataTable</code> component for any data type, with full type safety.</p>
+<p>Let's define our data types and column configurations.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">DataTable</span><span class="p">,</span><span class="w"> </span><span class="nx">ColumnDefinition</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/components/DataTable&#39;</span><span class="p">;</span>
+
+<span class="c1">// Define our data types</span>
+<span class="kd">interface</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">isActive</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">Product</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">stock</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Sample data</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">users</span><span class="o">:</span><span class="w"> </span><span class="kt">User</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Alice&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;alice@example.com&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">isActive</span><span class="o">:</span><span class="w"> </span><span class="kt">true</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Bob&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;bob@example.com&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">isActive</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="w"> </span><span class="p">},</span>
+<span class="p">];</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">products</span><span class="o">:</span><span class="w"> </span><span class="kt">Product</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">101</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Laptop&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">1200</span><span class="p">,</span><span class="w"> </span><span class="nx">stock</span><span class="o">:</span><span class="w"> </span><span class="kt">50</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">102</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Mouse&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">25</span><span class="p">,</span><span class="w"> </span><span class="nx">stock</span><span class="o">:</span><span class="w"> </span><span class="kt">200</span><span class="w"> </span><span class="p">},</span>
+<span class="p">];</span>
+
+<span class="c1">// Define columns for the User table</span>
+<span class="c1">// TypeScript ensures `key` is a valid key of `User`</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">userColumns</span><span class="o">:</span><span class="w"> </span><span class="kt">ColumnDefinition</span><span class="p">&lt;</span><span class="nt">User</span><span class="p">&gt;[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;ID&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;User Name&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;email&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Email Address&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span>
+<span class="w">    </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;isActive&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">    </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Status&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">render</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">span</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="kt">user.isActive</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;green&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">isActive</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;Active&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Inactive&#39;</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">];</span>
+
+<span class="c1">// Define columns for the Product table</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">productColumns</span><span class="o">:</span><span class="w"> </span><span class="kt">ColumnDefinition</span><span class="p">&lt;</span><span class="nt">Product</span><span class="p">&gt;[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;SKU&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Product Name&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span>
+<span class="w">    </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;price&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">    </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Price&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">render</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">product</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="sb">`$</span><span class="si">${</span><span class="nx">product</span><span class="p">.</span><span class="nx">price</span><span class="p">.</span><span class="nx">toFixed</span><span class="p">(</span><span class="mf">2</span><span class="p">)</span><span class="si">}</span><span class="sb">`</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;stock&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;In Stock&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="p">];</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">User</span><span class="w"> </span><span class="nx">Management</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">DataTable</span><span class="w"> </span><span class="na">items</span><span class="o">=</span><span class="p">{</span><span class="nx">users</span><span class="p">}</span><span class="w"> </span><span class="na">columns</span><span class="o">=</span><span class="p">{</span><span class="nx">userColumns</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">marginTop</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;40px&#39;</span><span class="w"> </span><span class="p">}}&gt;</span><span class="nx">Product</span><span class="w"> </span><span class="nx">Inventory</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">DataTable</span><span class="w"> </span><span class="na">items</span><span class="o">=</span><span class="p">{</span><span class="nx">products</span><span class="p">}</span><span class="w"> </span><span class="na">columns</span><span class="o">=</span><span class="p">{</span><span class="nx">productColumns</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Improvement</strong>:
+-   <strong>Reusability</strong>: We have one <code>DataTable</code> component that can render any kind of data.
+-   <strong>Type Safety</strong>: When defining <code>userColumns</code>, TypeScript knows that <code>T</code> is <code>User</code>, so it will only allow <code>'id'</code>, <code>'name'</code>, <code>'email'</code>, or <code>'isActive'</code> for the <code>key</code> property. If you typed <code>key: 'username'</code>, you would get a compile-time error.
+-   <strong>Flexibility</strong>: The <code>render</code> function in the column definition gives us full control over how data is displayed, and it is also fully typed—the <code>user</code> parameter inside <code>render</code> is correctly typed as <code>User</code>.</p>
+<p>Generics are a powerful tool for creating flexible, reusable, and type-safe components, forming the foundation of many component libraries.</p>
+<h2 id="the-20-of-typescript-that-gives-you-80-of-the-value">The 20% of TypeScript that gives you 80% of the value</h2>
+<h2 id="a-practical-cheat-sheet">A Practical Cheat Sheet</h2>
+<p>You don't need to master every feature of TypeScript to be effective. Focusing on a few core concepts will prevent the vast majority of common bugs. Here is the essential toolkit.</p>
+<h3 id="1-basic-types">1. Basic Types</h3>
+<p>Always use the most specific type possible. Avoid <code>any</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Usage</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td>Textual data</td>
+<td><code>const name: string = 'Alice';</code></td>
+</tr>
+<tr>
+<td><code>number</code></td>
+<td>Numeric values</td>
+<td><code>const age: number = 30;</code></td>
+</tr>
+<tr>
+<td><code>boolean</code></td>
+<td>True/false values</td>
+<td><code>const isAdmin: boolean = true;</code></td>
+</tr>
+<tr>
+<td><code>null</code></td>
+<td>Intentional absence of a value</td>
+<td><code>const user: User | null = null;</code></td>
+</tr>
+<tr>
+<td><code>undefined</code></td>
+<td>Uninitialized variables</td>
+<td><code>let city: string | undefined;</code></td>
+</tr>
+<tr>
+<td><code>string[]</code></td>
+<td>An array of strings</td>
+<td><code>const roles: string[] = ['admin'];</code></td>
+</tr>
+<tr>
+<td><code>any</code></td>
+<td><strong>Avoid.</strong> Opt-out of type checking.</td>
+<td><code>let data: any;</code></td>
+</tr>
+<tr>
+<td><code>unknown</code></td>
+<td>A type-safe alternative to <code>any</code>.</td>
+<td><code>let data: unknown;</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="2-shaping-objects-with-interface-and-type">2. Shaping Objects with <code>interface</code> and <code>type</code></h3>
+<p>Use these to describe the shape of objects like props and state.</p>
+<p><strong><code>interface</code></strong>: Best for defining object shapes, especially for public APIs like component props. Can be extended.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">interface</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="c1">// Optional property</span>
+<span class="w">  </span><span class="nx">avatarUrl?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">Admin</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">permissions</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[];</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong><code>type</code></strong>: More versatile. Can be used for objects, but also for unions, primitives, etc.</p>
+<div class="codehilite"><pre><span></span><code><span class="kr">type</span><span class="w"> </span><span class="nx">UserID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">UserRole</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;Admin&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;Editor&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;Viewer&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">UserID</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">role</span><span class="o">:</span><span class="w"> </span><span class="kt">UserRole</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="3-union-types">3. Union Types (<code>|</code>)</h3>
+<p>When a value can be one of several types. This is extremely common for state that can be data, <code>null</code>, or <code>undefined</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// A variable that can be a string or a number</span>
+<span class="kd">let</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;123&#39;</span><span class="p">;</span>
+<span class="nx">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">456</span><span class="p">;</span><span class="w"> </span><span class="c1">// This is valid</span>
+
+<span class="c1">// State that holds data or is null before loading</span>
+<span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="o">&lt;</span><span class="nx">User</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="o">&gt;</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+</code></pre></div>
+
+<h3 id="4-typing-functions-and-events">4. Typing Functions and Events</h3>
+<p>Describe a function's arguments and return value.</p>
+<p><strong>For regular functions</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">fetchUser</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">User</span><span class="o">&gt;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... implementation</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p><strong>For React event handlers</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">handleClick</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="kt">React.MouseEvent</span><span class="p">&lt;</span><span class="nt">HTMLButtonElement</span><span class="p">&gt;)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">};</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">handleChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="kt">React.ChangeEvent</span><span class="p">&lt;</span><span class="nt">HTMLInputElement</span><span class="p">&gt;)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">);</span>
+<span class="p">};</span>
+
+<span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="p">&lt;&gt;</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">handleClick</span><span class="p">}&gt;</span><span class="nx">Click</span><span class="w"> </span><span class="nx">Me</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">  </span><span class="p">&lt;/&gt;</span>
+<span class="p">);</span>
+</code></pre></div>
+
+<h3 id="5-core-react-types">5. Core React Types</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Usage</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>React.ReactNode</code></td>
+<td>Anything React can render: JSX, string, number, null, array.</td>
+<td><code>interface Props { children: React.ReactNode; }</code></td>
+</tr>
+<tr>
+<td><code>React.FC&lt;Props&gt;</code></td>
+<td>A function component. Automatically types <code>children</code>.</td>
+<td><code>const MyComponent: React.FC&lt;Props&gt; = ({ children }) =&gt; ...</code></td>
+</tr>
+<tr>
+<td><code>useState&lt;T&gt;</code></td>
+<td>Typing state.</td>
+<td><code>const [count, setCount] = useState&lt;number&gt;(0);</code></td>
+</tr>
+<tr>
+<td><code>useRef&lt;T&gt;</code></td>
+<td>Typing refs.</td>
+<td><code>const inputRef = useRef&lt;HTMLInputElement&gt;(null);</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="6-generics-t">6. Generics (<code>&lt;T&gt;</code>)</h3>
+<p>For creating reusable, type-safe functions and components.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// A generic function</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">getFirst</span><span class="o">&lt;</span><span class="nx">T</span><span class="o">&gt;</span><span class="p">(</span><span class="nx">arr</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">[])</span><span class="o">:</span><span class="w"> </span><span class="nx">T</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">arr</span><span class="p">[</span><span class="mf">0</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">firstNum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">getFirst</span><span class="p">([</span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="mf">2</span><span class="p">,</span><span class="w"> </span><span class="mf">3</span><span class="p">]);</span><span class="w"> </span><span class="c1">// Inferred as number</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">firstStr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">getFirst</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;b&#39;</span><span class="p">]);</span><span class="w"> </span><span class="c1">// Inferred as string</span>
+
+<span class="c1">// A generic component was covered in section 7.4</span>
+</code></pre></div>
+
+<h3 id="7-key-utility-types">7. Key Utility Types</h3>
+<p>TypeScript comes with built-in "utility types" that help you transform other types.</p>
+<table>
+<thead>
+<tr>
+<th>Utility Type</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Partial&lt;T&gt;</code></td>
+<td>Makes all properties of <code>T</code> optional.</td>
+<td><code>const partialUser: Partial&lt;User&gt; = { name: 'Temp' };</code></td>
+</tr>
+<tr>
+<td><code>Required&lt;T&gt;</code></td>
+<td>Makes all properties of <code>T</code> required.</td>
+<td><code>const fullUser: Required&lt;User&gt; = { id: 1, name: 'A', avatarUrl: '...' };</code></td>
+</tr>
+<tr>
+<td><code>Omit&lt;T, K&gt;</code></td>
+<td>Creates a type by picking all properties from <code>T</code> and removing <code>K</code>.</td>
+<td><code>type UserForCreation = Omit&lt;User, 'id'&gt;; // { name: string; ... }</code></td>
+</tr>
+<tr>
+<td><code>Pick&lt;T, K&gt;</code></td>
+<td>Creates a type by picking only the properties <code>K</code> from <code>T</code>.</td>
+<td><code>type UserPreview = Pick&lt;User, 'name' | 'avatarUrl'&gt;;</code></td>
+</tr>
+</tbody>
+</table>
+<p>By focusing on these core concepts, you can add a powerful layer of safety and predictability to your React applications, catching bugs before they happen and making your codebase easier to understand and maintain.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:40:58 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

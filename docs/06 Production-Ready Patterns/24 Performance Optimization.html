@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>24 Performance Optimization</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">06 Production-Ready Patterns</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-24-performance-optimization">Chapter 24: Performance Optimization</h1>
+<h2 id="reactmemo-and-usememo-when-to-use-them">React.memo and useMemo: when to use them</h2>
+<h2 id="the-cardinal-rule-of-optimization-dont">The Cardinal Rule of Optimization: Don't</h2>
+<p>Performance optimization is a double-edged sword. While it can make your application feel snappy and responsive, it almost always comes at the cost of increased code complexity and cognitive overhead. The most important principle is to <strong>measure first</strong>. Do not optimize what you <em>think</em> is slow; optimize what you have <em>proven</em> is slow.</p>
+<p>Throughout this chapter, we will follow a strict methodology:
+1.  Establish a baseline with a realistic, but unoptimized, component.
+2.  Identify a specific, measurable performance problem.
+3.  Use diagnostic tools to understand the root cause of the problem.
+4.  Apply a targeted optimization technique.
+5.  Measure again to verify the improvement.</p>
+<p>This cycle prevents "premature optimization," which is the root of much complex and unnecessary code in software development.</p>
+<h2 id="phase-1-the-reference-implementation-a-laggy-dashboard">Phase 1: The Reference Implementation - A Laggy Dashboard</h2>
+<p>Let's build our anchor example: a <code>PerformanceDashboard</code>. This dashboard will display a complex sales chart, a feed of recent activity, and a filter input. The activity feed will update frequently, and the sales chart will be computationally expensive to render. This is a perfect recipe for performance issues.</p>
+<h3 id="project-structure">Project Structure</h3>
+<p>First, let's set up the files for our dashboard.</p>
+<div class="codehilite"><pre><span></span><code>src/
+├──<span class="w"> </span>app/
+│<span class="w">   </span>└──<span class="w"> </span>performance-demo/
+│<span class="w">       </span>└──<span class="w"> </span>page.tsx
+└──<span class="w"> </span>components/
+<span class="w">    </span>├──<span class="w"> </span>PerformanceDashboard.tsx<span class="w">  </span><span class="c1"># Our main component</span>
+<span class="w">    </span>├──<span class="w"> </span>SalesChart.tsx<span class="w">          </span><span class="c1"># The expensive-to-render component</span>
+<span class="w">    </span>├──<span class="w"> </span>RecentActivity.tsx<span class="w">      </span><span class="c1"># The frequently-updating component</span>
+<span class="w">    </span>└──<span class="w"> </span>Header.tsx<span class="w">              </span><span class="c1"># A simple display component</span>
+</code></pre></div>
+
+<h3 id="initial-code-the-problem-version">Initial Code: The Problem Version</h3>
+<p>Here is the initial, unoptimized code. We'll add <code>console.log</code> statements to see when our components render. We are also adding an artificial delay in <code>SalesChart</code> to simulate a computationally expensive rendering process.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/performance-demo/page.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/components/PerformanceDashboard&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">PerformanceDemoPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-8&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-3xl font-bold mb-6&quot;</span><span class="p">&gt;</span><span class="nx">Performance</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">PerformanceDashboard</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Header.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">HeaderProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">user</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">salesData</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">amount</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="p">}[];</span>
+<span class="p">};</span>
+
+<span class="c1">// A simple header component</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">Header</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">salesData</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">HeaderProps</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Rendering Header...&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">totalSales</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">salesData</span><span class="p">.</span><span class="nx">reduce</span><span class="p">((</span><span class="nx">sum</span><span class="p">,</span><span class="w"> </span><span class="nx">sale</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">sum</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">sale</span><span class="p">.</span><span class="nx">amount</span><span class="p">,</span><span class="w"> </span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-gray-100 p-4 rounded-lg mb-4&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-xl&quot;</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">}</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Total</span><span class="w"> </span><span class="nx">Sales</span><span class="o">:</span><span class="w"> </span><span class="kt">$</span><span class="p">{</span><span class="nx">totalSales</span><span class="p">.</span><span class="nx">toLocaleString</span><span class="p">()}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">Header</span><span class="p">;</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/SalesChart.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">SalesChartProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">salesData</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">month</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="nx">amount</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="p">}[];</span>
+<span class="p">};</span>
+
+<span class="c1">// This is our intentionally &quot;slow&quot; component.</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">SalesChart</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">({</span><span class="w"> </span><span class="nx">salesData</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">SalesChartProps</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Rendering SalesChart... (This is slow!)&quot;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// --- Artificial Delay ---</span>
+<span class="w">  </span><span class="c1">// In a real app, this could be complex calculations,</span>
+<span class="w">  </span><span class="c1">// a large list rendering, or a heavy charting library.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">startTime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">performance</span><span class="p">.</span><span class="nx">now</span><span class="p">();</span>
+<span class="w">  </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="nx">performance</span><span class="p">.</span><span class="nx">now</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nx">startTime</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">20</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Do nothing for 20ms to simulate a slow render</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="c1">// --- End Artificial Delay ---</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-white p-4 rounded-lg shadow-md&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h3</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;font-bold mb-2&quot;</span><span class="p">&gt;</span><span class="nx">Monthly</span><span class="w"> </span><span class="nx">Sales</span><span class="p">&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* A simple representation of a chart */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex items-end h-40 space-x-2&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">salesData</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">sale</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">sale</span><span class="p">.</span><span class="nx">month</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex-1 flex flex-col items-center&quot;</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span>
+<span class="w">              </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;w-full bg-blue-500&quot;</span><span class="w"> </span>
+<span class="w">              </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="p">(</span><span class="nx">sale</span><span class="p">.</span><span class="nx">amount</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1000</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">10</span><span class="si">}</span><span class="sb">%`</span><span class="w"> </span><span class="p">}}</span>
+<span class="w">            </span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">span</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-xs mt-1&quot;</span><span class="p">&gt;{</span><span class="nx">sale</span><span class="p">.</span><span class="nx">month</span><span class="p">}&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">SalesChart</span><span class="p">;</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/RecentActivity.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">RecentActivityProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">activities</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[];</span>
+<span class="p">};</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">RecentActivity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">({</span><span class="w"> </span><span class="nx">activities</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">RecentActivityProps</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Rendering RecentActivity...&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-gray-50 p-4 rounded-lg mt-4&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h3</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;font-bold mb-2&quot;</span><span class="p">&gt;</span><span class="nx">Recent</span><span class="w"> </span><span class="nx">Activity</span><span class="p">&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">activities</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">activity</span><span class="p">,</span><span class="w"> </span><span class="nx">index</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">index</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-sm text-gray-600&quot;</span><span class="p">&gt;{</span><span class="nx">activity</span><span class="p">}&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">RecentActivity</span><span class="p">;</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/PerformanceDashboard.tsx</span>
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Header</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./Header&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">SalesChart</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./SalesChart&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">RecentActivity</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./RecentActivity&#39;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">initialSalesData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">month</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Jan&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">amount</span><span class="o">:</span><span class="w"> </span><span class="kt">12000</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">month</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Feb&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">amount</span><span class="o">:</span><span class="w"> </span><span class="kt">18000</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">month</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Mar&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">amount</span><span class="o">:</span><span class="w"> </span><span class="kt">15000</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">month</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">amount</span><span class="o">:</span><span class="w"> </span><span class="kt">22000</span><span class="w"> </span><span class="p">},</span>
+<span class="p">];</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Rendering PerformanceDashboard...&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">filter</span><span class="p">,</span><span class="w"> </span><span class="nx">setFilter</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">activities</span><span class="p">,</span><span class="w"> </span><span class="nx">setActivities</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">string</span><span class="err">[]</span><span class="p">&gt;([</span><span class="s1">&#39;Initial activity&#39;</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="c1">// Simulate new activity coming in every 2 seconds</span>
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">intervalId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">setInterval</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">setActivities</span><span class="p">(</span><span class="nx">prev</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">[...</span><span class="nx">prev</span><span class="p">,</span><span class="w"> </span><span class="sb">`New event at </span><span class="si">${</span><span class="ow">new</span><span class="w"> </span><span class="nb">Date</span><span class="p">().</span><span class="nx">toLocaleTimeString</span><span class="p">()</span><span class="si">}</span><span class="sb">`</span><span class="p">]);</span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="mf">2000</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">clearInterval</span><span class="p">(</span><span class="nx">intervalId</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Header</span><span class="w"> </span><span class="na">user</span><span class="o">=</span><span class="s">&quot;Alice&quot;</span><span class="w"> </span><span class="na">salesData</span><span class="o">=</span><span class="p">{</span><span class="nx">initialSalesData</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">        </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">filter</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setFilter</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">        </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Filter data...&quot;</span>
+<span class="w">        </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;w-full p-2 border rounded-lg mb-4&quot;</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;grid grid-cols-2 gap-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">SalesChart</span><span class="w"> </span><span class="na">salesData</span><span class="o">=</span><span class="p">{</span><span class="nx">initialSalesData</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">RecentActivity</span><span class="w"> </span><span class="na">activities</span><span class="o">=</span><span class="p">{</span><span class="nx">activities</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="p">;</span>
+</code></pre></div>
+
+<h3 id="failure-demonstration-the-laggy-input">Failure Demonstration: The Laggy Input</h3>
+<p>Run the application and navigate to <code>/performance-demo</code>. Open your browser's developer console and try typing into the "Filter data..." input field.</p>
+<h3 id="diagnostic-analysis-reading-the-failure">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+Typing in the input field feels incredibly sluggish. There's a noticeable delay between pressing a key and seeing the character appear. The entire UI feels "janky" or unresponsive. Every two seconds, when the activity feed updates, the same lag occurs.</p>
+<p><strong>Browser Console Output</strong>:
+As you type "test" into the input, you'll see a flood of logs:</p>
+<div class="codehilite"><pre><span></span><code>Rendering PerformanceDashboard...
+Rendering Header...
+Rendering SalesChart... (This is slow!)
+Rendering RecentActivity...
+Rendering PerformanceDashboard...
+Rendering Header...
+Rendering SalesChart... (This is slow!)
+Rendering RecentActivity...
+Rendering PerformanceDashboard...
+Rendering Header...
+Rendering SalesChart... (This is slow!)
+Rendering RecentActivity...
+Rendering PerformanceDashboard...
+Rendering Header...
+Rendering SalesChart... (This is slow!)
+Rendering RecentActivity...
+</code></pre></div>
+
+<p><strong>React DevTools Evidence</strong>:
+If you use the React DevTools Profiler to record this interaction, you'll see a clear picture:
+- <strong>Profiler Flamegraph</strong>: The <code>PerformanceDashboard</code> component shows a long render time for each keystroke. The majority of this time is spent inside <code>SalesChart</code>.
+- <strong>Render reason</strong>: The Profiler will tell you that <code>Header</code>, <code>SalesChart</code>, and <code>RecentActivity</code> re-rendered because their parent component (<code>PerformanceDashboard</code>) re-rendered.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: A laggy input field, making the app feel broken.</p>
+<ul>
+<li>Expected: Typing should be instantaneous.</li>
+<li>Actual: Each keystroke is delayed.</li>
+</ul>
+</li>
+<li>
+<p><strong>What the console reveals</strong>: Every single component in our dashboard re-renders on <em>every single keystroke</em>.</p>
+<ul>
+<li>Key indicator: The <code>Rendering SalesChart... (This is slow!)</code> log appears repeatedly.</li>
+<li>Error location: The problem originates in <code>PerformanceDashboard</code>, whose state change triggers a cascade of re-renders.</li>
+</ul>
+</li>
+<li>
+<p><strong>What DevTools shows</strong>: The Profiler confirms that <code>SalesChart</code> is the bottleneck. It re-renders even though its <code>salesData</code> prop has not changed.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: When the <code>filter</code> state in <code>PerformanceDashboard</code> changes, React re-renders <code>PerformanceDashboard</code> and, by default, all of its children. The expensive <code>SalesChart</code> is re-rendered unnecessarily, blocking the main thread and causing the input lag.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: React's default behavior is "re-render if the parent re-renders." This is usually fast and not a problem. But when a child component is computationally expensive, this default behavior becomes a performance bottleneck.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A way to tell React: "Do not re-render this component unless its props have actually changed."</p>
+</li>
+</ol>
+<h3 id="iteration-1-memoizing-components-with-reactmemo">Iteration 1: Memoizing Components with <code>React.memo</code></h3>
+<p><code>React.memo</code> is a higher-order component (HOC) that does exactly what we need. It wraps a component and memoizes its rendered output. Before re-rendering the component, React will do a shallow comparison of its new props with its old props. If they are the same, React will skip the re-render and reuse the last rendered result.</p>
+<p>Let's apply it to our expensive <code>SalesChart</code> and our stable <code>Header</code>.</p>
+<p><strong>Before</strong> (Iteration 0):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/SalesChart.tsx</span>
+<span class="c1">// ...</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">SalesChart</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">({</span><span class="w"> </span><span class="nx">salesData</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">SalesChartProps</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">SalesChart</span><span class="p">;</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 1):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/SalesChart.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Import React</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">SalesChartProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">salesData</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">month</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="nx">amount</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="p">}[];</span>
+<span class="p">};</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">SalesChart</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">({</span><span class="w"> </span><span class="nx">salesData</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">SalesChartProps</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... (same component logic)</span>
+<span class="p">};</span>
+
+<span class="c1">// Wrap the component with React.memo</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">memo</span><span class="p">(</span><span class="nx">SalesChart</span><span class="p">);</span>
+</code></pre></div>
+
+<p>We'll do the same for <code>Header</code>, since its props (<code>user</code> and <code>salesData</code>) are also stable and don't change when we type in the filter.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Header.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Import React</span>
+
+<span class="c1">// ... (component logic)</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">memo</span><span class="p">(</span><span class="nx">Header</span><span class="p">);</span>
+</code></pre></div>
+
+<h3 id="verification-a-responsive-ui">Verification: A Responsive UI</h3>
+<p>Now, refresh the page and try typing in the input again.</p>
+<p><strong>Browser Behavior</strong>: The input is now perfectly smooth and responsive. The lag is completely gone.</p>
+<p><strong>Browser Console Output</strong>:
+When you type "test", the console output is dramatically different:</p>
+<div class="codehilite"><pre><span></span><code>Rendering PerformanceDashboard...
+Rendering RecentActivity...
+Rendering PerformanceDashboard...
+Rendering RecentActivity...
+Rendering PerformanceDashboard...
+Rendering RecentActivity...
+Rendering PerformanceDashboard...
+Rendering RecentActivity...
+</code></pre></div>
+
+<p>The logs for <code>Header</code> and <code>SalesChart</code> are gone! They rendered once on the initial load and are now correctly skipped on subsequent updates to the <code>filter</code> state.</p>
+<p><strong>Expected vs. Actual Improvement</strong>:
+- <strong>Expected</strong>: <code>SalesChart</code> and <code>Header</code> should not re-render when only the <code>filter</code> or <code>activities</code> state changes.
+- <strong>Actual</strong>: The console logs and Profiler confirm they are no longer re-rendering. The UI is fast. We have successfully fixed the bottleneck.</p>
+<h3 id="the-problem-with-non-primitives-introducing-usememo">The Problem with Non-Primitives: Introducing <code>useMemo</code></h3>
+<p>Our fix works because the <code>salesData</code> prop is a stable object reference that comes from a constant defined outside the component. But what happens if we need to compute a prop <em>inside</em> the component?</p>
+<p>Let's introduce a new requirement: The <code>SalesChart</code> needs a <code>chartOptions</code> object to configure its appearance. We'll create this object inside <code>PerformanceDashboard</code>.</p>
+<p><strong>Iteration 2: Passing a Computed Object Prop</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/PerformanceDashboard.tsx</span>
+
+<span class="c1">// ... imports</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">SalesChart</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./SalesChart&#39;</span><span class="p">;</span>
+<span class="c1">// ...</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Rendering PerformanceDashboard...&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">filter</span><span class="p">,</span><span class="w"> </span><span class="nx">setFilter</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">activities</span><span class="p">,</span><span class="w"> </span><span class="nx">setActivities</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">string</span><span class="err">[]</span><span class="p">&gt;([</span><span class="s1">&#39;Initial activity&#39;</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="c1">// ... useEffect</span>
+
+<span class="w">  </span><span class="c1">// NEW: Create a configuration object for the chart</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">chartOptions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">theme</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;light&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">showGrid</span><span class="o">:</span><span class="w"> </span><span class="kt">true</span><span class="p">,</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... Header and input */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;grid grid-cols-2 gap-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* Pass the new options object to SalesChart */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">SalesChart</span><span class="w"> </span><span class="na">salesData</span><span class="o">=</span><span class="p">{</span><span class="nx">initialSalesData</span><span class="p">}</span><span class="w"> </span><span class="na">options</span><span class="o">=</span><span class="p">{</span><span class="nx">chartOptions</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">RecentActivity</span><span class="w"> </span><span class="na">activities</span><span class="o">=</span><span class="p">{</span><span class="nx">activities</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="p">;</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/SalesChart.tsx</span>
+<span class="c1">// Update props to accept the new options object</span>
+<span class="kr">type</span><span class="w"> </span><span class="nx">SalesChartProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">salesData</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">month</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="nx">amount</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="p">}[];</span>
+<span class="w">  </span><span class="nx">options</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">theme</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="nx">showGrid</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="p">};</span><span class="w"> </span><span class="c1">// Add this</span>
+<span class="p">};</span>
+
+<span class="c1">// ... component logic</span>
+</code></pre></div>
+
+<p>Run the app again and type in the filter. The lag is back.</p>
+<h3 id="diagnostic-analysis-the-reference-trap">Diagnostic Analysis: The Reference Trap</h3>
+<p><strong>Browser Behavior</strong>: The UI is sluggish again.</p>
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code>Rendering PerformanceDashboard...
+Rendering SalesChart... (This is slow!)
+Rendering RecentActivity...
+Rendering PerformanceDashboard...
+Rendering SalesChart... (This is slow!)
+Rendering RecentActivity...
+</code></pre></div>
+
+<p>The <code>SalesChart</code> is re-rendering again, despite being wrapped in <code>React.memo</code>.</p>
+<p><strong>React DevTools Evidence</strong>:
+- <strong>Profiler</strong>: Shows <code>SalesChart</code> re-rendering on every keystroke.
+- <strong>Why it rendered</strong>: "Props changed". If you inspect the <code>options</code> prop between renders, you'll see that while the <em>values</em> inside the object (<code>theme: 'light'</code>) are the same, the object <em>itself</em> is a new instance in memory.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>Root cause identified</strong>: On every render of <code>PerformanceDashboard</code>, the line <code>const chartOptions = { ... }</code> creates a brand new object. Even though this new object has identical contents to the old one, it has a different memory address. <code>React.memo</code> performs a shallow comparison, and <code>{...} !== {...}</code> is always true. The prop is considered "changed," and the memoization is broken.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: We are creating a new object reference on every render, which will always defeat <code>React.memo</code>'s shallow comparison.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A way to preserve the identity (the memory reference) of an object or value across re-renders, as long as the inputs used to create it haven't changed.</p>
+</li>
+</ol>
+<p>This is the exact problem the <code>useMemo</code> hook solves.</p>
+<h3 id="iteration-3-memoizing-values-with-usememo">Iteration 3: Memoizing Values with <code>useMemo</code></h3>
+<p>The <code>useMemo</code> hook memoizes a computed value. It takes a function that creates the value and a dependency array. React will only re-run the creation function (and thus produce a new value) if one of the dependencies has changed.</p>
+<p><strong>Before</strong> (Iteration 2):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/PerformanceDashboard.tsx</span>
+<span class="c1">// ...</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="c1">// This creates a new object on every render</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">chartOptions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">theme</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;light&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">showGrid</span><span class="o">:</span><span class="w"> </span><span class="kt">true</span><span class="p">,</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 3):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/PerformanceDashboard.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="p">,</span><span class="w"> </span><span class="nx">useMemo</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Add useMemo</span>
+<span class="c1">// ...</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">filter</span><span class="p">,</span><span class="w"> </span><span class="nx">setFilter</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// ...</span>
+
+<span class="w">  </span><span class="c1">// This object will now only be re-created if its dependencies change.</span>
+<span class="w">  </span><span class="c1">// Since the dependency array is empty, it will be created only once.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">chartOptions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Recalculating chartOptions...&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">theme</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;light&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">showGrid</span><span class="o">:</span><span class="w"> </span><span class="kt">true</span><span class="p">,</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// Empty dependency array means it runs only once</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">SalesChart</span><span class="w"> </span><span class="na">salesData</span><span class="o">=</span><span class="p">{</span><span class="nx">initialSalesData</span><span class="p">}</span><span class="w"> </span><span class="na">options</span><span class="o">=</span><span class="p">{</span><span class="nx">chartOptions</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="verification-stable-references">Verification: Stable References</h3>
+<p>Refresh the page and type in the input.</p>
+<p><strong>Browser Behavior</strong>: The UI is fast and responsive again.</p>
+<p><strong>Browser Console Output</strong>:
+On initial load, you'll see:</p>
+<div class="codehilite"><pre><span></span><code>Recalculating chartOptions...
+</code></pre></div>
+
+<p>But as you type, this message does not appear again. The <code>SalesChart</code> render log is also gone. The <code>chartOptions</code> object is being reused across renders, satisfying <code>React.memo</code>'s shallow comparison.</p>
+<h3 id="when-to-apply-this-solution">When to Apply This Solution</h3>
+<ul>
+<li><strong>What it optimizes for</strong>: Prevents re-renders of memoized child components that receive objects, arrays, or other non-primitive values as props. It also avoids re-running expensive calculations on every render.</li>
+<li><strong>What it sacrifices</strong>: Adds a small amount of memory overhead to store the memoized value and complexity to the code.</li>
+<li><strong>When to choose <code>React.memo</code></strong>: When a component is pure (same props yield same output), renders often, and its re-rendering is causing a noticeable performance issue.</li>
+<li>
+<p><strong>When to choose <code>useMemo</code></strong>:</p>
+<ol>
+<li>To preserve reference equality for objects or arrays passed as props to a memoized (<code>React.memo</code>) component.</li>
+<li>To avoid re-computing a value that is computationally expensive to calculate on every render.</li>
+</ol>
+</li>
+<li>
+<p><strong>When to avoid</strong>: Do not wrap every component in <code>React.memo</code> or every object in <code>useMemo</code>. The comparison itself has a cost. Only apply it when you have measured a real performance problem. For simple components that render quickly, the default behavior is often fine.</p>
+</li>
+</ul>
+<h2 id="usecallback-probably-not-as-often-as-you-think">useCallback: probably not as often as you think</h2>
+<h2 id="the-final-piece-of-the-memoization-puzzle-functions">The Final Piece of the Memoization Puzzle: Functions</h2>
+<p>We've seen how <code>React.memo</code> can be broken by changing object references, and how <code>useMemo</code> can fix it. There's one more common prop type that can break memoization: functions.</p>
+<p>Let's add a new feature: a button inside <code>SalesChart</code> that allows the user to reset the view. The logic for this reset will live in the parent <code>PerformanceDashboard</code>.</p>
+<h3 id="iteration-4-passing-a-callback-function">Iteration 4: Passing a Callback Function</h3>
+<p>First, we'll define a <code>handleResetView</code> function in <code>PerformanceDashboard</code> and pass it down to <code>SalesChart</code>.</p>
+<p><strong>Before</strong> (The code from the end of the last section):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/PerformanceDashboard.tsx</span>
+<span class="c1">// ...</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">chartOptions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">SalesChart</span><span class="w"> </span><span class="na">salesData</span><span class="o">=</span><span class="p">{</span><span class="nx">initialSalesData</span><span class="p">}</span><span class="w"> </span><span class="na">options</span><span class="o">=</span><span class="p">{</span><span class="nx">chartOptions</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 4):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/PerformanceDashboard.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="p">,</span><span class="w"> </span><span class="nx">useMemo</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="c1">// ...</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Rendering PerformanceDashboard...&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">filter</span><span class="p">,</span><span class="w"> </span><span class="nx">setFilter</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">activities</span><span class="p">,</span><span class="w"> </span><span class="nx">setActivities</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">string</span><span class="err">[]</span><span class="p">&gt;([</span><span class="s1">&#39;Initial activity&#39;</span><span class="p">]);</span>
+<span class="w">  </span><span class="c1">// ... useEffect</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">chartOptions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// NEW: Define a handler function</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleResetView</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;View has been reset!&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// In a real app, this might reset zoom, filters, etc.</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... Header and input */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;grid grid-cols-2 gap-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* Pass the new handler function to SalesChart */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">SalesChart</span>
+<span class="w">          </span><span class="na">salesData</span><span class="o">=</span><span class="p">{</span><span class="nx">initialSalesData</span><span class="p">}</span>
+<span class="w">          </span><span class="na">options</span><span class="o">=</span><span class="p">{</span><span class="nx">chartOptions</span><span class="p">}</span>
+<span class="w">          </span><span class="na">onResetView</span><span class="o">=</span><span class="p">{</span><span class="nx">handleResetView</span><span class="p">}</span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">RecentActivity</span><span class="w"> </span><span class="na">activities</span><span class="o">=</span><span class="p">{</span><span class="nx">activities</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="p">;</span>
+</code></pre></div>
+
+<p>Now, let's update <code>SalesChart</code> to accept this function and render a button.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/SalesChart.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">SalesChartProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">salesData</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">month</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="nx">amount</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="p">}[];</span>
+<span class="w">  </span><span class="nx">options</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">theme</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="nx">showGrid</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="nx">onResetView</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"> </span><span class="c1">// Add the function prop</span>
+<span class="p">};</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">SalesChart</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">({</span><span class="w"> </span><span class="nx">salesData</span><span class="p">,</span><span class="w"> </span><span class="nx">options</span><span class="p">,</span><span class="w"> </span><span class="nx">onResetView</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">SalesChartProps</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Rendering SalesChart... (This is slow!)&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// ... artificial delay</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-white p-4 rounded-lg shadow-md&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex justify-between items-center mb-2&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">h3</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;font-bold&quot;</span><span class="p">&gt;</span><span class="nx">Monthly</span><span class="w"> </span><span class="nx">Sales</span><span class="p">&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* Add the button that uses the prop */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span>
+<span class="w">          </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">onResetView</span><span class="p">}</span>
+<span class="w">          </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-sm bg-gray-200 px-2 py-1 rounded hover:bg-gray-300&quot;</span>
+<span class="w">        </span><span class="p">&gt;</span>
+<span class="w">          </span><span class="nx">Reset</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... chart rendering */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">memo</span><span class="p">(</span><span class="nx">SalesChart</span><span class="p">);</span>
+</code></pre></div>
+
+<p>Now, run the application and type in the filter input.</p>
+<h3 id="diagnostic-analysis-the-function-reference-trap">Diagnostic Analysis: The Function Reference Trap</h3>
+<p><strong>Browser Behavior</strong>: The lag is back. The input is sluggish.</p>
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code>Rendering PerformanceDashboard...
+Rendering SalesChart... (This is slow!)
+Rendering RecentActivity...
+</code></pre></div>
+
+<p>The <code>SalesChart</code> is re-rendering on every keystroke again. Our <code>React.memo</code> is being defeated.</p>
+<p><strong>React DevTools Evidence</strong>:
+- <strong>Profiler</strong>: Confirms <code>SalesChart</code> is re-rendering because its props changed.
+- <strong>Why it rendered</strong>: The <code>onResetView</code> prop has changed.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>Root cause identified</strong>: This is the exact same problem we had with objects, but now with functions. In JavaScript, functions are objects. Every time <code>PerformanceDashboard</code> re-renders, the line <code>const handleResetView = () =&gt; { ... }</code> creates a <em>brand new function</em>. This new function has a different reference in memory, even though its code is identical. <code>React.memo</code> sees a new function reference, concludes the props have changed, and re-renders the slow component.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: We are defining a plain function inside a component body, guaranteeing it will be a new instance on every render.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A way to memoize the function itself, preserving its reference across re-renders unless its dependencies change.</p>
+</li>
+</ol>
+<p>This is the job of the <code>useCallback</code> hook.</p>
+<h3 id="iteration-5-memoizing-functions-with-usecallback">Iteration 5: Memoizing Functions with <code>useCallback</code></h3>
+<p>The <code>useCallback</code> hook is syntactic sugar for <code>useMemo</code> specifically for functions.
+<code>useCallback(fn, deps)</code> is equivalent to <code>useMemo(() =&gt; fn, deps)</code>.</p>
+<p>It returns a memoized version of the callback that only changes if one of the dependencies has changed. This is perfect for passing callbacks to optimized child components.</p>
+<p><strong>Before</strong> (Iteration 4):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/PerformanceDashboard.tsx</span>
+<span class="c1">// ...</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="c1">// This creates a new function on every render</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleResetView</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;View has been reset!&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 5):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/PerformanceDashboard.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="p">,</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">,</span><span class="w"> </span><span class="nx">useCallback</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Add useCallback</span>
+<span class="c1">// ...</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">chartOptions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Wrap the function definition in useCallback</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleResetView</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useCallback</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;View has been reset!&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// Empty dependency array means the function is created only once</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">SalesChart</span>
+<span class="w">        </span><span class="na">salesData</span><span class="o">=</span><span class="p">{</span><span class="nx">initialSalesData</span><span class="p">}</span>
+<span class="w">        </span><span class="na">options</span><span class="o">=</span><span class="p">{</span><span class="nx">chartOptions</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onResetView</span><span class="o">=</span><span class="p">{</span><span class="nx">handleResetView</span><span class="p">}</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="verification-performance-restored">Verification: Performance Restored</h3>
+<p>Refresh the page and type in the input.</p>
+<p><strong>Browser Behavior</strong>: The UI is fast and responsive again. The <code>SalesChart</code> no longer re-renders when you type. Clicking the "Reset" button still works and logs "View has been reset!" to the console.</p>
+<p>We have successfully memoized the component, its object props, and its function props, resulting in a fully optimized rendering path.</p>
+<h3 id="the-dangers-of-over-optimization">The Dangers of Over-Optimization</h3>
+<p>It might seem like the lesson here is "wrap everything in <code>React.memo</code>, <code>useMemo</code>, and <code>useCallback</code>." <strong>This is a dangerous and incorrect conclusion.</strong> This is a common trap for junior and even mid-level developers.</p>
+<p><code>useCallback</code> and <code>useMemo</code> are not free.
+1.  <strong>Memory Cost</strong>: React has to store the memoized value and the dependency array in memory. For a large number of components, this can add up.
+2.  <strong>CPU Cost</strong>: On every render, React has to compare the new dependency array with the old one. If the dependencies are complex, this comparison itself can take time.
+3.  <strong>Complexity Cost</strong>: The code becomes harder to read and reason about. You now have to manage dependency arrays, which are a common source of bugs (e.g., stale closures from missing dependencies).</p>
+<p><strong>The Golden Rule of <code>useCallback</code></strong>:
+You only need <code>useCallback</code> in two primary scenarios:</p>
+<ol>
+<li><strong>Passing a callback to a memoized child component</strong>: This is the exact case we just solved. The child component (<code>SalesChart</code>) is wrapped in <code>React.memo</code> and is expensive to render. Without <code>useCallback</code>, the memoization would be pointless.</li>
+<li><strong>As a dependency in another hook</strong>: If you have a function that is used inside a <code>useEffect</code>, <code>useMemo</code>, or another <code>useCallback</code>, you should wrap it in <code>useCallback</code> to prevent the outer hook from re-running unnecessarily.</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Example of scenario 2</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">fetchData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useCallback</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// fetch logic using `filter`</span>
+<span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">filter</span><span class="p">]);</span>
+
+<span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">fetchData</span><span class="p">();</span>
+<span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">fetchData</span><span class="p">]);</span><span class="w"> </span><span class="c1">// Without useCallback, this effect would run on every render</span>
+</code></pre></div>
+
+<p>If your function is not being used in one of these two ways, you <strong>probably do not need <code>useCallback</code></strong>. For example, passing a new function to a native DOM element like <code>&lt;button onClick={() =&gt; ...}&gt;</code> is perfectly fine and often preferred for simplicity. The cost of re-creating that small function is negligible compared to the cost of React's memoization machinery.</p>
+<p><strong>In summary</strong>: Use these tools like a surgeon's scalpel, not a sledgehammer. Profile your app, find the specific bottleneck, and apply the precise tool needed to fix it.</p>
+<h2 id="code-splitting-strategies">Code splitting strategies</h2>
+<h2 id="shifting-gears-from-render-performance-to-load-performance">Shifting Gears: From Render Performance to Load Performance</h2>
+<p>So far, we've focused on <em>runtime</em> performance—what happens when the user interacts with an already-loaded page. But what about the initial page load? If our <code>SalesChart</code> component relies on a massive charting library, our users will have to download a huge JavaScript bundle just to see the page, even if they never look at the chart. This is a <em>load</em> performance problem.</p>
+<p>Code splitting is the solution. It's the process of splitting your application's bundle into smaller chunks that can be loaded on demand. Next.js makes this incredibly easy with dynamic imports.</p>
+<h3 id="failure-demonstration-the-bloated-bundle">Failure Demonstration: The Bloated Bundle</h3>
+<p>Let's simulate our <code>SalesChart</code> using a large library. We won't actually install one, but we can use the <code>@next/bundle-analyzer</code> to see how our components contribute to the final bundle size.</p>
+<p>First, install the analyzer:</p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>@next/bundle-analyzer
+</code></pre></div>
+
+<p>Next, configure it in your <code>next.config.js</code> file:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// next.config.js</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">withBundleAnalyzer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s1">&#39;@next/bundle-analyzer&#39;</span><span class="p">)({</span>
+<span class="w">  </span><span class="nx">enabled</span><span class="o">:</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">ANALYZE</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;true&#39;</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">withBundleAnalyzer</span><span class="p">({</span>
+<span class="w">  </span><span class="c1">// your next.js config</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p>Now, run the build with the <code>ANALYZE</code> flag:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">ANALYZE</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>build
+</code></pre></div>
+
+<p>This will build your application and then open two pages in your browser: <code>client.html</code> and <code>server.html</code>. Let's look at <code>client.html</code>. You will see a treemap visualization of your JavaScript bundles. You'll find that <code>SalesChart.js</code> is included in the main chunk for the <code>/performance-demo</code> page.</p>
+<h3 id="diagnostic-analysis-reading-the-failure_1">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>: On a slow connection, the user would see a blank screen or a loading spinner for a long time before the page becomes interactive.</p>
+<p><strong>Network Tab Analysis</strong>:
+- <strong>Request pattern</strong>: A single, large <code>performance-demo-*.js</code> file is downloaded when the user navigates to the page.
+- <strong>Timing</strong>: The Time to Interactive (TTI) is high because the browser has to download, parse, and execute this large JavaScript file.</p>
+<p><strong>Bundle Analyzer Evidence</strong>:
+- The visualization clearly shows <code>SalesChart.tsx</code> and any libraries it imports (e.g., <code>chart.js</code>, <code>d3</code>) as part of the page's main bundle. This code is loaded upfront, always.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: Slow initial page load.</p>
+<ul>
+<li>Expected: The page content should appear quickly.</li>
+<li>Actual: The user waits for the entire bundle, including code for components they might not even see, to download.</li>
+</ul>
+</li>
+<li>
+<p><strong>What the bundle analyzer reveals</strong>: We are shipping code eagerly instead of lazily.</p>
+<ul>
+<li>Key indicator: The size of the page's main chunk is significantly inflated by the <code>SalesChart</code> component.</li>
+</ul>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: We are using a standard, static <code>import</code> for <code>SalesChart</code>. This tells the bundler (Webpack) to include the component's code in the initial bundle for any page that uses it.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: Static imports are, by definition, resolved at build time. We have no way to defer the loading of this code until it's actually needed.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A way to tell Next.js, "Don't include this component in the initial bundle. Instead, create a separate chunk for it and only fetch that chunk when the component is about to be rendered."</p>
+</li>
+</ol>
+<h3 id="iteration-6-code-splitting-with-nextdynamic">Iteration 6: Code Splitting with <code>next/dynamic</code></h3>
+<p>Next.js provides a special <code>dynamic</code> function that wraps React's <code>lazy</code> and <code>Suspense</code> functionality into a simple, powerful API.</p>
+<p><strong>Before</strong> (Iteration 5):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/PerformanceDashboard.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">SalesChart</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./SalesChart&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Static import</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">SalesChart</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="na">...</span><span class="w"> </span><span class="err">*/</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 6):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/PerformanceDashboard.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">dynamic</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/dynamic&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Import dynamic</span>
+
+<span class="c1">// ... other imports</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">RecentActivity</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./RecentActivity&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Header</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./Header&#39;</span><span class="p">;</span>
+
+<span class="c1">// Create a dynamic version of SalesChart</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">DynamicSalesChart</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">dynamic</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">import</span><span class="p">(</span><span class="s1">&#39;./SalesChart&#39;</span><span class="p">),</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Optional: show a loading component while the chart chunk is being fetched</span>
+<span class="w">  </span><span class="nx">loading</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">chart</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;,</span>
+<span class="w">  </span><span class="c1">// Optional: disable server-side rendering for this component if it uses browser-only APIs</span>
+<span class="w">  </span><span class="nx">ssr</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="p">,</span><span class="w"> </span>
+<span class="p">});</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... state and callbacks</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... Header and input */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;grid grid-cols-2 gap-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* Use the dynamic component instead of the static one */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">DynamicSalesChart</span>
+<span class="w">          </span><span class="na">salesData</span><span class="o">=</span><span class="p">{</span><span class="nx">initialSalesData</span><span class="p">}</span>
+<span class="w">          </span><span class="na">options</span><span class="o">=</span><span class="p">{</span><span class="nx">chartOptions</span><span class="p">}</span>
+<span class="w">          </span><span class="na">onResetView</span><span class="o">=</span><span class="p">{</span><span class="nx">handleResetView</span><span class="p">}</span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">RecentActivity</span><span class="w"> </span><span class="na">activities</span><span class="o">=</span><span class="p">{</span><span class="nx">activities</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="p">;</span>
+</code></pre></div>
+
+<h3 id="verification-a-leaner-initial-load">Verification: A Leaner Initial Load</h3>
+<p>Now, run <code>ANALYZE=true npm run build</code> again.</p>
+<p><strong>Bundle Analyzer Evidence</strong>:
+Look at the <code>client.html</code> report. You will now see a new, separate chunk for <code>SalesChart.js</code>. The main chunk for the <code>/performance-demo</code> page is significantly smaller.</p>
+<p><strong>Network Tab Analysis</strong>:
+1.  Load the <code>/performance-demo</code> page with the Network tab open.
+2.  You will see the small, initial page bundle download first. The page becomes interactive almost immediately.
+3.  A moment later, you will see a <em>new</em> network request for a file like <code>_next/static/chunks/src_components_SalesChart_tsx.js</code>. This is the code for our chart component being loaded on demand. While it's loading, the user sees the "Loading chart..." message we specified.</p>
+<p><strong>Performance Metrics</strong>:
+- <strong>Before</strong>:
+  - Initial Bundle Size: ~150 KB (hypothetically, with a chart library)
+  - Time to Interactive: 1.5s
+- <strong>After</strong>:
+  - Initial Bundle Size: ~80 KB
+  - New <code>SalesChart</code> chunk: ~70 KB
+  - Time to Interactive: 0.8s (The user can interact with the page while the chart loads in the background)</p>
+<h3 id="code-splitting-strategies_1">Code Splitting Strategies</h3>
+<p><code>next/dynamic</code> is a powerful tool. Here are some common strategies for using it:</p>
+<ol>
+<li>
+<p><strong>Component-Based Splitting (what we just did)</strong>: Identify large, non-critical components (charts, complex forms, heavy UI elements) and load them dynamically. This is great for components that are "below the fold" or not essential for the initial user experience.</p>
+</li>
+<li>
+<p><strong>Route-Based Splitting</strong>: Next.js does this automatically. Each page in your <code>app</code> directory is its own entry point and gets its own bundle. This is the most fundamental form of code splitting.</p>
+</li>
+<li>
+<p><strong>Interaction-Based Splitting</strong>: Defer loading code until the user actually interacts with something. A classic example is a modal dialog.</p>
+</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Modal example</span>
+<span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isModalOpen</span><span class="p">,</span><span class="w"> </span><span class="nx">setIsModalOpen</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">DynamicModal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">dynamic</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">import</span><span class="p">(</span><span class="s1">&#39;./MyModal&#39;</span><span class="p">));</span>
+
+<span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setIsModalOpen</span><span class="p">(</span><span class="kc">true</span><span class="p">)}&gt;</span><span class="nx">Open</span><span class="w"> </span><span class="nx">Modal</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">{</span><span class="nx">isModalOpen</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">DynamicModal</span><span class="w"> </span><span class="na">onClose</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setIsModalOpen</span><span class="p">(</span><span class="kc">false</span><span class="p">)}</span><span class="w"> </span><span class="p">/&gt;}</span>
+<span class="w">  </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">);</span>
+</code></pre></div>
+
+<p>In this example, the code for <code>MyModal</code> is never downloaded unless the user clicks the "Open Modal" button. This is an extremely effective strategy for optimizing initial load times.</p>
+<h2 id="analyzing-and-fixing-performance-bottlenecks">Analyzing and fixing performance bottlenecks</h2>
+<h2 id="the-debugging-workflow-from-slow-to-solved">The Debugging Workflow: From "Slow" to "Solved"</h2>
+<p>Throughout this chapter, we've been informally following a diagnostic process. Now, let's formalize it into a repeatable workflow you can use on any performance problem. Your most important tools are your browser's DevTools and the React DevTools extension.</p>
+<h3 id="the-toolkit">The Toolkit</h3>
+<ol>
+<li><strong>React DevTools - Profiler</strong>: This is your primary weapon for diagnosing runtime performance issues. It records what components rendered, why they rendered, and how long they took.</li>
+<li><strong>React DevTools - Components Tab</strong>: Lets you inspect the props and state of any component in the tree, which is crucial for understanding <em>why</em> a component might be re-rendering.</li>
+<li><strong>Browser DevTools - Performance Tab</strong>: A more general-purpose tool. It can help you find "long tasks" that block the main thread, which might be caused by slow React renders, but could also be from other JavaScript on the page.</li>
+<li><strong><code>@next/bundle-analyzer</code></strong>: Your go-to tool for diagnosing load performance issues and identifying which components are bloating your bundles.</li>
+<li><strong><code>console.log</code></strong>: Simple, but effective. As we've seen, logging a message in a component body is a quick way to see if it's re-rendering.</li>
+</ol>
+<h3 id="debugging-workflow-when-your-component-fails">Debugging Workflow: When Your Component Fails</h3>
+<p>Let's apply this workflow to the very first problem we encountered: the laggy input in our dashboard.</p>
+<p><strong>Step 1: Observe the user experience</strong>
+The first sign of trouble is user-facing.
+- <strong>Observation</strong>: "When I type into the filter input, the characters appear with a noticeable delay. The UI feels janky."
+- <strong>Hypothesis</strong>: Something is blocking the main thread on every keystroke. Since it's a React app, it's likely a slow component render.</p>
+<p><strong>Step 2: Check the console</strong>
+Look for any warnings or errors. In our case, we added <code>console.log</code> statements which immediately gave us a clue.
+- <strong>Observation</strong>: <code>Rendering SalesChart... (This is slow!)</code> is logged on every keystroke.
+- <strong>Hypothesis</strong>: The <code>SalesChart</code> component is re-rendering unnecessarily.</p>
+<p><strong>Step 3: Inspect with React DevTools Profiler</strong>
+This is where we gather definitive evidence.
+1.  Open the React DevTools and go to the "Profiler" tab.
+2.  Click the blue "Record" button.
+3.  Perform the slow action (type a few characters into the input).
+4.  Click "Stop recording".</p>
+<p>You will be presented with a flamegraph.
+- <strong>Observation</strong>:
+    - The <code>PerformanceDashboard</code> component is at the top of the graph for each "commit" (render).
+    - The bar for <code>SalesChart</code> is very long and colored yellow/orange, indicating a slow render.
+    - Clicking on the <code>SalesChart</code> bar in the Profiler shows the reason for the render: "Parent component rendered".
+- <strong>Conclusion</strong>: We have confirmed it. <code>SalesChart</code> is slow, and it's re-rendering because its parent is re-rendering, even though its own props haven't changed.</p>
+<p><strong>Step 4: Inspect Props with the Components Tab</strong>
+Let's verify the props.
+1.  Go to the "Components" tab in React DevTools.
+2.  Click on <code>SalesChart</code> in the component tree.
+3.  The props are displayed on the right: <code>salesData: [...]</code>.
+4.  Type a character in the input. The component tree will flash, showing the re-render.
+- <strong>Observation</strong>: The <code>salesData</code> prop does not change when the <code>filter</code> state in the parent changes.
+- <strong>Conclusion</strong>: The re-render is completely wasted.</p>
+<p><strong>Step 5: Reproduce Minimally (Mental or Actual)</strong>
+Think about the core problem. A parent component's state change is causing an expensive, unrelated child to re-render. This is a classic memoization problem.</p>
+<p><strong>Step 6: Apply the Fix</strong>
+Based on our diagnosis, we know we need to prevent the re-render when props are the same.
+- <strong>Decision</strong>: The right tool for this is <code>React.memo</code>.
+- <strong>Action</strong>: Wrap <code>SalesChart</code> in <code>React.memo</code>.</p>
+<p><strong>Step 7: Verify the Fix</strong>
+Never assume your fix worked. Always re-profile.
+1.  Clear the previous Profiler recording.
+2.  Record a new session while typing in the input.
+- <strong>Observation</strong>: The flamegraph is now much shorter. The <code>SalesChart</code> component is greyed out and has a "did not render" label.
+- <strong>Conclusion</strong>: The fix was successful. The performance bottleneck has been eliminated.</p>
+<p>This systematic process takes the guesswork out of performance optimization. You move from a vague feeling of "slowness" to a precise, evidence-backed understanding of the problem, which leads you directly to the correct solution.</p>
+<h2 id="the-performance-optimization-flowchart">The performance optimization flowchart</h2>
+<h2 id="synthesis-the-complete-journey-and-decision-framework">Synthesis: The Complete Journey and Decision Framework</h2>
+<p>We have taken our <code>PerformanceDashboard</code> from a laggy, frustrating user experience to a highly optimized component, addressing both runtime and load-time performance. Let's review the journey.</p>
+<h3 id="the-journey-from-problem-to-solution">The Journey: From Problem to Solution</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Iteration</th>
+<th style="text-align: left;">Failure Mode</th>
+<th style="text-align: left;">Technique Applied</th>
+<th style="text-align: left;">Result</th>
+<th style="text-align: left;">Performance Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">UI lag on input change due to expensive render</td>
+<td style="text-align: left;">None (Baseline)</td>
+<td style="text-align: left;">Unusable on interaction</td>
+<td style="text-align: left;">Baseline (Slow)</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Unnecessary re-render of <code>SalesChart</code></td>
+<td style="text-align: left;"><code>React.memo</code></td>
+<td style="text-align: left;">Fixed lag from simple parent state changes</td>
+<td style="text-align: left;">Drastic improvement in UI responsiveness</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;"><code>React.memo</code> broken by new object prop reference</td>
+<td style="text-align: left;"><code>useMemo</code></td>
+<td style="text-align: left;">Preserved object reference, restoring <code>React.memo</code>'s effectiveness</td>
+<td style="text-align: left;">Performance restored</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;"><code>React.memo</code> broken by new function prop reference</td>
+<td style="text-align: left;"><code>useCallback</code></td>
+<td style="text-align: left;">Preserved function reference, completing the memoization</td>
+<td style="text-align: left;">Performance fully restored for runtime interactions</td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">Large initial bundle size due to <code>SalesChart</code></td>
+<td style="text-align: left;"><code>next/dynamic</code></td>
+<td style="text-align: left;">Split <code>SalesChart</code> into a separate chunk, loaded on demand</td>
+<td style="text-align: left;">Significant reduction in initial load time</td>
+</tr>
+</tbody>
+</table>
+<h3 id="final-implementation">Final Implementation</h3>
+<p>Here is the final, fully-optimized version of our <code>PerformanceDashboard</code> component, incorporating all the techniques we've learned.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/PerformanceDashboard.tsx (Final Version)</span>
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="p">,</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">,</span><span class="w"> </span><span class="nx">useCallback</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">dynamic</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/dynamic&#39;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">Header</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./Header&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Assuming Header is also memoized</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">RecentActivity</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./RecentActivity&#39;</span><span class="p">;</span>
+
+<span class="c1">// --- Data defined outside component to ensure stable reference ---</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">initialSalesData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">month</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Jan&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">amount</span><span class="o">:</span><span class="w"> </span><span class="kt">12000</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">month</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Feb&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">amount</span><span class="o">:</span><span class="w"> </span><span class="kt">18000</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">month</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Mar&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">amount</span><span class="o">:</span><span class="w"> </span><span class="kt">15000</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">month</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">amount</span><span class="o">:</span><span class="w"> </span><span class="kt">22000</span><span class="w"> </span><span class="p">},</span>
+<span class="p">];</span>
+
+<span class="c1">// --- Dynamically import the heavy component ---</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">DynamicSalesChart</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">dynamic</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="k">import</span><span class="p">(</span><span class="s1">&#39;./SalesChart&#39;</span><span class="p">),</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">loading</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-white p-4 rounded-lg shadow-md&quot;</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">chart</span><span class="p">...&lt;/</span><span class="nt">div</span><span class="p">&gt;,</span>
+<span class="w">  </span><span class="nx">ssr</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Rendering PerformanceDashboard...&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">filter</span><span class="p">,</span><span class="w"> </span><span class="nx">setFilter</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">activities</span><span class="p">,</span><span class="w"> </span><span class="nx">setActivities</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">string</span><span class="err">[]</span><span class="p">&gt;([</span><span class="s1">&#39;Initial activity&#39;</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">intervalId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">setInterval</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">setActivities</span><span class="p">(</span><span class="nx">prev</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">[...</span><span class="nx">prev</span><span class="p">,</span><span class="w"> </span><span class="sb">`New event at </span><span class="si">${</span><span class="ow">new</span><span class="w"> </span><span class="nb">Date</span><span class="p">().</span><span class="nx">toLocaleTimeString</span><span class="p">()</span><span class="si">}</span><span class="sb">`</span><span class="p">]);</span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="mf">2000</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">clearInterval</span><span class="p">(</span><span class="nx">intervalId</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="c1">// --- Memoize object props for memoized children ---</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">chartOptions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMemo</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">theme</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;light&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">showGrid</span><span class="o">:</span><span class="w"> </span><span class="kt">true</span><span class="p">,</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="c1">// --- Memoize function props for memoized children ---</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleResetView</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useCallback</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;View has been reset!&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Header</span><span class="w"> </span><span class="na">user</span><span class="o">=</span><span class="s">&quot;Alice&quot;</span><span class="w"> </span><span class="na">salesData</span><span class="o">=</span><span class="p">{</span><span class="nx">initialSalesData</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">        </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">filter</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setFilter</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">        </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Filter data...&quot;</span>
+<span class="w">        </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;w-full p-2 border rounded-lg mb-4&quot;</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;grid grid-cols-2 gap-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">DynamicSalesChart</span>
+<span class="w">          </span><span class="na">salesData</span><span class="o">=</span><span class="p">{</span><span class="nx">initialSalesData</span><span class="p">}</span>
+<span class="w">          </span><span class="na">options</span><span class="o">=</span><span class="p">{</span><span class="nx">chartOptions</span><span class="p">}</span>
+<span class="w">          </span><span class="na">onResetView</span><span class="o">=</span><span class="p">{</span><span class="nx">handleResetView</span><span class="p">}</span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">RecentActivity</span><span class="w"> </span><span class="na">activities</span><span class="o">=</span><span class="p">{</span><span class="nx">activities</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">PerformanceDashboard</span><span class="p">;</span>
+</code></pre></div>
+
+<h3 id="decision-framework-the-performance-optimization-flowchart">Decision Framework: The Performance Optimization Flowchart</h3>
+<p>When faced with a performance issue, this flowchart can guide your thinking. The most important step is the first one.</p>
+<!-- Placeholder for a real flowchart image -->
+
+<p><strong>1. Is there a measurable performance problem?</strong>
+   - <strong>No</strong>: <strong>STOP.</strong> Do not optimize. Your work is done. Premature optimization is a trap.
+   - <strong>Yes</strong>: Proceed to step 2.</p>
+<p><strong>2. What kind of problem is it?</strong>
+   - <strong>Slow Initial Load / High Time-to-Interactive</strong>: The page takes too long to appear and become usable.
+     - <strong>Action</strong>: Analyze your bundle with <code>@next/bundle-analyzer</code>.
+     - <strong>Solutions</strong>:
+       - Use <code>next/dynamic</code> to code-split large components that are not critical for the initial view.
+       - Check for large, unused dependencies.
+       - Optimize images with <code>next/image</code>.
+       - Ensure third-party scripts are loaded asynchronously (<code>strategy="lazyOnload"</code>).</p>
+<ul>
+<li><strong>Slow UI Interaction / Lag / Jank</strong>: The page is loaded, but interacting with it is slow.<ul>
+<li><strong>Action</strong>: Profile the interaction with the React DevTools Profiler.</li>
+<li><strong>Diagnosis</strong>: Identify the component(s) that are taking the longest to render in the flamegraph.</li>
+<li><strong>Question</strong>: Is the slow component re-rendering unnecessarily?</li>
+<li><strong>Yes, it is re-rendering unnecessarily</strong>:<ul>
+<li><strong>Check the render reason in the Profiler.</strong></li>
+<li>If "Parent component rendered" and props are identical primitives: Wrap the component in <code>React.memo</code>.</li>
+<li>If props are objects/arrays that change reference: Use <code>useMemo</code> in the parent for that prop.</li>
+<li>If props are functions that change reference: Use <code>useCallback</code> in the parent for that prop.</li>
+</ul>
+</li>
+<li><strong>No, the render is necessary but the component is just inherently slow</strong>:<ul>
+<li>Can you virtualize a long list? (Use a library like <code>react-window</code> or <code>tanstack-virtual</code>).</li>
+<li>Can you break the component into smaller pieces?</li>
+<li>Can you defer the expensive update using <code>useTransition</code> or <code>useDeferredValue</code>? (These are advanced hooks for concurrent rendering).</li>
+<li>Can you move a heavy computation to a Web Worker?</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="lessons-learned">Lessons Learned</h3>
+<ul>
+<li><strong>Measure, Don't Guess</strong>: The Profiler and Bundle Analyzer are your sources of truth. Data, not intuition, should drive optimization.</li>
+<li><strong>Optimization Adds Complexity</strong>: Every <code>memo</code>, <code>useMemo</code>, and <code>useCallback</code> you add makes your code harder to reason about. This is a trade-off you should only make when necessary.</li>
+<li><strong>Distinguish Load vs. Runtime</strong>: The tools and techniques for fixing a slow initial load are different from those for fixing a laggy UI. Identify which problem you have first.</li>
+<li><strong>React is Fast by Default</strong>: Most of the time, you don't need these optimizations. They are for the exceptional cases where components are computationally expensive or render with very high frequency. Trust React's default behavior until you have proof that it's a bottleneck.</li>
+</ul>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:41:01 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

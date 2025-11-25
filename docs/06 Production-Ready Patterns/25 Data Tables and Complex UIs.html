@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>25 Data Tables and Complex UIs</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">06 Production-Ready Patterns</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-25-data-tables-and-complex-uis">Chapter 25: Data Tables and Complex UIs</h1>
+<h2 id="tanstack-table-flexible-headless-tables">TanStack Table: flexible, headless tables</h2>
+<h2 id="the-challenge-of-complex-data-display">The Challenge of Complex Data Display</h2>
+<p>Displaying a simple list of items is straightforward. But as applications grow, so does the complexity of the data we need to present. Users expect to be able to sort, filter, and paginate through thousands of rows of data without a hitch. Building this from scratch is a monumental task, fraught with performance pitfalls and state management nightmares.</p>
+<p>This chapter will guide you through building a high-performance, feature-rich data table, starting from a naive implementation and progressively layering on professional-grade solutions.</p>
+<h3 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h3>
+<p>Our anchor example for this chapter will be a <code>ProductDashboard</code>. It's a common UI pattern: a table that displays a list of products with various attributes like name, category, price, and stock level.</p>
+<p>We'll start by building this with the most basic tools available: standard HTML <code>&lt;table&gt;</code> elements and <code>Array.prototype.map</code>. This will serve as our baseline and will quickly reveal the limitations of a manual approach.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">src</span><span class="o">/</span>
+└──<span class="w"> </span><span class="n">app</span><span class="o">/</span>
+<span class="w">    </span>└──<span class="w"> </span><span class="n">products</span><span class="o">/</span>
+<span class="w">        </span>├──<span class="w"> </span><span class="n">page.tsx</span><span class="w">          </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">Our</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="n">component</span>
+<span class="w">        </span>├──<span class="w"> </span><span class="n">ProductDashboard.tsx</span><span class="w">  </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="n">table</span><span class="w"> </span><span class="n">component</span><span class="w"> </span><span class="n">we</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">build</span>
+<span class="w">        </span>└──<span class="w"> </span><span class="n">data.ts</span><span class="w">           </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">Mock</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="kr">for</span><span class="w"> </span><span class="n">our</span><span class="w"> </span><span class="n">products</span>
+</code></pre></div>
+
+<p>First, let's define some mock data.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/data.ts</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">Product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">category</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Electronics&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;Books&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;Clothing&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;Home Goods&#39;</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">stock</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">mockData</span><span class="o">:</span><span class="w"> </span><span class="kt">Product</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">1</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Laptop Pro&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">category</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Electronics&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">1499.99</span><span class="p">,</span><span class="w"> </span><span class="nx">stock</span><span class="o">:</span><span class="w"> </span><span class="kt">35</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">2</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;The Great Novel&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">category</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Books&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">19.99</span><span class="p">,</span><span class="w"> </span><span class="nx">stock</span><span class="o">:</span><span class="w"> </span><span class="kt">150</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">3</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Classic T-Shirt&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">category</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Clothing&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">29.99</span><span class="p">,</span><span class="w"> </span><span class="nx">stock</span><span class="o">:</span><span class="w"> </span><span class="kt">200</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">4</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Smart Thermostat&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">category</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Home Goods&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">199.00</span><span class="p">,</span><span class="w"> </span><span class="nx">stock</span><span class="o">:</span><span class="w"> </span><span class="kt">80</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">5</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Wireless Headphones&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">category</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Electronics&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">249.50</span><span class="p">,</span><span class="w"> </span><span class="nx">stock</span><span class="o">:</span><span class="w"> </span><span class="kt">60</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="c1">// ...imagine 95 more entries for a total of 100</span>
+<span class="p">];</span>
+
+<span class="c1">// Let&#39;s generate a larger dataset for later use</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">createLargeMockData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">count</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">Product</span><span class="p">[]</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">categories</span><span class="o">:</span><span class="w"> </span><span class="kt">Product</span><span class="p">[</span><span class="s1">&#39;category&#39;</span><span class="p">][]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s1">&#39;Electronics&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Books&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Clothing&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Home Goods&#39;</span><span class="p">];</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="kt">Product</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">count</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">data</span><span class="p">.</span><span class="nx">push</span><span class="p">({</span>
+<span class="w">            </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">,</span>
+<span class="w">            </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="sb">`Product </span><span class="si">${</span><span class="nx">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="si">}</span><span class="sb">`</span><span class="p">,</span>
+<span class="w">            </span><span class="nx">category</span><span class="o">:</span><span class="w"> </span><span class="kt">categories</span><span class="p">[</span><span class="nx">i</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="nx">categories</span><span class="p">.</span><span class="nx">length</span><span class="p">],</span>
+<span class="w">            </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">parseFloat</span><span class="p">((</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1000</span><span class="p">).</span><span class="nx">toFixed</span><span class="p">(</span><span class="mf">2</span><span class="p">)),</span>
+<span class="w">            </span><span class="nx">stock</span><span class="o">:</span><span class="w"> </span><span class="kt">Math.floor</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">500</span><span class="p">),</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">data</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// For now, we&#39;ll use a smaller set</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">defaultProducts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createLargeMockData</span><span class="p">(</span><span class="mf">100</span><span class="p">);</span>
+</code></pre></div>
+
+<p>Now, let's create our initial, naive <code>ProductDashboard</code> component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/ProductDashboard.tsx</span>
+
+<span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Product</span><span class="p">,</span><span class="w"> </span><span class="nx">defaultProducts</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./data&#39;</span><span class="p">;</span>
+
+<span class="c1">// Iteration 0: The Naive Table</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDashboard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">products</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Product</span><span class="err">[]</span><span class="p">&gt;(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">defaultProducts</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;container&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Product</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">th</span><span class="p">&gt;</span><span class="nx">ID</span><span class="p">&lt;/</span><span class="nt">th</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">th</span><span class="p">&gt;</span><span class="nx">Name</span><span class="p">&lt;/</span><span class="nt">th</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">th</span><span class="p">&gt;</span><span class="nx">Category</span><span class="p">&lt;/</span><span class="nt">th</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">th</span><span class="p">&gt;</span><span class="nx">Price</span><span class="p">&lt;/</span><span class="nt">th</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">th</span><span class="p">&gt;</span><span class="nx">Stock</span><span class="p">&lt;/</span><span class="nt">th</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">products</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">product</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">tr</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">td</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">id</span><span class="p">}&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">td</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">td</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">category</span><span class="p">}&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">td</span><span class="p">&gt;</span><span class="nx">$</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">price</span><span class="p">.</span><span class="nx">toFixed</span><span class="p">(</span><span class="mf">2</span><span class="p">)}&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">td</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">stock</span><span class="p">}&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">))}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">style</span><span class="w"> </span><span class="na">jsx</span><span class="p">&gt;{</span><span class="sb">`</span>
+<span class="sb">        .container { padding: 2rem; }</span>
+<span class="sb">        table { width: 100%; border-collapse: collapse; }</span>
+<span class="sb">        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }</span>
+<span class="sb">        th { background-color: #f2f2f2; }</span>
+<span class="sb">      `</span><span class="p">}&lt;/</span><span class="nt">style</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>And finally, we render it on our page.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/page.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">ProductDashboard</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./ProductDashboard&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductsPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">ProductDashboard</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This component works. It renders a table of 100 products. But it's a house of cards.</p>
+<h3 id="diagnostic-analysis-the-failure-of-maintainability">Diagnostic Analysis: The Failure of Maintainability</h3>
+<p>This isn't a runtime error, but an architectural one. Let's analyze its weaknesses.</p>
+<p><strong>User Experience</strong>:
+- The user sees a static table. They cannot sort, filter, or paginate. If there were 10,000 products, the page would be unusably long.</p>
+<p><strong>Developer Experience</strong>:
+- <strong>Rigid Columns</strong>: The headers (<code>&lt;th&gt;</code>) and the data cells (<code>&lt;td&gt;</code>) are completely disconnected. If you want to reorder columns, you have to change the code in two separate places. If you forget one, the data will be misaligned with the headers.
+- <strong>No Reusability</strong>: The rendering logic is tightly coupled to the <code>Product</code> data structure. You can't reuse this table for anything else.
+- <strong>Manual Logic</strong>: How would you add sorting? You'd need to add state for the sort key and direction, write a click handler for each <code>&lt;th&gt;</code>, and implement a sorting function. What about filtering? More state, an input element, and a filtering function. This component would quickly become a monolithic mess of state management.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: A static, non-interactive data dump.</li>
+<li><strong>What the developer experiences</strong>: A brittle component that is difficult and risky to change.</li>
+<li><strong>Root cause identified</strong>: The component mixes data logic (what to display) with presentation logic (how to display it in a <code>&lt;table&gt;</code>) in a rigid, inseparable way.</li>
+<li><strong>Why the current approach can't solve this</strong>: Every new feature (sorting, filtering, pagination) requires adding more complex, intertwined state and logic directly into the component, leading to an unmaintainable final product.</li>
+<li><strong>What we need</strong>: A way to separate the <em>logic</em> of a table (state management for sorting, filtering, columns, data) from its <em>presentation</em> (the actual HTML tags).</li>
+</ol>
+<h3 id="iteration-1-introducing-tanstack-table">Iteration 1: Introducing TanStack Table</h3>
+<p>This is where a <strong>headless UI</strong> library comes in. TanStack Table is a prime example. It's "headless" because it provides no UI components out of the box. Instead, it gives you a powerful hook (<code>useReactTable</code>) that manages all the complex state and logic, and returns helper functions and data structures that you can use to render <em>your own</em> markup.</p>
+<p>You control the UI, TanStack Table controls the state.</p>
+<p>Let's refactor our <code>ProductDashboard</code> to use it. First, install the library:</p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>@tanstack/react-table
+</code></pre></div>
+
+<p>Now, let's see the refactored component.</p>
+<p><strong>Before</strong> (Iteration 0): The naive, manual table.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/ProductDashboard.tsx (excerpt)</span>
+<span class="c1">// ...</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">th</span><span class="p">&gt;</span><span class="nx">ID</span><span class="p">&lt;/</span><span class="nt">th</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="cm">/* ... other headers */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">products</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">product</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">tr</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">td</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">id</span><span class="p">}&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="cm">/* ... other cells */</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="c1">// ...</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 1): Using <code>useReactTable</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/ProductDashboard.tsx (Version 1)</span>
+
+<span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Product</span><span class="p">,</span><span class="w"> </span><span class="nx">defaultProducts</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./data&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">useReactTable</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">getCoreRowModel</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">ColumnDef</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">flexRender</span><span class="p">,</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@tanstack/react-table&#39;</span><span class="p">;</span>
+
+<span class="c1">// Iteration 1: Refactoring with TanStack Table</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDashboard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">data</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Product</span><span class="err">[]</span><span class="p">&gt;(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">defaultProducts</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Step 1: Define your columns</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">columns</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useMemo</span><span class="p">&lt;</span><span class="nt">ColumnDef</span><span class="err">&lt;</span><span class="na">Product</span><span class="p">&gt;[]</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">accessorKey</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;id&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;ID&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">cell</span><span class="o">:</span><span class="w"> </span><span class="kt">info</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">info</span><span class="p">.</span><span class="nx">getValue</span><span class="p">(),</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">accessorKey</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;name&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Product Name&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">cell</span><span class="o">:</span><span class="w"> </span><span class="kt">info</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">info</span><span class="p">.</span><span class="nx">getValue</span><span class="p">(),</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">accessorKey</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;category&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Category&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">cell</span><span class="o">:</span><span class="w"> </span><span class="kt">info</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">info</span><span class="p">.</span><span class="nx">getValue</span><span class="p">(),</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">accessorKey</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;price&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Price&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">cell</span><span class="o">:</span><span class="w"> </span><span class="kt">info</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="sb">`$</span><span class="si">${</span><span class="p">(</span><span class="nx">info</span><span class="p">.</span><span class="nx">getValue</span><span class="p">()</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="kt">number</span><span class="p">).</span><span class="nx">toFixed</span><span class="p">(</span><span class="mf">2</span><span class="p">)</span><span class="si">}</span><span class="sb">`</span><span class="p">,</span><span class="w"> </span><span class="c1">// Format the price</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">accessorKey</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;stock&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Stock&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">cell</span><span class="o">:</span><span class="w"> </span><span class="kt">info</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">info</span><span class="p">.</span><span class="nx">getValue</span><span class="p">(),</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="p">[]</span>
+<span class="w">  </span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Step 2: Create the table instance</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useReactTable</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">data</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">columns</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">getCoreRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getCoreRowModel</span><span class="p">(),</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="c1">// Step 3: Render the table using the instance&#39;s helpers</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;container&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Product</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">table</span><span class="p">.</span><span class="nx">getHeaderGroups</span><span class="p">().</span><span class="nx">map</span><span class="p">(</span><span class="nx">headerGroup</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">tr</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">headerGroup</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">              </span><span class="p">{</span><span class="nx">headerGroup</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">header</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="p">&lt;</span><span class="nt">th</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">header</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">                  </span><span class="p">{</span><span class="nx">header</span><span class="p">.</span><span class="nx">isPlaceholder</span>
+<span class="w">                    </span><span class="o">?</span><span class="w"> </span><span class="nx">null</span>
+<span class="w">                    </span><span class="o">:</span><span class="w"> </span><span class="kt">flexRender</span><span class="p">(</span>
+<span class="w">                        </span><span class="nx">header</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">columnDef</span><span class="p">.</span><span class="nx">header</span><span class="p">,</span>
+<span class="w">                        </span><span class="nx">header</span><span class="p">.</span><span class="nx">getContext</span><span class="p">()</span>
+<span class="w">                      </span><span class="p">)}</span>
+<span class="w">                </span><span class="p">&lt;/</span><span class="nt">th</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">))}</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">))}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">table</span><span class="p">.</span><span class="nx">getRowModel</span><span class="p">().</span><span class="nx">rows</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">row</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">tr</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">row</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">              </span><span class="p">{</span><span class="nx">row</span><span class="p">.</span><span class="nx">getVisibleCells</span><span class="p">().</span><span class="nx">map</span><span class="p">(</span><span class="nx">cell</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="p">&lt;</span><span class="nt">td</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">cell</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">                  </span><span class="p">{</span><span class="nx">flexRender</span><span class="p">(</span><span class="nx">cell</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">columnDef</span><span class="p">.</span><span class="nx">cell</span><span class="p">,</span><span class="w"> </span><span class="nx">cell</span><span class="p">.</span><span class="nx">getContext</span><span class="p">())}</span>
+<span class="w">                </span><span class="p">&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">))}</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">))}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">style</span><span class="w"> </span><span class="na">jsx</span><span class="p">&gt;{</span><span class="sb">`</span>
+<span class="sb">        .container { padding: 2rem; }</span>
+<span class="sb">        table { width: 100%; border-collapse: collapse; }</span>
+<span class="sb">        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }</span>
+<span class="sb">        th { background-color: #f2f2f2; }</span>
+<span class="sb">      `</span><span class="p">}&lt;/</span><span class="nt">style</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="analysis-of-the-improvement">Analysis of the Improvement</h3>
+<p>The UI looks identical, but the underlying architecture is vastly superior.</p>
+<ol>
+<li><strong>Decoupled Columns</strong>: The <code>columns</code> array is now the single source of truth. It defines the data accessor (<code>accessorKey</code>), the header text (<code>header</code>), and the cell rendering logic (<code>cell</code>). To reorder columns, you just reorder the objects in this array. The table headers and body will update automatically.</li>
+<li><strong>Declarative Logic</strong>: We tell <code>useReactTable</code> <em>what</em> we want (our data and columns) and <em>what capabilities</em> we need (<code>getCoreRowModel()</code>). The hook handles the complex logic of creating headers, rows, and cells.</li>
+<li><strong>Render Control</strong>: We still have 100% control over the markup. The <code>flexRender</code> utility is a small helper that intelligently renders our <code>header</code> and <code>cell</code> definitions. We could replace it with custom JSX if we wanted.</li>
+</ol>
+<p><strong>Limitation Preview</strong>: Our table is now well-structured and maintainable, but it's still just a static display. We haven't added any of the user-facing features like sorting, filtering, or pagination. That's our next challenge.</p>
+<h2 id="pagination-sorting-and-filtering">Pagination, sorting, and filtering</h2>
+<h2 id="iteration-2-adding-interactivity">Iteration 2: Adding Interactivity</h2>
+<p>Our <code>ProductDashboard</code> is built on a solid foundation, but a user can't do anything with it. In this section, we'll leverage TanStack Table's state management capabilities to add sorting, filtering, and pagination.</p>
+<h3 id="adding-sorting">Adding Sorting</h3>
+<p><strong>Current Limitation</strong>: Users cannot reorder the data based on a column's value, such as sorting by price from lowest to highest.</p>
+<p><strong>New Scenario</strong>: A user clicks on the "Price" header, expecting the table to sort the products by price.</p>
+<p>To enable sorting, we need to do three things:
+1.  Add state to track the current sorting configuration.
+2.  Tell the table instance how to process sorted rows using <code>getSortedRowModel</code>.
+3.  Add <code>onClick</code> handlers to our column headers to toggle sorting.</p>
+<p>Let's update the <code>ProductDashboard</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/ProductDashboard.tsx (Version 2 - Sorting)</span>
+
+<span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Product</span><span class="p">,</span><span class="w"> </span><span class="nx">defaultProducts</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./data&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">useReactTable</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">getCoreRowModel</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">getSortedRowModel</span><span class="p">,</span><span class="w"> </span><span class="c1">// Import</span>
+<span class="w">  </span><span class="nx">ColumnDef</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">flexRender</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">SortingState</span><span class="p">,</span><span class="w"> </span><span class="c1">// Import</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@tanstack/react-table&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDashboard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">data</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Product</span><span class="err">[]</span><span class="p">&gt;(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">defaultProducts</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">sorting</span><span class="p">,</span><span class="w"> </span><span class="nx">setSorting</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">SortingState</span><span class="p">&gt;([]);</span><span class="w"> </span><span class="c1">// Add sorting state</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">columns</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useMemo</span><span class="p">&lt;</span><span class="nt">ColumnDef</span><span class="err">&lt;</span><span class="na">Product</span><span class="p">&gt;[]</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="c1">// ... (same column definitions as before)</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nx">accessorKey</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;ID&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nx">accessorKey</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Product Name&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nx">accessorKey</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;category&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Category&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nx">accessorKey</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;price&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Price&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">cell</span><span class="o">:</span><span class="w"> </span><span class="kt">info</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="sb">`$</span><span class="si">${</span><span class="p">(</span><span class="nx">info</span><span class="p">.</span><span class="nx">getValue</span><span class="p">()</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="kt">number</span><span class="p">).</span><span class="nx">toFixed</span><span class="p">(</span><span class="mf">2</span><span class="p">)</span><span class="si">}</span><span class="sb">`</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nx">accessorKey</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;stock&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Stock&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="p">[]</span>
+<span class="w">  </span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useReactTable</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">data</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">columns</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// Pass state to the table</span>
+<span class="w">      </span><span class="nx">sorting</span><span class="p">,</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nx">onSortingChange</span><span class="o">:</span><span class="w"> </span><span class="kt">setSorting</span><span class="p">,</span><span class="w"> </span><span class="c1">// Provide a state updater</span>
+<span class="w">    </span><span class="nx">getCoreRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getCoreRowModel</span><span class="p">(),</span>
+<span class="w">    </span><span class="nx">getSortedRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getSortedRowModel</span><span class="p">(),</span><span class="w"> </span><span class="c1">// Add the sorting row model</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;container&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Product</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">table</span><span class="p">.</span><span class="nx">getHeaderGroups</span><span class="p">().</span><span class="nx">map</span><span class="p">(</span><span class="nx">headerGroup</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">tr</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">headerGroup</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">              </span><span class="p">{</span><span class="nx">headerGroup</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">header</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="p">&lt;</span><span class="nt">th</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">header</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">header</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">getToggleSortingHandler</span><span class="p">()}&gt;</span>
+<span class="w">                  </span><span class="p">{</span><span class="nx">flexRender</span><span class="p">(</span>
+<span class="w">                    </span><span class="nx">header</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">columnDef</span><span class="p">.</span><span class="nx">header</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">header</span><span class="p">.</span><span class="nx">getContext</span><span class="p">()</span>
+<span class="w">                  </span><span class="p">)}</span>
+<span class="w">                  </span><span class="p">{</span><span class="cm">/* Add a sort indicator */</span><span class="p">}</span>
+<span class="w">                  </span><span class="p">{{</span>
+<span class="w">                    </span><span class="nx">asc</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39; 🔼&#39;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">desc</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39; 🔽&#39;</span><span class="p">,</span>
+<span class="w">                  </span><span class="p">}[</span><span class="nx">header</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">getIsSorted</span><span class="p">()</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="kt">string</span><span class="p">]</span><span class="w"> </span><span class="o">??</span><span class="w"> </span><span class="kc">null</span><span class="p">}</span>
+<span class="w">                </span><span class="p">&lt;/</span><span class="nt">th</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">))}</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">))}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">table</span><span class="p">.</span><span class="nx">getRowModel</span><span class="p">().</span><span class="nx">rows</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">row</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">tr</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">row</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">              </span><span class="p">{</span><span class="nx">row</span><span class="p">.</span><span class="nx">getVisibleCells</span><span class="p">().</span><span class="nx">map</span><span class="p">(</span><span class="nx">cell</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="p">&lt;</span><span class="nt">td</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">cell</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">                  </span><span class="p">{</span><span class="nx">flexRender</span><span class="p">(</span><span class="nx">cell</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">columnDef</span><span class="p">.</span><span class="nx">cell</span><span class="p">,</span><span class="w"> </span><span class="nx">cell</span><span class="p">.</span><span class="nx">getContext</span><span class="p">())}</span>
+<span class="w">                </span><span class="p">&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">))}</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">))}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... styles */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Verification</strong>: Now, when you click on a column header, the table re-renders, sorted by that column. Clicking again reverses the sort order.</p>
+<p><strong>React DevTools Evidence</strong>:
+- <strong>Components Tab</strong>: Select <code>ProductDashboard</code>.
+- <strong>State</strong>: You will see a <code>sorting</code> state array.
+- <strong>Behavior</strong>: When you click the "Price" header, the state changes to <code>[{ id: 'price', desc: false }]</code>. Click again, and it becomes <code>[{ id: 'price', desc: true }]</code>. The table instance uses this state to re-order the rows provided by <code>getRowModel()</code>.</p>
+<h3 id="adding-global-filtering">Adding Global Filtering</h3>
+<p><strong>Current Limitation</strong>: Users can't search for a specific product. They have to manually scan the entire table.</p>
+<p><strong>New Scenario</strong>: A user wants to find all products with "Laptop" in the name. They type "Laptop" into a search box, and the table updates to show only matching rows.</p>
+<p>This requires a similar process: add state for the filter, provide the <code>getFilteredRowModel</code>, and connect an input element to update the filter state.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/ProductDashboard.tsx (Version 3 - Filtering)</span>
+<span class="c1">// ... imports</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... other imports</span>
+<span class="w">  </span><span class="nx">getFilteredRowModel</span><span class="p">,</span><span class="w"> </span><span class="c1">// Import</span>
+<span class="w">  </span><span class="c1">// ... other types</span>
+<span class="w">  </span><span class="nx">GlobalFilter</span><span class="p">,</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@tanstack/react-table&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDashboard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">data</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Product</span><span class="err">[]</span><span class="p">&gt;(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">defaultProducts</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">sorting</span><span class="p">,</span><span class="w"> </span><span class="nx">setSorting</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">SortingState</span><span class="p">&gt;([]);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">globalFilter</span><span class="p">,</span><span class="w"> </span><span class="nx">setGlobalFilter</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span><span class="w"> </span><span class="c1">// Add filter state</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">columns</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useMemo</span><span class="p">&lt;</span><span class="nt">ColumnDef</span><span class="err">&lt;</span><span class="na">Product</span><span class="p">&gt;[]</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="cm">/* ... same columns ... */</span><span class="w"> </span><span class="p">],</span>
+<span class="w">    </span><span class="p">[]</span>
+<span class="w">  </span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useReactTable</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">data</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">columns</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">sorting</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">globalFilter</span><span class="p">,</span><span class="w"> </span><span class="c1">// Pass filter state</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nx">onSortingChange</span><span class="o">:</span><span class="w"> </span><span class="kt">setSorting</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">onGlobalFilterChange</span><span class="o">:</span><span class="w"> </span><span class="kt">setGlobalFilter</span><span class="p">,</span><span class="w"> </span><span class="c1">// Provide updater</span>
+<span class="w">    </span><span class="nx">getCoreRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getCoreRowModel</span><span class="p">(),</span>
+<span class="w">    </span><span class="nx">getSortedRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getSortedRowModel</span><span class="p">(),</span>
+<span class="w">    </span><span class="nx">getFilteredRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getFilteredRowModel</span><span class="p">(),</span><span class="w"> </span><span class="c1">// Add filter row model</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;container&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Product</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Add a filter input */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">globalFilter</span><span class="w"> </span><span class="o">??</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">e</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setGlobalFilter</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">        </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;filter-input&quot;</span>
+<span class="w">        </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Search all columns...&quot;</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* ... same table markup ... */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">style</span><span class="w"> </span><span class="na">jsx</span><span class="p">&gt;{</span><span class="sb">`</span>
+<span class="sb">        /* ... other styles ... */</span>
+<span class="sb">        .filter-input {</span>
+<span class="sb">          margin-bottom: 1rem;</span>
+<span class="sb">          padding: 0.5rem;</span>
+<span class="sb">          font-size: 1rem;</span>
+<span class="sb">        }</span>
+<span class="sb">      `</span><span class="p">}&lt;/</span><span class="nt">style</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Verification</strong>: As you type in the search box, the table rows dynamically update to show only the products that match your query across all columns.</p>
+<h3 id="adding-pagination">Adding Pagination</h3>
+<p><strong>Current Limitation</strong>: The table shows all 100 items at once. For a dataset with thousands of items, this would be overwhelming and slow.</p>
+<p><strong>New Scenario</strong>: The user should see a manageable number of items per page (e.g., 10) and be able to navigate between pages.</p>
+<p>This follows the same pattern: add pagination state, include the <code>getPaginationRowModel</code>, and render pagination controls.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/ProductDashboard.tsx (Version 4 - Pagination)</span>
+<span class="c1">// ... imports</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... other imports</span>
+<span class="w">  </span><span class="nx">getPaginationRowModel</span><span class="p">,</span><span class="w"> </span><span class="c1">// Import</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@tanstack/react-table&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDashboard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... states for data, sorting, globalFilter</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">data</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Product</span><span class="err">[]</span><span class="p">&gt;(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">defaultProducts</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">sorting</span><span class="p">,</span><span class="w"> </span><span class="nx">setSorting</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">SortingState</span><span class="p">&gt;([]);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">globalFilter</span><span class="p">,</span><span class="w"> </span><span class="nx">setGlobalFilter</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">columns</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useMemo</span><span class="p">&lt;</span><span class="nt">ColumnDef</span><span class="err">&lt;</span><span class="na">Product</span><span class="p">&gt;[]</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="cm">/* ... same columns ... */</span><span class="w"> </span><span class="p">],</span>
+<span class="w">    </span><span class="p">[]</span>
+<span class="w">  </span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useReactTable</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">data</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">columns</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">sorting</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">globalFilter</span><span class="p">,</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nx">onSortingChange</span><span class="o">:</span><span class="w"> </span><span class="kt">setSorting</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">onGlobalFilterChange</span><span class="o">:</span><span class="w"> </span><span class="kt">setGlobalFilter</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">getCoreRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getCoreRowModel</span><span class="p">(),</span>
+<span class="w">    </span><span class="nx">getSortedRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getSortedRowModel</span><span class="p">(),</span>
+<span class="w">    </span><span class="nx">getFilteredRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getFilteredRowModel</span><span class="p">(),</span>
+<span class="w">    </span><span class="nx">getPaginationRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getPaginationRowModel</span><span class="p">(),</span><span class="w"> </span><span class="c1">// Add pagination row model</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;container&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Product</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">globalFilter</span><span class="w"> </span><span class="o">??</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">e</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setGlobalFilter</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">        </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;filter-input&quot;</span>
+<span class="w">        </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Search all columns...&quot;</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* ... same table markup ... */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">table</span><span class="p">&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Add Pagination Controls */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;pagination&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span>
+<span class="w">          </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">table</span><span class="p">.</span><span class="nx">setPageIndex</span><span class="p">(</span><span class="mf">0</span><span class="p">)}</span>
+<span class="w">          </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="o">!</span><span class="nx">table</span><span class="p">.</span><span class="nx">getCanPreviousPage</span><span class="p">()}</span>
+<span class="w">        </span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="s1">&#39;&lt;&lt;&#39;</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span>
+<span class="w">          </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">table</span><span class="p">.</span><span class="nx">previousPage</span><span class="p">()}</span>
+<span class="w">          </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="o">!</span><span class="nx">table</span><span class="p">.</span><span class="nx">getCanPreviousPage</span><span class="p">()}</span>
+<span class="w">        </span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="s1">&#39;&lt;&#39;</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="nx">Page</span><span class="p">{</span><span class="s1">&#39; &#39;</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">strong</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">table</span><span class="p">.</span><span class="nx">getState</span><span class="p">().</span><span class="nx">pagination</span><span class="p">.</span><span class="nx">pageIndex</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">}</span><span class="w"> </span><span class="k">of</span><span class="p">{</span><span class="s1">&#39; &#39;</span><span class="p">}</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">table</span><span class="p">.</span><span class="nx">getPageCount</span><span class="p">()}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">strong</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span>
+<span class="w">          </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">table</span><span class="p">.</span><span class="nx">nextPage</span><span class="p">()}</span>
+<span class="w">          </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="o">!</span><span class="nx">table</span><span class="p">.</span><span class="nx">getCanNextPage</span><span class="p">()}</span>
+<span class="w">        </span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="s1">&#39;&gt;&#39;</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span>
+<span class="w">          </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">table</span><span class="p">.</span><span class="nx">setPageIndex</span><span class="p">(</span><span class="nx">table</span><span class="p">.</span><span class="nx">getPageCount</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">1</span><span class="p">)}</span>
+<span class="w">          </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="o">!</span><span class="nx">table</span><span class="p">.</span><span class="nx">getCanNextPage</span><span class="p">()}</span>
+<span class="w">        </span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="s1">&#39;&gt;&gt;&#39;</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">style</span><span class="w"> </span><span class="na">jsx</span><span class="p">&gt;{</span><span class="sb">`</span>
+<span class="sb">        /* ... other styles ... */</span>
+<span class="sb">        .pagination { margin-top: 1rem; display: flex; gap: 0.5rem; align-items: center; }</span>
+<span class="sb">        .pagination button { padding: 0.5rem; }</span>
+<span class="sb">      `</span><span class="p">}&lt;/</span><span class="nt">style</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Verification</strong>: The table now displays only 10 rows at a time (the default page size). The pagination controls allow you to navigate through all the data, and the buttons correctly disable themselves on the first and last pages.</p>
+<p><strong>Limitation Preview</strong>: Our table is now fully interactive for a dataset of 100 items. But what happens when we scale up to 10,000 items? Even with pagination, the browser still has to process the entire 10,000-item array in JavaScript for every sort or filter operation. More importantly, if we weren't using pagination, the DOM would be crushed. Let's explore that failure mode next.</p>
+<h2 id="virtual-scrolling-for-large-lists">Virtual scrolling for large lists</h2>
+<h2 id="iteration-3-taming-large-datasets-with-virtualization">Iteration 3: Taming Large Datasets with Virtualization</h2>
+<p>Our <code>ProductDashboard</code> is feature-complete for small datasets. Now, we'll expose its critical performance flaw by feeding it a massive amount of data.</p>
+<p><strong>Current Limitation</strong>: The component's performance is directly tied to the total number of rows in the dataset. While pagination helps the UI, JavaScript operations like filtering and sorting still have to churn through the entire array. If we were to render all rows at once, the browser would freeze.</p>
+<p><strong>New Scenario</strong>: Our product catalog has grown from 100 items to 10,000. Let's see what happens.</p>
+<p>First, let's modify our component to use a larger dataset and temporarily remove pagination to demonstrate the core problem of rendering too many DOM nodes.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/ProductDashboard.tsx (Failing Version - 10k rows)</span>
+
+<span class="c1">// ... imports</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Product</span><span class="p">,</span><span class="w"> </span><span class="nx">createLargeMockData</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./data&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Use the generator</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDashboard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Use 10,000 items!</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">data</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Product</span><span class="err">[]</span><span class="p">&gt;(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">createLargeMockData</span><span class="p">(</span><span class="mf">10000</span><span class="p">));</span>
+
+<span class="w">  </span><span class="c1">// ... states for sorting, filtering</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useReactTable</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">data</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">columns</span><span class="p">,</span>
+<span class="w">    </span><span class="c1">// ... state and updaters</span>
+<span class="w">    </span><span class="nx">getCoreRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getCoreRowModel</span><span class="p">(),</span>
+<span class="w">    </span><span class="nx">getSortedRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getSortedRowModel</span><span class="p">(),</span>
+<span class="w">    </span><span class="nx">getFilteredRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getFilteredRowModel</span><span class="p">(),</span>
+<span class="w">    </span><span class="c1">// NO getPaginationRowModel for this test</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;container&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... filter input ... */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* ... thead ... */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="cm">/* This will now try to render 10,000 &lt;tr&gt; elements */</span><span class="p">}</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">table</span><span class="p">.</span><span class="nx">getRowModel</span><span class="p">().</span><span class="nx">rows</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">row</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">tr</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">row</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">              </span><span class="p">{</span><span class="nx">row</span><span class="p">.</span><span class="nx">getVisibleCells</span><span class="p">().</span><span class="nx">map</span><span class="p">(</span><span class="nx">cell</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="p">&lt;</span><span class="nt">td</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">cell</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">                  </span><span class="p">{</span><span class="nx">flexRender</span><span class="p">(</span><span class="nx">cell</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">columnDef</span><span class="p">.</span><span class="nx">cell</span><span class="p">,</span><span class="w"> </span><span class="nx">cell</span><span class="p">.</span><span class="nx">getContext</span><span class="p">())}</span>
+<span class="w">                </span><span class="p">&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">))}</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">))}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... no pagination controls ... */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="diagnostic-analysis-reading-the-failure">Diagnostic Analysis: Reading the Failure</h3>
+<p>Running this code will cause a noticeable, and often severe, degradation in performance.</p>
+<p><strong>Browser Behavior</strong>:
+- The page takes a very long time to load. The browser tab may become unresponsive or "hang".
+- Scrolling is extremely laggy and "janky". The scrollbar may jump or not respond immediately.
+- Typing in the filter input is slow. There's a visible delay between typing a character and seeing the table update.</p>
+<p><strong>Browser DevTools Evidence (Performance Tab)</strong>:
+- <strong>Flame Chart</strong>: Recording a page load will show a very long "Scripting" task, potentially lasting several seconds. Inside, you'll see thousands of calls related to React rendering and DOM manipulation.
+- <strong>Main Thread Work</strong>: The main thread will be blocked for a long duration, preventing any user interaction.</p>
+<p><strong>Browser DevTools Evidence (Elements Tab)</strong>:
+- If you inspect the <code>&lt;tbody&gt;</code>, you will see 10,000 <code>&lt;tr&gt;</code> elements rendered in the DOM. This is the smoking gun.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: A slow, unresponsive, and unusable application.</li>
+<li><strong>What the console reveals</strong>: No errors, just extreme sluggishness. This is a performance bug, not a logic error.</li>
+<li><strong>What DevTools shows</strong>: The root cause is the sheer number of DOM nodes. The browser's rendering engine cannot efficiently handle painting, styling, and managing event listeners for tens of thousands of individual elements.</li>
+<li><strong>Root cause identified</strong>: We are rendering every single row in our dataset to the DOM, even though the user can only see a handful at a time.</li>
+<li><strong>Why the current approach can't solve this</strong>: React is fast, but the DOM is slow. No amount of React optimization can make rendering 10,000 complex table rows a fast operation.</li>
+<li><strong>What we need</strong>: A way to render <em>only the rows currently visible in the viewport</em> and fake the existence of the rest. This technique is called <strong>virtualization</strong> or <strong>windowing</strong>.</li>
+</ol>
+<h3 id="iteration-4-implementing-virtual-scrolling">Iteration 4: Implementing Virtual Scrolling</h3>
+<p>We'll use another library from the TanStack ecosystem, <code>@tanstack/react-virtual</code>, which is designed to work seamlessly with TanStack Table.</p>
+<p>First, install it:</p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>@tanstack/react-virtual
+</code></pre></div>
+
+<p>Now, let's integrate it into our <code>ProductDashboard</code>. The core idea is to:
+1.  Wrap our table body in a container with a fixed height and <code>overflow: scroll</code>.
+2.  Use the <code>useVirtualizer</code> hook to calculate which rows should be visible.
+3.  Use CSS transforms to position the rendered rows correctly within the scrollable container, creating the illusion of a full list.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/ProductDashboard.tsx (Version 5 - Virtualized)</span>
+
+<span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Product</span><span class="p">,</span><span class="w"> </span><span class="nx">createLargeMockData</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./data&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">useReactTable</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">getCoreRowModel</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">getSortedRowModel</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">getFilteredRowModel</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">ColumnDef</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">flexRender</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">SortingState</span><span class="p">,</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@tanstack/react-table&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useVirtualizer</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@tanstack/react-virtual&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Import</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDashboard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">data</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Product</span><span class="err">[]</span><span class="p">&gt;(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">createLargeMockData</span><span class="p">(</span><span class="mf">10000</span><span class="p">));</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">sorting</span><span class="p">,</span><span class="w"> </span><span class="nx">setSorting</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">SortingState</span><span class="p">&gt;([]);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">globalFilter</span><span class="p">,</span><span class="w"> </span><span class="nx">setGlobalFilter</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">columns</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useMemo</span><span class="p">&lt;</span><span class="nt">ColumnDef</span><span class="err">&lt;</span><span class="na">Product</span><span class="p">&gt;[]</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="cm">/* ... same columns ... */</span><span class="w"> </span><span class="p">],</span>
+<span class="w">    </span><span class="p">[]</span>
+<span class="w">  </span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useReactTable</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">data</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">columns</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">sorting</span><span class="p">,</span><span class="w"> </span><span class="nx">globalFilter</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="nx">onSortingChange</span><span class="o">:</span><span class="w"> </span><span class="kt">setSorting</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">onGlobalFilterChange</span><span class="o">:</span><span class="w"> </span><span class="kt">setGlobalFilter</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">getCoreRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getCoreRowModel</span><span class="p">(),</span>
+<span class="w">    </span><span class="nx">getSortedRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getSortedRowModel</span><span class="p">(),</span>
+<span class="w">    </span><span class="nx">getFilteredRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getFilteredRowModel</span><span class="p">(),</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">tableContainerRef</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useRef</span><span class="p">&lt;</span><span class="nt">HTMLDivElement</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">rows</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">table</span><span class="p">.</span><span class="nx">getRowModel</span><span class="p">();</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">rowVirtualizer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useVirtualizer</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">count</span><span class="o">:</span><span class="w"> </span><span class="kt">rows.length</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">getScrollElement</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">tableContainerRef</span><span class="p">.</span><span class="nx">current</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">estimateSize</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="mf">34</span><span class="p">,</span><span class="w"> </span><span class="c1">// Estimate row height for performance</span>
+<span class="w">    </span><span class="nx">overscan</span><span class="o">:</span><span class="w"> </span><span class="kt">5</span><span class="p">,</span><span class="w"> </span><span class="c1">// Render 5 extra items on each side</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;container&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Product</span><span class="w"> </span><span class="nx">Dashboard</span><span class="w"> </span><span class="p">(</span><span class="mf">10</span><span class="p">,</span><span class="mo">000</span><span class="w"> </span><span class="nx">items</span><span class="p">)&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">globalFilter</span><span class="w"> </span><span class="o">??</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">e</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setGlobalFilter</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">        </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;filter-input&quot;</span>
+<span class="w">        </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Search all columns...&quot;</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* The scrollable container */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">tableContainerRef</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;table-container&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">table</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;100%&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">table</span><span class="p">.</span><span class="nx">getHeaderGroups</span><span class="p">().</span><span class="nx">map</span><span class="p">(</span><span class="nx">headerGroup</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">tr</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">headerGroup</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">                </span><span class="p">{</span><span class="nx">headerGroup</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">header</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                  </span><span class="p">&lt;</span><span class="nt">th</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">header</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">header</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">getToggleSortingHandler</span><span class="p">()}&gt;</span>
+<span class="w">                    </span><span class="p">{</span><span class="nx">flexRender</span><span class="p">(</span><span class="nx">header</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">columnDef</span><span class="p">.</span><span class="nx">header</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="p">.</span><span class="nx">getContext</span><span class="p">())}</span>
+<span class="w">                    </span><span class="p">{{</span><span class="w"> </span><span class="nx">asc</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39; 🔼&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">desc</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39; 🔽&#39;</span><span class="w"> </span><span class="p">}[</span><span class="nx">header</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">getIsSorted</span><span class="p">()</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="kt">string</span><span class="p">]</span><span class="w"> </span><span class="o">??</span><span class="w"> </span><span class="kc">null</span><span class="p">}</span>
+<span class="w">                  </span><span class="p">&lt;/</span><span class="nt">th</span><span class="p">&gt;</span>
+<span class="w">                </span><span class="p">))}</span>
+<span class="w">              </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">))}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="cm">/* The virtualized body */</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">tbody</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">rowVirtualizer</span><span class="p">.</span><span class="nx">getTotalSize</span><span class="p">()</span><span class="si">}</span><span class="sb">px`</span><span class="p">,</span><span class="w"> </span><span class="nx">position</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;relative&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">rowVirtualizer</span><span class="p">.</span><span class="nx">getVirtualItems</span><span class="p">().</span><span class="nx">map</span><span class="p">(</span><span class="nx">virtualRow</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">              </span><span class="kd">const</span><span class="w"> </span><span class="nx">row</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">rows</span><span class="p">[</span><span class="nx">virtualRow</span><span class="p">.</span><span class="nx">index</span><span class="p">];</span>
+<span class="w">              </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="p">&lt;</span><span class="nt">tr</span>
+<span class="w">                  </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">row</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span>
+<span class="w">                  </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span>
+<span class="w">                    </span><span class="nx">position</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;absolute&#39;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">top</span><span class="o">:</span><span class="w"> </span><span class="kt">0</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">left</span><span class="o">:</span><span class="w"> </span><span class="kt">0</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;100%&#39;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">virtualRow</span><span class="p">.</span><span class="nx">size</span><span class="si">}</span><span class="sb">px`</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">transform</span><span class="o">:</span><span class="w"> </span><span class="sb">`translateY(</span><span class="si">${</span><span class="nx">virtualRow</span><span class="p">.</span><span class="nx">start</span><span class="si">}</span><span class="sb">px)`</span><span class="p">,</span>
+<span class="w">                  </span><span class="p">}}</span>
+<span class="w">                </span><span class="p">&gt;</span>
+<span class="w">                  </span><span class="p">{</span><span class="nx">row</span><span class="p">.</span><span class="nx">getVisibleCells</span><span class="p">().</span><span class="nx">map</span><span class="p">(</span><span class="nx">cell</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                    </span><span class="p">&lt;</span><span class="nt">td</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">cell</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">                      </span><span class="p">{</span><span class="nx">flexRender</span><span class="p">(</span><span class="nx">cell</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">columnDef</span><span class="p">.</span><span class="nx">cell</span><span class="p">,</span><span class="w"> </span><span class="nx">cell</span><span class="p">.</span><span class="nx">getContext</span><span class="p">())}</span>
+<span class="w">                    </span><span class="p">&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">                  </span><span class="p">))}</span>
+<span class="w">                </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">);</span>
+<span class="w">            </span><span class="p">})}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">style</span><span class="w"> </span><span class="na">jsx</span><span class="p">&gt;{</span><span class="sb">`</span>
+<span class="sb">        /* ... other styles ... */</span>
+<span class="sb">        .table-container {</span>
+<span class="sb">          height: 600px; /* Crucial for virtualization */</span>
+<span class="sb">          overflow: auto;</span>
+<span class="sb">          border: 1px solid #ddd;</span>
+<span class="sb">        }</span>
+<span class="sb">        th {</span>
+<span class="sb">          background-color: #f2f2f2;</span>
+<span class="sb">          position: sticky; /* Keep headers visible */</span>
+<span class="sb">          top: 0;</span>
+<span class="sb">        }</span>
+<span class="sb">      `</span><span class="p">}&lt;/</span><span class="nt">style</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification-and-performance-improvement">Verification and Performance Improvement</h3>
+<p><strong>Expected vs. Actual Improvement</strong>:</p>
+<ul>
+<li><strong>Browser Behavior</strong>: The page loads almost instantly. Scrolling is perfectly smooth, even with 10,000 items. Filtering is instantaneous.</li>
+<li><strong>Performance Metrics (Profiler)</strong>: The initial render time is now trivial, comparable to rendering just a dozen rows.</li>
+<li><strong>DOM Inspector</strong>: If you inspect the <code>&lt;tbody&gt;</code>, you will see only about 15-20 <code>&lt;tr&gt;</code> elements at any given time, no matter how far you scroll. The <code>transform: translateY(...)</code> style on each <code>&lt;tr&gt;</code> is rapidly changing as you scroll, moving the few rendered rows into the correct visual position.</li>
+</ul>
+<p>We have successfully decoupled our application's performance from its dataset size.</p>
+<p><strong>Limitation Preview</strong>: Our table is now incredibly performant, but in the process of optimizing it with virtualization, we've potentially broken accessibility. Screen readers and keyboard navigation rely on a standard DOM structure, which our absolutely positioned <code>&lt;tr&gt;</code> elements disrupt. Our next and final task is to make our complex UI accessible.</p>
+<h2 id="accessible-keyboard-navigable-interfaces">Accessible, keyboard-navigable interfaces</h2>
+<h2 id="iteration-5-ensuring-accessibility-a11y">Iteration 5: Ensuring Accessibility (A11y)</h2>
+<p>Performance is critical, but not at the expense of usability for all users. Our virtualized table is fast, but it presents challenges for assistive technologies like screen readers and for users who rely on keyboard navigation.</p>
+<p><strong>Current Limitation</strong>:
+-   <strong>Screen Readers</strong>: A screen reader might not correctly interpret our <code>&lt;tbody&gt;</code> with absolutely positioned <code>&lt;tr&gt;</code> elements as a contiguous data table. It may not announce row/column counts or headers correctly.
+-   <strong>Keyboard Navigation</strong>: Tabbing through the table might be unpredictable. Focus management within a virtualized grid is non-trivial.</p>
+<p><strong>New Scenario</strong>: A user with a visual impairment uses a screen reader to navigate the product data. Another user navigates the site using only their keyboard. Both should have a seamless experience.</p>
+<h3 id="the-principles-of-accessible-data-tables">The Principles of Accessible Data Tables</h3>
+<p>To make our table accessible, we need to provide semantic information to the browser using ARIA (Accessible Rich Internet Applications) roles and attributes. For a data grid, the key roles are:</p>
+<ul>
+<li><code>role="grid"</code>: On the <code>&lt;table&gt;</code> element. This tells assistive tech that this is a data grid, not a simple layout table.</li>
+<li><code>role="row"</code>: On each <code>&lt;tr&gt;</code>.</li>
+<li><code>role="columnheader"</code>: On each <code>&lt;th&gt;</code>.</li>
+<li><code>role="gridcell"</code>: On each <code>&lt;td&gt;</code>.</li>
+</ul>
+<p>TanStack Table's default markup with <code>&lt;table&gt;</code>, <code>&lt;tr&gt;</code>, <code>&lt;th&gt;</code>, and <code>&lt;td&gt;</code> already provides good semantics. Our main job is to enhance it, especially for sorting and within our virtualized context.</p>
+<h3 id="implementing-aria-attributes">Implementing ARIA Attributes</h3>
+<p>Let's add the necessary attributes to our <code>ProductDashboard</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/ProductDashboard.tsx (Version 6 - Accessible)</span>
+
+<span class="c1">// ... (imports are the same as the virtualized version)</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDashboard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... (all state and hooks are the same)</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">data</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Product</span><span class="err">[]</span><span class="p">&gt;(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">createLargeMockData</span><span class="p">(</span><span class="mf">10000</span><span class="p">));</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">sorting</span><span class="p">,</span><span class="w"> </span><span class="nx">setSorting</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">SortingState</span><span class="p">&gt;([]);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">globalFilter</span><span class="p">,</span><span class="w"> </span><span class="nx">setGlobalFilter</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">columns</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useMemo</span><span class="p">&lt;</span><span class="nt">ColumnDef</span><span class="err">&lt;</span><span class="na">Product</span><span class="p">&gt;[]</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="cm">/* ... same columns ... */</span><span class="w"> </span><span class="p">],</span>
+<span class="w">    </span><span class="p">[]</span>
+<span class="w">  </span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useReactTable</span><span class="p">({</span><span class="w"> </span><span class="cm">/* ... same options ... */</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">tableContainerRef</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useRef</span><span class="p">&lt;</span><span class="nt">HTMLDivElement</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">rows</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">table</span><span class="p">.</span><span class="nx">getRowModel</span><span class="p">();</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">rowVirtualizer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useVirtualizer</span><span class="p">({</span><span class="w"> </span><span class="cm">/* ... same options ... */</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;container&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... h1 and input ... */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">tableContainerRef</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;table-container&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">table</span><span class="w"> </span><span class="na">role</span><span class="o">=</span><span class="s">&quot;grid&quot;</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span><span class="cm">/* Add role=&quot;grid&quot; */</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">table</span><span class="p">.</span><span class="nx">getHeaderGroups</span><span class="p">().</span><span class="nx">map</span><span class="p">(</span><span class="nx">headerGroup</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">tr</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">headerGroup</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="w"> </span><span class="na">role</span><span class="o">=</span><span class="s">&quot;row&quot;</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span><span class="cm">/* Add role=&quot;row&quot; */</span><span class="p">}</span>
+<span class="w">                </span><span class="p">{</span><span class="nx">headerGroup</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">header</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                  </span><span class="p">&lt;</span><span class="nt">th</span>
+<span class="w">                    </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">header</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span>
+<span class="w">                    </span><span class="na">role</span><span class="o">=</span><span class="s">&quot;columnheader&quot;</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="na">Add</span><span class="w"> </span><span class="na">role</span><span class="o">=</span><span class="s">&quot;columnheader&quot;</span><span class="w"> </span><span class="err">*/</span>
+<span class="w">                    </span><span class="na">aria-sort</span><span class="o">=</span><span class="p">{</span><span class="w"> </span><span class="c1">// Announce sort direction</span>
+<span class="w">                      </span><span class="nx">header</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">getIsSorted</span><span class="p">()</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;asc&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;ascending&#39;</span><span class="w"> </span><span class="o">:</span>
+<span class="w">                      </span><span class="nx">header</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">getIsSorted</span><span class="p">()</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;desc&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;descending&#39;</span><span class="w"> </span><span class="o">:</span>
+<span class="w">                      </span><span class="s1">&#39;none&#39;</span>
+<span class="w">                    </span><span class="p">}</span>
+<span class="w">                    </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">header</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">getToggleSortingHandler</span><span class="p">()}</span>
+<span class="w">                  </span><span class="p">&gt;</span>
+<span class="w">                    </span><span class="p">{</span><span class="cm">/* ... flexRender and sort indicator ... */</span><span class="p">}</span>
+<span class="w">                  </span><span class="p">&lt;/</span><span class="nt">th</span><span class="p">&gt;</span>
+<span class="w">                </span><span class="p">))}</span>
+<span class="w">              </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">))}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">tbody</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">rowVirtualizer</span><span class="p">.</span><span class="nx">getTotalSize</span><span class="p">()</span><span class="si">}</span><span class="sb">px`</span><span class="p">,</span><span class="w"> </span><span class="nx">position</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;relative&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">rowVirtualizer</span><span class="p">.</span><span class="nx">getVirtualItems</span><span class="p">().</span><span class="nx">map</span><span class="p">(</span><span class="nx">virtualRow</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">              </span><span class="kd">const</span><span class="w"> </span><span class="nx">row</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">rows</span><span class="p">[</span><span class="nx">virtualRow</span><span class="p">.</span><span class="nx">index</span><span class="p">];</span>
+<span class="w">              </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="p">&lt;</span><span class="nt">tr</span>
+<span class="w">                  </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">row</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span>
+<span class="w">                  </span><span class="na">role</span><span class="o">=</span><span class="s">&quot;row&quot;</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="na">Add</span><span class="w"> </span><span class="na">role</span><span class="o">=</span><span class="s">&quot;row&quot;</span><span class="w"> </span><span class="err">*/</span>
+<span class="w">                  </span><span class="na">data-index</span><span class="o">=</span><span class="p">{</span><span class="nx">virtualRow</span><span class="p">.</span><span class="nx">index</span><span class="p">}</span><span class="w"> </span><span class="err">//</span><span class="w"> </span><span class="na">Useful</span><span class="w"> </span><span class="na">for</span><span class="w"> </span><span class="na">focus</span><span class="w"> </span><span class="na">management</span>
+<span class="w">                  </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">node</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">rowVirtualizer</span><span class="p">.</span><span class="nx">measureElement</span><span class="p">(</span><span class="nx">node</span><span class="p">)}</span><span class="w"> </span><span class="err">//</span><span class="w"> </span><span class="na">Helps</span><span class="w"> </span><span class="na">with</span><span class="w"> </span><span class="na">dynamic</span><span class="w"> </span><span class="na">row</span><span class="w"> </span><span class="na">heights</span>
+<span class="w">                  </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span>
+<span class="w">                    </span><span class="nx">position</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;absolute&#39;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">top</span><span class="o">:</span><span class="w"> </span><span class="kt">0</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">left</span><span class="o">:</span><span class="w"> </span><span class="kt">0</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;100%&#39;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">virtualRow</span><span class="p">.</span><span class="nx">size</span><span class="si">}</span><span class="sb">px`</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">transform</span><span class="o">:</span><span class="w"> </span><span class="sb">`translateY(</span><span class="si">${</span><span class="nx">virtualRow</span><span class="p">.</span><span class="nx">start</span><span class="si">}</span><span class="sb">px)`</span><span class="p">,</span>
+<span class="w">                  </span><span class="p">}}</span>
+<span class="w">                </span><span class="p">&gt;</span>
+<span class="w">                  </span><span class="p">{</span><span class="nx">row</span><span class="p">.</span><span class="nx">getVisibleCells</span><span class="p">().</span><span class="nx">map</span><span class="p">(</span><span class="nx">cell</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                    </span><span class="p">&lt;</span><span class="nt">td</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">cell</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="w"> </span><span class="na">role</span><span class="o">=</span><span class="s">&quot;gridcell&quot;</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span><span class="cm">/* Add role=&quot;gridcell&quot; */</span><span class="p">}</span>
+<span class="w">                      </span><span class="p">{</span><span class="nx">flexRender</span><span class="p">(</span><span class="nx">cell</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">columnDef</span><span class="p">.</span><span class="nx">cell</span><span class="p">,</span><span class="w"> </span><span class="nx">cell</span><span class="p">.</span><span class="nx">getContext</span><span class="p">())}</span>
+<span class="w">                    </span><span class="p">&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">                  </span><span class="p">))}</span>
+<span class="w">                </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">);</span>
+<span class="w">            </span><span class="p">})}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... styles ... */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification-with-accessibility-tools">Verification with Accessibility Tools</h3>
+<ol>
+<li><strong>Screen Reader</strong>: Using a tool like NVDA, JAWS, or VoiceOver, you'll now hear the table announced as a "grid with X columns and 10,000 rows." When you navigate to a header, it will announce its name and sort state (e.g., "Price, column header, sorting ascending").</li>
+<li><strong>Browser DevTools (Accessibility Tab)</strong>: Inspecting an element will now show its computed ARIA role. The <code>&lt;table&gt;</code> will have <code>role: grid</code>, and so on. This confirms the browser is parsing our semantic hints correctly.</li>
+</ol>
+<h3 id="keyboard-navigation-considerations">Keyboard Navigation Considerations</h3>
+<p>True grid-like keyboard navigation (using arrow keys to move between cells) is a complex topic that often requires a custom hook to manage focus. However, the most crucial aspect is ensuring that interactive elements are reachable.</p>
+<ul>
+<li><strong>Headers</strong>: Our <code>&lt;th&gt;</code> elements are clickable, so they should be focusable. We can add <code>tabIndex={0}</code> to them to ensure they are part of the tab order.</li>
+<li><strong>Focus Management</strong>: When data changes (e.g., after filtering), focus can be lost. A robust solution would involve programmatically setting focus back to a logical place, like the filter input or the table container.</li>
+</ul>
+<p>For many applications, ensuring the primary interactive controls (filter, sort headers, pagination) are keyboard accessible provides the most value. Full cell-by-cell navigation is an advanced feature for spreadsheet-like applications.</p>
+<h3 id="common-failure-modes-and-their-signatures">Common Failure Modes and Their Signatures</h3>
+<h4 id="symptom-table-doesnt-update-when-parent-components-state-changes">Symptom: Table doesn't update when parent component's state changes.</h4>
+<p><strong>Console pattern</strong>: No errors. The UI is just stale.
+<strong>DevTools clues</strong>: The <code>ProductDashboard</code> component re-renders, but the table content remains the same.
+<strong>Root cause</strong>: The <code>data</code> and <code>columns</code> props passed to <code>useReactTable</code> are not stable. If you define them inside your component without <code>React.useMemo</code>, they get a new reference on every render, causing the table instance to reset internally in unexpected ways.
+<strong>Solution</strong>: Always wrap your <code>columns</code> definition in <code>useMemo</code> and ensure the <code>data</code> array has a stable reference unless it has actually changed.</p>
+<h4 id="symptom-virtualized-list-has-large-blank-gaps-or-jumps-erratically-when-scrolling">Symptom: Virtualized list has large blank gaps or jumps erratically when scrolling.</h4>
+<p><strong>Browser behavior</strong>: Scrolling is not smooth; content appears to "pop in" late.
+<strong>DevTools clues</strong>: The <code>transform: translateY(...)</code> values are changing in large, inconsistent increments.
+<strong>Root cause</strong>: The <code>estimateSize</code> function in <code>useVirtualizer</code> is significantly different from the actual rendered height of the rows. This causes the virtualizer's calculations to be off.
+<strong>Solution</strong>: Provide a more accurate <code>estimateSize</code>. If row heights are dynamic, implement a measurement strategy using the <code>measureElement</code> ref callback, as shown in the accessible example.</p>
+<h4 id="symptom-sorting-or-filtering-doesnt-work-at-all">Symptom: Sorting or filtering doesn't work at all.</h4>
+<p><strong>Console pattern</strong>: No errors. Clicking headers or typing in the filter does nothing.
+<strong>DevTools clues</strong>: The <code>sorting</code> or <code>globalFilter</code> state in your component updates correctly, but the table doesn't re-render with the new data.
+<strong>Root cause</strong>: You forgot to include the necessary row model in the <code>useReactTable</code> options. Forgetting <code>getSortedRowModel()</code> will disable sorting; forgetting <code>getFilteredRowModel()</code> will disable filtering.
+<strong>Solution</strong>: Ensure the table instance is created with all the row models you need: <code>getCoreRowModel</code>, <code>getSortedRowModel</code>, <code>getFilteredRowModel</code>, <code>getPaginationRowModel</code>, etc.</p>
+<h3 id="the-journey-from-problem-to-solution">The Journey: From Problem to Solution</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Iteration</th>
+<th style="text-align: left;">Failure Mode</th>
+<th style="text-align: left;">Technique Applied</th>
+<th style="text-align: left;">Result</th>
+<th style="text-align: left;">Performance Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">Brittle, unmaintainable code</td>
+<td style="text-align: left;">Naive <code>&lt;table&gt;</code></td>
+<td style="text-align: left;">Works, but is hard to change</td>
+<td style="text-align: left;">Baseline</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Logic and presentation tightly coupled</td>
+<td style="text-align: left;">TanStack Table (Headless)</td>
+<td style="text-align: left;">Maintainable, decoupled column definitions</td>
+<td style="text-align: left;">Negligible overhead</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">No user interactivity</td>
+<td style="text-align: left;">Table State Management</td>
+<td style="text-align: left;">Sorting, filtering, and pagination work</td>
+<td style="text-align: left;">JS computation on client for all data</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">Browser freezes with large datasets</td>
+<td style="text-align: left;">Virtualization</td>
+<td style="text-align: left;">Renders 10,000+ rows with ease</td>
+<td style="text-align: left;">Drastic improvement: O(1) DOM nodes</td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">Poor experience for assistive technologies</td>
+<td style="text-align: left;">ARIA Roles &amp; Attributes</td>
+<td style="text-align: left;">Accessible to screen readers and keyboards</td>
+<td style="text-align: left;">No performance impact</td>
+</tr>
+</tbody>
+</table>
+<h3 id="final-implementation">Final Implementation</h3>
+<p>Here is the complete, production-ready <code>ProductDashboard</code> component that is performant, interactive, and accessible.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/products/ProductDashboard.tsx (Final Version)</span>
+
+<span class="s1">&#39;use client&#39;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Product</span><span class="p">,</span><span class="w"> </span><span class="nx">createLargeMockData</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./data&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">useReactTable</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">getCoreRowModel</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">getSortedRowModel</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">getFilteredRowModel</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">ColumnDef</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">flexRender</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">SortingState</span><span class="p">,</span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@tanstack/react-table&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useVirtualizer</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@tanstack/react-virtual&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductDashboard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">data</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Product</span><span class="err">[]</span><span class="p">&gt;(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">createLargeMockData</span><span class="p">(</span><span class="mf">10000</span><span class="p">));</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">sorting</span><span class="p">,</span><span class="w"> </span><span class="nx">setSorting</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">SortingState</span><span class="p">&gt;([]);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">globalFilter</span><span class="p">,</span><span class="w"> </span><span class="nx">setGlobalFilter</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">columns</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useMemo</span><span class="p">&lt;</span><span class="nt">ColumnDef</span><span class="err">&lt;</span><span class="na">Product</span><span class="p">&gt;[]</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">    </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nx">accessorKey</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;ID&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">size</span><span class="o">:</span><span class="w"> </span><span class="kt">60</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nx">accessorKey</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Product Name&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">size</span><span class="o">:</span><span class="w"> </span><span class="kt">250</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nx">accessorKey</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;category&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Category&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">size</span><span class="o">:</span><span class="w"> </span><span class="kt">150</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nx">accessorKey</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;price&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Price&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">size</span><span class="o">:</span><span class="w"> </span><span class="kt">100</span><span class="p">,</span><span class="w"> </span><span class="nx">cell</span><span class="o">:</span><span class="w"> </span><span class="kt">info</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="sb">`$</span><span class="si">${</span><span class="p">(</span><span class="nx">info</span><span class="p">.</span><span class="nx">getValue</span><span class="p">()</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="kt">number</span><span class="p">).</span><span class="nx">toFixed</span><span class="p">(</span><span class="mf">2</span><span class="p">)</span><span class="si">}</span><span class="sb">`</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nx">accessorKey</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;stock&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Stock&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">size</span><span class="o">:</span><span class="w"> </span><span class="kt">100</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="p">[]</span>
+<span class="w">  </span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useReactTable</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">data</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">columns</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">sorting</span><span class="p">,</span><span class="w"> </span><span class="nx">globalFilter</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="nx">onSortingChange</span><span class="o">:</span><span class="w"> </span><span class="kt">setSorting</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">onGlobalFilterChange</span><span class="o">:</span><span class="w"> </span><span class="kt">setGlobalFilter</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">getCoreRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getCoreRowModel</span><span class="p">(),</span>
+<span class="w">    </span><span class="nx">getSortedRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getSortedRowModel</span><span class="p">(),</span>
+<span class="w">    </span><span class="nx">getFilteredRowModel</span><span class="o">:</span><span class="w"> </span><span class="kt">getFilteredRowModel</span><span class="p">(),</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">tableContainerRef</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useRef</span><span class="p">&lt;</span><span class="nt">HTMLDivElement</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">rows</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">table</span><span class="p">.</span><span class="nx">getRowModel</span><span class="p">();</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">rowVirtualizer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useVirtualizer</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">count</span><span class="o">:</span><span class="w"> </span><span class="kt">rows.length</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">getScrollElement</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">tableContainerRef</span><span class="p">.</span><span class="nx">current</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">estimateSize</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="mf">34</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">overscan</span><span class="o">:</span><span class="w"> </span><span class="kt">10</span><span class="p">,</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;container&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Product</span><span class="w"> </span><span class="nx">Dashboard</span><span class="w"> </span><span class="p">(</span><span class="mf">10</span><span class="p">,</span><span class="mo">000</span><span class="w"> </span><span class="nx">items</span><span class="p">)&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">globalFilter</span><span class="w"> </span><span class="o">??</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">e</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setGlobalFilter</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">        </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;filter-input&quot;</span>
+<span class="w">        </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Search all columns...&quot;</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">tableContainerRef</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;table-container&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">table</span><span class="w"> </span><span class="na">role</span><span class="o">=</span><span class="s">&quot;grid&quot;</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="kt">table.getTotalSize</span><span class="p">()</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">table</span><span class="p">.</span><span class="nx">getHeaderGroups</span><span class="p">().</span><span class="nx">map</span><span class="p">(</span><span class="nx">headerGroup</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">tr</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">headerGroup</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="w"> </span><span class="na">role</span><span class="o">=</span><span class="s">&quot;row&quot;</span><span class="p">&gt;</span>
+<span class="w">                </span><span class="p">{</span><span class="nx">headerGroup</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">header</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                  </span><span class="p">&lt;</span><span class="nt">th</span>
+<span class="w">                    </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">header</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span>
+<span class="w">                    </span><span class="na">role</span><span class="o">=</span><span class="s">&quot;columnheader&quot;</span>
+<span class="w">                    </span><span class="na">aria-sort</span><span class="o">=</span><span class="p">{</span><span class="nx">header</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">getIsSorted</span><span class="p">()</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;asc&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;ascending&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="nx">header</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">getIsSorted</span><span class="p">()</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;desc&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;descending&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;none&#39;</span><span class="p">}</span>
+<span class="w">                    </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">header</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">getToggleSortingHandler</span><span class="p">()}</span>
+<span class="w">                    </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="kt">header.getSize</span><span class="p">()</span><span class="w"> </span><span class="p">}}</span>
+<span class="w">                  </span><span class="p">&gt;</span>
+<span class="w">                    </span><span class="p">{</span><span class="nx">flexRender</span><span class="p">(</span><span class="nx">header</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">columnDef</span><span class="p">.</span><span class="nx">header</span><span class="p">,</span><span class="w"> </span><span class="nx">header</span><span class="p">.</span><span class="nx">getContext</span><span class="p">())}</span>
+<span class="w">                    </span><span class="p">{{</span><span class="w"> </span><span class="nx">asc</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39; 🔼&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">desc</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39; 🔽&#39;</span><span class="w"> </span><span class="p">}[</span><span class="nx">header</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">getIsSorted</span><span class="p">()</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="kt">string</span><span class="p">]</span><span class="w"> </span><span class="o">??</span><span class="w"> </span><span class="kc">null</span><span class="p">}</span>
+<span class="w">                  </span><span class="p">&lt;/</span><span class="nt">th</span><span class="p">&gt;</span>
+<span class="w">                </span><span class="p">))}</span>
+<span class="w">              </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">))}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">thead</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">tbody</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">rowVirtualizer</span><span class="p">.</span><span class="nx">getTotalSize</span><span class="p">()</span><span class="si">}</span><span class="sb">px`</span><span class="p">,</span><span class="w"> </span><span class="nx">position</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;relative&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">rowVirtualizer</span><span class="p">.</span><span class="nx">getVirtualItems</span><span class="p">().</span><span class="nx">map</span><span class="p">(</span><span class="nx">virtualRow</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">              </span><span class="kd">const</span><span class="w"> </span><span class="nx">row</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">rows</span><span class="p">[</span><span class="nx">virtualRow</span><span class="p">.</span><span class="nx">index</span><span class="p">];</span>
+<span class="w">              </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="p">&lt;</span><span class="nt">tr</span>
+<span class="w">                  </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">row</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span>
+<span class="w">                  </span><span class="na">role</span><span class="o">=</span><span class="s">&quot;row&quot;</span>
+<span class="w">                  </span><span class="na">data-index</span><span class="o">=</span><span class="p">{</span><span class="nx">virtualRow</span><span class="p">.</span><span class="nx">index</span><span class="p">}</span>
+<span class="w">                  </span><span class="na">ref</span><span class="o">=</span><span class="p">{</span><span class="nx">node</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">rowVirtualizer</span><span class="p">.</span><span class="nx">measureElement</span><span class="p">(</span><span class="nx">node</span><span class="p">)}</span>
+<span class="w">                  </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span>
+<span class="w">                    </span><span class="nx">position</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;absolute&#39;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">top</span><span class="o">:</span><span class="w"> </span><span class="kt">0</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">left</span><span class="o">:</span><span class="w"> </span><span class="kt">0</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;100%&#39;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="sb">`</span><span class="si">${</span><span class="nx">virtualRow</span><span class="p">.</span><span class="nx">size</span><span class="si">}</span><span class="sb">px`</span><span class="p">,</span>
+<span class="w">                    </span><span class="nx">transform</span><span class="o">:</span><span class="w"> </span><span class="sb">`translateY(</span><span class="si">${</span><span class="nx">virtualRow</span><span class="p">.</span><span class="nx">start</span><span class="si">}</span><span class="sb">px)`</span><span class="p">,</span>
+<span class="w">                  </span><span class="p">}}</span>
+<span class="w">                </span><span class="p">&gt;</span>
+<span class="w">                  </span><span class="p">{</span><span class="nx">row</span><span class="p">.</span><span class="nx">getVisibleCells</span><span class="p">().</span><span class="nx">map</span><span class="p">(</span><span class="nx">cell</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                    </span><span class="p">&lt;</span><span class="nt">td</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">cell</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="w"> </span><span class="na">role</span><span class="o">=</span><span class="s">&quot;gridcell&quot;</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="kt">cell.column.getSize</span><span class="p">()</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">                      </span><span class="p">{</span><span class="nx">flexRender</span><span class="p">(</span><span class="nx">cell</span><span class="p">.</span><span class="nx">column</span><span class="p">.</span><span class="nx">columnDef</span><span class="p">.</span><span class="nx">cell</span><span class="p">,</span><span class="w"> </span><span class="nx">cell</span><span class="p">.</span><span class="nx">getContext</span><span class="p">())}</span>
+<span class="w">                    </span><span class="p">&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+<span class="w">                  </span><span class="p">))}</span>
+<span class="w">                </span><span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">);</span>
+<span class="w">            </span><span class="p">})}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">tbody</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">table</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">style</span><span class="w"> </span><span class="na">jsx</span><span class="p">&gt;{</span><span class="sb">`</span>
+<span class="sb">        .container { padding: 2rem; font-family: sans-serif; }</span>
+<span class="sb">        .filter-input { margin-bottom: 1rem; padding: 0.5rem; font-size: 1rem; width: 100%; box-sizing: border-box; }</span>
+<span class="sb">        .table-container { height: 600px; overflow: auto; border: 1px solid #ccc; }</span>
+<span class="sb">        table { border-collapse: collapse; }</span>
+<span class="sb">        th, td { border-bottom: 1px solid #ddd; border-right: 1px solid #ddd; padding: 8px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }</span>
+<span class="sb">        th { background-color: #f2f2f2; position: sticky; top: 0; z-index: 1; cursor: pointer; user-select: none; }</span>
+<span class="sb">      `</span><span class="p">}&lt;/</span><span class="nt">style</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="lessons-learned">Lessons Learned</h3>
+<p>Building complex UIs like data tables is a journey of layering concerns. We started with basic rendering, then added state management for interactivity, addressed performance bottlenecks with virtualization, and finally ensured the result was accessible. By using a headless library like TanStack Table, we retained full control over our markup and styling at every step, allowing us to solve each problem with the right tool without being locked into a specific UI framework.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:41:01 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

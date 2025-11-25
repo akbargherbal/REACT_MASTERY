@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>15 Why Next.js Exists</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">05 Next.js — Server-Side React</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-15-why-nextjs-exists">Chapter 15: Why Next.js Exists</h1>
+<h2 id="the-limitations-of-client-only-react">The limitations of client-only React</h2>
+<h2 id="the-world-before-nextjs-client-side-rendering">The World Before Next.js: Client-Side Rendering</h2>
+<p>To understand why Next.js is so essential in the modern web development landscape, we must first travel back in time. Not far—just to the world of "vanilla" client-side React applications, often bootstrapped with tools like Create React App or Vite.</p>
+<p>In this world, React's primary job is to build user interfaces inside the user's browser. This model is called Client-Side Rendering (CSR). Let's build a small, realistic application using this approach to experience its strengths and, more importantly, its profound limitations.</p>
+<h3 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h3>
+<p>Our anchor example for this chapter will be a simple <strong>Product Listing Page</strong>. It needs to fetch a list of products from an API and display them to the user. This is a common requirement for e-commerce sites, blogs, and any content-driven platform.</p>
+<p>We'll use Vite to set up a standard client-side React project.</p>
+<p><strong>Step 1: Project Setup</strong></p>
+<p>First, let's create a new React project with Vite and TypeScript.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Create a new Vite project named &#39;csr-product-app&#39;</span>
+npm<span class="w"> </span>create<span class="w"> </span>vite@latest<span class="w"> </span>csr-product-app<span class="w"> </span>--<span class="w"> </span>--template<span class="w"> </span>react-ts
+
+<span class="c1"># Navigate into the project directory</span>
+<span class="nb">cd</span><span class="w"> </span>csr-product-app
+
+<span class="c1"># Install dependencies</span>
+npm<span class="w"> </span>install
+
+<span class="c1"># Start the development server</span>
+npm<span class="w"> </span>run<span class="w"> </span>dev
+</code></pre></div>
+
+<p><strong>Step 2: Creating a Mock API</strong></p>
+<p>To simulate fetching data, we'll create a simple mock API function. This will return a list of products after a short delay, mimicking a real network request.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>csr-product-app/
+└── src/
+    ├── api/
+    │   └── products.ts  ← Our new mock API
+    ├── App.tsx
+    └── main.tsx
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/api/products.ts</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">Product</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">mockProducts</span><span class="o">:</span><span class="w"> </span><span class="kt">Product</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;p1&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Quantum Widget&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">99.99</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A widget that defies classical physics.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;p2&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Hyper-Sprocket&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">149.50</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;The fastest sprocket in the known universe.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;p3&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Nano-Gear&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">45.00</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Infinitesimally small, infinitely useful.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="p">];</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">fetchProducts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">Product</span><span class="p">[]</span><span class="o">&gt;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Fetching products from API...&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// Simulate a network delay of 1.5 seconds</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">resolve</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">resolve</span><span class="p">,</span><span class="w"> </span><span class="mf">1500</span><span class="p">));</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;...products fetched!&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">mockProducts</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p><strong>Step 3: Building the Product Page Component</strong></p>
+<p>Now, let's modify <code>App.tsx</code> to fetch and display these products. This is the classic CSR data-fetching pattern:
+1.  Component mounts.
+2.  Show a loading state.
+3.  Trigger a <code>useEffect</code> to fetch data.
+4.  When data arrives, update the state.
+5.  Re-render with the data.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/App.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fetchProducts</span><span class="p">,</span><span class="w"> </span><span class="nx">Product</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./api/products&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="s1">&#39;./App.css&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Basic styling for clarity</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">App</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">products</span><span class="p">,</span><span class="w"> </span><span class="nx">setProducts</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Product</span><span class="err">[]</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">undefined</span><span class="p">&gt;(</span><span class="kc">undefined</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="nx">setError</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">string</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// This effect runs once on the client, after the component mounts</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">getProducts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetchProducts</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">setProducts</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setError</span><span class="p">(</span><span class="s1">&#39;Failed to fetch products.&#39;</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="nx">getProducts</span><span class="p">();</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// Empty dependency array means this runs only once</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">renderContent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">error</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// While products is undefined, we are loading</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">products</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="kc">undefined</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">products</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">products</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">product</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">id</span><span class="p">}&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">h3</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">$</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">price</span><span class="p">.</span><span class="nx">toFixed</span><span class="p">(</span><span class="mf">2</span><span class="p">)}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">description</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Our</span><span class="w"> </span><span class="nx">Awesome</span><span class="w"> </span><span class="nx">Products</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">renderContent</span><span class="p">()}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">App</span><span class="p">;</span>
+</code></pre></div>
+
+<p>Let's add some minimal CSS to make it look presentable.</p>
+<div class="codehilite"><pre><span></span><code><span class="c">/* src/App.css */</span>
+<span class="nt">body</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">font-family</span><span class="p">:</span><span class="w"> </span><span class="kc">sans-serif</span><span class="p">;</span>
+<span class="w">  </span><span class="k">background-color</span><span class="p">:</span><span class="w"> </span><span class="mh">#f0f2f5</span><span class="p">;</span>
+<span class="w">  </span><span class="k">color</span><span class="p">:</span><span class="w"> </span><span class="mh">#1c1e21</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="nt">main</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">max-width</span><span class="p">:</span><span class="w"> </span><span class="mi">800</span><span class="kt">px</span><span class="p">;</span>
+<span class="w">  </span><span class="k">margin</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="kt">rem</span><span class="w"> </span><span class="kc">auto</span><span class="p">;</span>
+<span class="w">  </span><span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="kt">rem</span><span class="p">;</span>
+<span class="w">  </span><span class="k">background-color</span><span class="p">:</span><span class="w"> </span><span class="kc">white</span><span class="p">;</span>
+<span class="w">  </span><span class="k">border-radius</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="kt">px</span><span class="p">;</span>
+<span class="w">  </span><span class="k">box-shadow</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">2</span><span class="kt">px</span><span class="w"> </span><span class="mi">4</span><span class="kt">px</span><span class="w"> </span><span class="nb">rgba</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="nt">h1</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">color</span><span class="p">:</span><span class="w"> </span><span class="mh">#0b57d0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="nt">ul</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">list-style</span><span class="p">:</span><span class="w"> </span><span class="kc">none</span><span class="p">;</span>
+<span class="w">  </span><span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="nt">li</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">border-bottom</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="kt">px</span><span class="w"> </span><span class="kc">solid</span><span class="w"> </span><span class="mh">#ddd</span><span class="p">;</span>
+<span class="w">  </span><span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="kt">rem</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="nt">li</span><span class="p">:</span><span class="nd">last-child</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">border-bottom</span><span class="p">:</span><span class="w"> </span><span class="kc">none</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="nt">h3</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">margin</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mf">0.5</span><span class="kt">rem</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>When you run <code>npm run dev</code>, you'll see "Loading products..." for 1.5 seconds, and then the product list will appear. It works! From a user's perspective, it seems fine.</p>
+<p>However, beneath this functioning UI lies a series of fundamental problems that impact our business goals: search engine visibility, user-perceived performance, and overall experience. In the next section, we will dissect this "working" application to reveal its hidden flaws. This diagnosis is the entire reason frameworks like Next.js exist.</p>
+<h2 id="seo-performance-and-user-experience">SEO, performance, and user experience</h2>
+<h2 id="the-csr-failure-modes">The CSR Failure Modes</h2>
+<p>Our <code>csr-product-app</code> works, but "working" is not the same as "effective." Let's put on our diagnostic hats and analyze the application from three critical perspectives: Search Engine Optimization (SEO), performance, and user experience (UX).</p>
+<h3 id="failure-mode-1-the-seo-black-hole">Failure Mode 1: The SEO Black Hole</h3>
+<p>Search engines like Google discover and rank web pages by "crawling" them. A crawler is an automated bot that requests your page's URL and reads the HTML content it receives. What does a crawler see when it visits our product page?</p>
+<p>Let's find out. The simplest way is to view the page's source code in the browser (right-click -&gt; "View Page Source") or use a command-line tool like <code>curl</code>.</p>
+<p><strong>Diagnostic Analysis: Reading the Failure (SEO)</strong></p>
+<p><strong>Terminal Command</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Request the page from our local dev server</span>
+curl<span class="w"> </span>http://localhost:5173
+</code></pre></div>
+
+<p><strong>Terminal Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="cp">&lt;!doctype html&gt;</span>
+<span class="p">&lt;</span><span class="nt">html</span> <span class="na">lang</span><span class="o">=</span><span class="s">&quot;en&quot;</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">charset</span><span class="o">=</span><span class="s">&quot;UTF-8&quot;</span> <span class="p">/&gt;</span>
+    <span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">&quot;icon&quot;</span> <span class="na">type</span><span class="o">=</span><span class="s">&quot;image/svg+xml&quot;</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;/vite.svg&quot;</span> <span class="p">/&gt;</span>
+    <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">name</span><span class="o">=</span><span class="s">&quot;viewport&quot;</span> <span class="na">content</span><span class="o">=</span><span class="s">&quot;width=device-width, initial-scale=1.0&quot;</span> <span class="p">/&gt;</span>
+    <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>Vite + React + TS<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
+  <span class="p">&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
+  <span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">&quot;root&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">script</span> <span class="na">type</span><span class="o">=</span><span class="s">&quot;module&quot;</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;/src/main.tsx&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+  <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+</code></pre></div>
+
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the crawler experiences</strong>: The crawler receives an almost completely empty HTML document. The <code>&lt;body&gt;</code> tag contains a single <code>&lt;div id="root"&gt;&lt;/div&gt;</code>. There is no product information—no names, no prices, no descriptions.</p>
+<ul>
+<li><strong>Expected</strong>: HTML containing the text "Quantum Widget", "Hyper-Sprocket", etc.</li>
+<li><strong>Actual</strong>: An empty shell.</li>
+</ul>
+</li>
+<li>
+<p><strong>What the source code reveals</strong>: The HTML's only job is to load a JavaScript file (<code>/src/main.tsx</code>). All the logic for fetching data and rendering the product list is locked inside that JavaScript.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: <strong>The content is generated by JavaScript on the client, <em>after</em> the initial HTML has been delivered.</strong> Most search engine crawlers do not wait for JavaScript to execute and for API calls to complete. They index the HTML they receive initially.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: The very nature of Client-Side Rendering is to send a minimal HTML document and let the client's browser build the page. For content that needs to be indexed by search engines, this is a catastrophic failure. Our product page is effectively invisible to them.</p>
+</li>
+</ol>
+<h3 id="failure-mode-2-the-performance-waterfall">Failure Mode 2: The Performance Waterfall</h3>
+<p>Now let's analyze what happens in a real user's browser. We'll use the Chrome DevTools Network tab.</p>
+<p><strong>Diagnostic Analysis: Reading the Failure (Performance)</strong></p>
+<p><strong>Browser DevTools - Network Tab</strong> (with "Slow 3G" throttling to simulate a realistic mobile connection):</p>
+<!-- Placeholder for a visual aid -->
+
+<p>A simplified view of the request sequence looks like this:</p>
+<ol>
+<li><strong><code>index.html</code></strong> (1.2 KB) - The empty shell arrives quickly.</li>
+<li><strong><code>main.css</code></strong> (2.5 KB) - Stylesheet loads.</li>
+<li><strong><code>vendor.js</code></strong> (120 KB) - React and other libraries load and parse.</li>
+<li><strong><code>app.js</code></strong> (15 KB) - Our application code loads and parses.</li>
+<li><strong><code>fetchProducts()</code> API Call</strong> (initiates after JS runs) - The browser now makes a request to our API.</li>
+<li><strong>API Response</strong> (0.5 KB) - The product data arrives after 1.5 seconds.</li>
+</ol>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: A blank screen, followed by a "Loading products..." message, followed by the actual content. This creates a significant delay before the user sees what they came for. This is measured by metrics like First Contentful Paint (FCP) and Largest Contentful Paint (LCP).</p>
+<ul>
+<li><strong>Expected</strong>: See product information as quickly as possible.</li>
+<li><strong>Actual</strong>: A sequential loading process where each step must wait for the previous one to complete. This is known as a <strong>request waterfall</strong>.</li>
+</ul>
+</li>
+<li>
+<p><strong>What the Network tab reveals</strong>: The browser cannot even <em>begin</em> to fetch the product data until it has downloaded, parsed, and executed a significant amount of JavaScript. The data fetching is the <em>last</em> step in a long chain.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: <strong>The critical rendering path is blocked by JavaScript.</strong> The HTML itself contains no meaningful content, so the browser is forced to wait for the entire JavaScript application to boot up before it can discover and fetch the data needed to render the page.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: In a CSR model, the client is responsible for everything. This creates a mandatory, multi-step process on the user's device, which is often slow and underpowered compared to a server.</p>
+</li>
+</ol>
+<h3 id="failure-mode-3-the-subpar-user-experience-ux">Failure Mode 3: The Subpar User Experience (UX)</h3>
+<p>The combination of the SEO and performance issues leads to a poor user experience.</p>
+<ul>
+<li><strong>High Time to Content</strong>: Users on slow connections will stare at a loading spinner for a long time. They might abandon the page before the content even loads.</li>
+<li><strong>Layout Shifts</strong>: As data loads and components render, the page layout can jump around, which is visually jarring and measured by the Core Web Vitals metric Cumulative Layout Shift (CLS).</li>
+<li><strong>Dependency on Client Power</strong>: The user's experience is entirely dependent on the speed of their device and network. An older phone on a spotty connection will have a terrible experience.</li>
+</ul>
+<h3 id="synthesis-the-core-problem-csr-cannot-solve">Synthesis: The Core Problem CSR Cannot Solve</h3>
+<p>All three failure modes stem from a single, fundamental architectural choice:</p>
+<blockquote>
+<p><strong>In Client-Side Rendering, the server sends a blank canvas and a box of paints (JavaScript), and tells the browser, "You figure it out."</strong></p>
+</blockquote>
+<p>This puts an enormous burden on the client. For applications where initial load performance and discoverability are critical—like e-commerce sites, blogs, marketing pages, and news articles—this is unacceptable.</p>
+<p><strong>What we need</strong>: We need a way to send a fully-painted canvas directly from the server. The browser should receive HTML that already contains the product list, ready to be displayed immediately. This would solve all three problems at once:
+-   <strong>SEO</strong>: Crawlers would see the full content in the initial HTML.
+-   <strong>Performance</strong>: The request waterfall would be flattened. The user would see content much faster.
+-   <strong>UX</strong>: The "loading" state for initial page load would be eliminated.</p>
+<p>This is the problem that <strong>Server-Side Rendering (SSR)</strong> and frameworks like Next.js were created to solve.</p>
+<h2 id="nextjs-vs-alternatives-remix-astro">Next.js vs. alternatives (Remix, Astro)</h2>
+<h2 id="the-solution-server-centric-ui-frameworks">The Solution: Server-Centric UI Frameworks</h2>
+<p>The limitations of Client-Side Rendering gave rise to a new generation of "meta-frameworks" built on top of libraries like React. These frameworks bring rendering back to the server, where it can be done faster and more efficiently, solving the core problems we just diagnosed.</p>
+<p>The dominant player in this space is <strong>Next.js</strong>, but it's helpful to understand it in the context of its peers, like <strong>Remix</strong> and <strong>Astro</strong>.</p>
+<h3 id="nextjs-the-full-stack-react-framework">Next.js: The Full-Stack React Framework</h3>
+<p>Next.js, created by Vercel, re-imagines React not just as a UI library, but as a full-stack framework that seamlessly blends server and client.</p>
+<ul>
+<li><strong>Core Philosophy</strong>: Start with the server. Render as much as possible on the server (for performance and SEO) and "hydrate" it with client-side interactivity only where needed.</li>
+<li><strong>Key Feature</strong>: The App Router, which introduces <strong>React Server Components (RSCs)</strong>. This allows you to write components that run <em>exclusively</em> on the server, fetching data and rendering to HTML before ever reaching the browser. This is a paradigm shift from the CSR model where every component runs on the client.</li>
+<li><strong>Rendering Strategies</strong>: Next.js is a hybrid framework. It offers multiple rendering strategies you can choose from on a per-page basis:<ul>
+<li><strong>Static Site Generation (SSG)</strong>: Pre-renders the page to static HTML at build time. Fastest possible delivery. Ideal for blogs, documentation, and marketing pages.</li>
+<li><strong>Server-Side Rendering (SSR)</strong>: Renders the page on the server for every request. Ideal for dynamic, personalized content like a user dashboard.</li>
+<li><strong>Incremental Static Regeneration (ISR)</strong>: A hybrid of SSG and SSR. Pre-builds a static page but can re-validate and update it periodically in the background. Perfect for content that changes, but not on every request (e.g., an e-commerce product page).</li>
+<li><strong>Client-Side Rendering (CSR)</strong>: You can still opt into CSR for parts of your app that are highly interactive and don't need SEO, like a settings panel behind a login.</li>
+</ul>
+</li>
+<li><strong>Best For</strong>: Developers who want a powerful, flexible, "batteries-included" solution for building anything from a static blog to a complex, dynamic web application. Its ecosystem and backing by Vercel are significant advantages.</li>
+</ul>
+<h3 id="remix-focused-on-web-fundamentals">Remix: Focused on Web Fundamentals</h3>
+<p>Remix, created by the team behind React Router, takes a different philosophical approach.</p>
+<ul>
+<li><strong>Core Philosophy</strong>: Embrace web standards. Remix is built on top of the Request/Response model of the web. Data loading, mutations (form submissions), and routing are all handled through standard HTML forms and browser APIs, progressively enhanced with JavaScript.</li>
+<li><strong>Key Feature</strong>: Route-based data loading. Each route can define a <code>loader</code> function (to fetch data) and an <code>action</code> function (to handle mutations). This co-locates data logic with the component, but in a way that works even if JavaScript fails to load.</li>
+<li><strong>Rendering Strategies</strong>: Primarily Server-Side Rendering. While it can produce static sites, its architecture is optimized for a dynamic server-rendered experience.</li>
+<li><strong>Best For</strong>: Developers who appreciate a strong adherence to web fundamentals and want to build resilient applications that are less dependent on client-side JavaScript. It excels at data-heavy, interactive applications like dashboards and social media sites.</li>
+</ul>
+<h3 id="astro-islands-of-interactivity">Astro: Islands of Interactivity</h3>
+<p>Astro is a multi-page application (MPA) framework that takes a unique approach to JavaScript.</p>
+<ul>
+<li><strong>Core Philosophy</strong>: Ship zero JavaScript by default. Astro renders your entire page to static HTML on the server. Interactivity is an opt-in feature.</li>
+<li><strong>Key Feature</strong>: <strong>Astro Islands</strong>. You can use components from any UI framework (React, Vue, Svelte, etc.) within an Astro project. These components are "islands" of interactivity in an otherwise static sea of HTML. You explicitly tell Astro when to load the component's JavaScript (e.g., when it becomes visible, when the page loads, or on a media query).</li>
+<li><strong>Rendering Strategies</strong>: Primarily Static Site Generation, with an option for on-demand Server-Side Rendering.</li>
+<li><strong>Best For</strong>: Content-heavy websites like blogs, marketing sites, and documentation where performance is paramount and interactivity is limited to specific parts of the page. Its ability to mix and match frameworks is also a unique advantage.</li>
+</ul>
+<h3 id="decision-framework-which-approach-when">Decision Framework: Which Approach When?</h3>
+<table>
+<thead>
+<tr>
+<th>Feature / Philosophy</th>
+<th>Next.js</th>
+<th>Remix</th>
+<th>Astro</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Primary Goal</strong></td>
+<td>Hybrid, flexible rendering for any application</td>
+<td>Resilient, dynamic apps via web standards</td>
+<td>Ultra-fast, content-focused sites</td>
+</tr>
+<tr>
+<td><strong>Default JS on Client</strong></td>
+<td>Minimal (for hydration and client components)</td>
+<td>Minimal (for routing and enhancements)</td>
+<td><strong>Zero</strong> (opt-in per component)</td>
+</tr>
+<tr>
+<td><strong>Data Fetching</strong></td>
+<td><code>async</code> Server Components, Route Handlers</td>
+<td>Route <code>loader</code> functions</td>
+<td>Top-level <code>await</code> in component scripts</td>
+</tr>
+<tr>
+<td><strong>Data Mutations</strong></td>
+<td>Server Actions</td>
+<td>Route <code>action</code> functions (HTML forms)</td>
+<td>API endpoints</td>
+</tr>
+<tr>
+<td><strong>Best Use Case</strong></td>
+<td>Complex web apps, e-commerce, dashboards</td>
+<td>Data-intensive forms, highly interactive apps</td>
+<td>Blogs, marketing sites, documentation</td>
+</tr>
+<tr>
+<td><strong>Paradigm</strong></td>
+<td>React as a full-stack architecture</td>
+<td>Web platform as the architecture</td>
+<td>HTML-first, with islands of interactivity</td>
+</tr>
+</tbody>
+</table>
+<p>For our book, we focus on Next.js because it represents the most comprehensive and popular evolution of the React ecosystem, providing the flexibility to build almost any kind of web application while directly solving the CSR problems we've identified.</p>
+<h2 id="creating-your-first-nextjs-app">Creating your first Next.js app</h2>
+<h2 id="the-fix-rebuilding-with-nextjs">The Fix: Rebuilding with Next.js</h2>
+<p>Now, let's take our broken <code>csr-product-app</code> and rebuild it with Next.js. The goal is to solve every single issue we diagnosed in section 15.2. You'll be surprised at how little our React component code needs to change. The magic is in <em>where</em> the code runs.</p>
+<h3 id="step-1-project-setup">Step 1: Project Setup</h3>
+<p>Let's create a new Next.js application using the <code>create-next-app</code> command-line tool.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># The command will prompt you with a few questions.</span>
+<span class="c1"># Use these answers for our project:</span>
+<span class="c1">#</span>
+<span class="c1"># ✔ What is your project named? … nextjs-product-app</span>
+<span class="c1"># ✔ Would you like to use TypeScript? … Yes</span>
+<span class="c1"># ✔ Would you like to use ESLint? … Yes</span>
+<span class="c1"># ✔ Would you like to use Tailwind CSS? … No</span>
+<span class="c1"># ✔ Would you like to use `src/` directory? … Yes</span>
+<span class="c1"># ✔ Would you like to use App Router? … Yes</span>
+<span class="c1"># ✔ Would you like to customize the default import alias? … No</span>
+
+npx<span class="w"> </span>create-next-app@latest
+
+<span class="c1"># Navigate into the new project directory</span>
+<span class="nb">cd</span><span class="w"> </span>nextjs-product-app
+</code></pre></div>
+
+<h3 id="step-2-migrating-our-code">Step 2: Migrating Our Code</h3>
+<p>The new project structure will look like this. The key difference is the <code>app/</code> directory, which is the heart of the Next.js App Router.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">nextjs</span><span class="o">-</span><span class="nv">product</span><span class="o">-</span><span class="nv">app</span><span class="o">/</span>
+└──<span class="w"> </span><span class="nv">src</span><span class="o">/</span>
+<span class="w">    </span>├──<span class="w"> </span><span class="nv">app</span><span class="o">/</span>
+<span class="w">    </span>│<span class="w">   </span>├──<span class="w"> </span><span class="nv">favicon</span>.<span class="nv">ico</span>
+<span class="w">    </span>│<span class="w">   </span>├──<span class="w"> </span><span class="nv">globals</span>.<span class="nv">css</span>
+<span class="w">    </span>│<span class="w">   </span>├──<span class="w"> </span><span class="nv">layout</span>.<span class="nv">tsx</span><span class="w">   </span>←<span class="w"> </span><span class="nv">Root</span><span class="w"> </span><span class="nv">layout</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">the</span><span class="w"> </span><span class="nv">app</span>
+<span class="w">    </span>│<span class="w">   </span>└──<span class="w"> </span><span class="nv">page</span>.<span class="nv">tsx</span><span class="w">     </span>←<span class="w"> </span><span class="nv">The</span><span class="w"> </span><span class="nv">component</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">the</span><span class="w"> </span><span class="s1">&#39;/&#39;</span><span class="w"> </span><span class="nv">route</span>
+<span class="w">    </span>└──<span class="w"> </span>...
+</code></pre></div>
+
+<p>Let's migrate our logic.</p>
+<p><strong>1. Copy the Mock API</strong></p>
+<p>Create the same <code>src/api/products.ts</code> file in our new Next.js project. The code is identical.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/api/products.ts</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">Product</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">mockProducts</span><span class="o">:</span><span class="w"> </span><span class="kt">Product</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;p1&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Quantum Widget&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">99.99</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A widget that defies classical physics.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;p2&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Hyper-Sprocket&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">149.50</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;The fastest sprocket in the known universe.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;p3&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Nano-Gear&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">45.00</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Infinitesimally small, infinitely useful.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="p">];</span>
+
+<span class="c1">// IMPORTANT: We add &#39;use server&#39; if we want to call this from a client component,</span>
+<span class="c1">// but since our page is a Server Component, this runs on the server by default.</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">fetchProducts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">Product</span><span class="p">[]</span><span class="o">&gt;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Fetching products on the SERVER...&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// Simulate a database/API delay</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">resolve</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">resolve</span><span class="p">,</span><span class="w"> </span><span class="mf">1500</span><span class="p">));</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;...products fetched on the SERVER!&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">mockProducts</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p><strong>2. Recreate the Product Page</strong></p>
+<p>Now, we'll edit <code>src/app/page.tsx</code>. This is where the Next.js magic happens.</p>
+<p><strong>Before</strong> (Vite <code>App.tsx</code>):
+-   Used <code>useState</code> and <code>useEffect</code> to manage loading and data fetching.
+-   The component was dumb; it knew nothing about data until it ran in the browser.</p>
+<p><strong>After</strong> (Next.js <code>page.tsx</code>):
+-   The component is now an <code>async</code> function.
+-   It fetches data <em>before</em> rendering.
+-   There is no <code>useState</code> or <code>useEffect</code> for the initial data load.
+-   This component runs <strong>on the server</strong>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fetchProducts</span><span class="p">,</span><span class="w"> </span><span class="nx">Product</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/api/products&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">styles</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./page.module.css&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Next.js uses CSS Modules by default</span>
+
+<span class="c1">// This is a React Server Component (RSC)</span>
+<span class="c1">// Notice the &#39;async&#39; keyword!</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// 1. Data is fetched on the server BEFORE the component renders.</span>
+<span class="w">  </span><span class="c1">// The user&#39;s browser is not involved in this step.</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">products</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetchProducts</span><span class="p">();</span>
+
+<span class="w">  </span><span class="c1">// 2. The component renders to HTML on the server, with the data already included.</span>
+<span class="w">  </span><span class="c1">// There is no loading state for the initial render.</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">styles</span><span class="p">.</span><span class="nx">main</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">styles</span><span class="p">.</span><span class="nx">title</span><span class="p">}&gt;</span><span class="nx">Our</span><span class="w"> </span><span class="nx">Awesome</span><span class="w"> </span><span class="nx">Products</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">styles</span><span class="p">.</span><span class="nx">productList</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">products</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">product</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">styles</span><span class="p">.</span><span class="nx">productItem</span><span class="p">}&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">h3</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">$</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">price</span><span class="p">.</span><span class="nx">toFixed</span><span class="p">(</span><span class="mf">2</span><span class="p">)}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">description</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Let's also add some styles to <code>src/app/page.module.css</code> to match our original design.</p>
+<div class="codehilite"><pre><span></span><code><span class="c">/* src/app/page.module.css */</span>
+
+<span class="p">.</span><span class="nc">main</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">max-width</span><span class="p">:</span><span class="w"> </span><span class="mi">800</span><span class="kt">px</span><span class="p">;</span>
+<span class="w">  </span><span class="k">margin</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="kt">rem</span><span class="w"> </span><span class="kc">auto</span><span class="p">;</span>
+<span class="w">  </span><span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="kt">rem</span><span class="p">;</span>
+<span class="w">  </span><span class="k">background-color</span><span class="p">:</span><span class="w"> </span><span class="kc">white</span><span class="p">;</span>
+<span class="w">  </span><span class="k">border-radius</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="kt">px</span><span class="p">;</span>
+<span class="w">  </span><span class="k">box-shadow</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">2</span><span class="kt">px</span><span class="w"> </span><span class="mi">4</span><span class="kt">px</span><span class="w"> </span><span class="nb">rgba</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">title</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">color</span><span class="p">:</span><span class="w"> </span><span class="mh">#0b57d0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">productList</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">list-style</span><span class="p">:</span><span class="w"> </span><span class="kc">none</span><span class="p">;</span>
+<span class="w">  </span><span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">productItem</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">border-bottom</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="kt">px</span><span class="w"> </span><span class="kc">solid</span><span class="w"> </span><span class="mh">#ddd</span><span class="p">;</span>
+<span class="w">  </span><span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="kt">rem</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">productItem</span><span class="p">:</span><span class="nd">last-child</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">border-bottom</span><span class="p">:</span><span class="w"> </span><span class="kc">none</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">productItem</span><span class="w"> </span><span class="nt">h3</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">margin</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mf">0.5</span><span class="kt">rem</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="step-3-verification-the-problem-is-solved">Step 3: Verification - The Problem is Solved</h3>
+<p>Now, run the development server with <code>npm run dev</code> and let's perform the same diagnostics we did on the CSR app.</p>
+<p><strong>Verification 1: SEO is Fixed</strong></p>
+<p>Use <code>curl</code> or "View Page Source" on <code>http://localhost:3000</code>.</p>
+<p><strong>Terminal Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="cp">&lt;!DOCTYPE html&gt;</span>
+<span class="p">&lt;</span><span class="nt">html</span> <span class="na">lang</span><span class="o">=</span><span class="s">&quot;en&quot;</span><span class="p">&gt;</span>
+  <span class="cm">&lt;!-- ... head content ... --&gt;</span>
+  <span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">main</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;page_main__c_6EK&quot;</span><span class="p">&gt;</span>
+      <span class="p">&lt;</span><span class="nt">h1</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;page_title__Vax_w&quot;</span><span class="p">&gt;</span>Our Awesome Products<span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+      <span class="p">&lt;</span><span class="nt">ul</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;page_productList__3_r_p&quot;</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">li</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;page_productItem__z_t_y&quot;</span><span class="p">&gt;</span>
+          <span class="p">&lt;</span><span class="nt">h3</span><span class="p">&gt;</span>Quantum Widget<span class="p">&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+          <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>$99.99<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+          <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>A widget that defies classical physics.<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+        <span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">li</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;page_productItem__z_t_y&quot;</span><span class="p">&gt;</span>
+          <span class="p">&lt;</span><span class="nt">h3</span><span class="p">&gt;</span>Hyper-Sprocket<span class="p">&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+          <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>$149.50<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+          <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>The fastest sprocket in the known universe.<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+        <span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">li</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;page_productItem__z_t_y&quot;</span><span class="p">&gt;</span>
+          <span class="p">&lt;</span><span class="nt">h3</span><span class="p">&gt;</span>Nano-Gear<span class="p">&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+          <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>$45.00<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+          <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>Infinitesimally small, infinitely useful.<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+        <span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+      <span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+    <span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+    <span class="cm">&lt;!-- ... Next.js scripts ... --&gt;</span>
+  <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+</code></pre></div>
+
+<p><strong>Result</strong>: <strong>Success!</strong> The HTML delivered to the browser contains all the product information. Search engine crawlers can now see and index our content perfectly.</p>
+<p><strong>Verification 2: Performance is Fixed</strong></p>
+<p>Open the Network tab in DevTools.</p>
+<p><strong>Browser DevTools - Network Tab</strong>:</p>
+<p>The first request for the document (<code>/</code>) now contains the fully rendered HTML. There is no subsequent client-side API call to fetch products. The waterfall is gone.</p>
+<ul>
+<li><strong>CSR App</strong>: HTML -&gt; JS -&gt; API Call -&gt; Render</li>
+<li><strong>Next.js App</strong>: HTML (with content) -&gt; Render</li>
+</ul>
+<p><strong>Result</strong>: <strong>Success!</strong> The user sees the content almost immediately after the HTML document loads. The Time to Content is dramatically reduced because the server did the heavy lifting.</p>
+<p><strong>Verification 3: User Experience is Fixed</strong></p>
+<p>When you load the page, there is no "Loading products..." message. The content is just <em>there</em>.</p>
+<p><strong>Result</strong>: <strong>Success!</strong> We have eliminated the client-side loading state for the initial page view, providing a much faster and more professional user experience.</p>
+<h3 id="the-journey-from-problem-to-solution">The Journey: From Problem to Solution</h3>
+<table>
+<thead>
+<tr>
+<th>Iteration</th>
+<th>Approach</th>
+<th>Failure Mode</th>
+<th>Technique Applied</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>CSR (Vite + React)</td>
+<td>Empty HTML on initial load, poor SEO.</td>
+<td><code>useEffect</code> data fetching</td>
+<td>Works, but is invisible to search engines.</td>
+</tr>
+<tr>
+<td>0</td>
+<td>CSR (Vite + React)</td>
+<td>Slow initial render due to JS/API waterfall.</td>
+<td><code>useEffect</code> data fetching</td>
+<td>Users see a loading spinner for a long time.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>SSR (Next.js App Router)</td>
+<td>Solved.</td>
+<td><code>async</code> Server Components</td>
+<td>Fully-rendered HTML is sent from the server.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>SSR (Next.js App Router)</td>
+<td>Solved.</td>
+<td><code>async</code> Server Components</td>
+<td>Data is pre-fetched, eliminating the waterfall.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="lessons-learned">Lessons Learned</h3>
+<p>By moving from a client-only React application to a Next.js application, we have fundamentally changed the rendering model.</p>
+<ol>
+<li><strong>Shift in Responsibility</strong>: We shifted the responsibility of initial data fetching and rendering from the user's browser to our powerful server.</li>
+<li><strong>The Power of <code>async</code> Components</strong>: React Server Components that can be <code>async</code> are a paradigm shift. They allow us to treat data fetching as a prerequisite for rendering, not a side effect that happens later.</li>
+<li><strong>Better by Default</strong>: Next.js guides you into a more performant and SEO-friendly architecture by default. The "easiest" way to build a page is also the best way for initial load performance.</li>
+</ol>
+<p>This is why Next.js exists. It's not just a tool; it's a solution to the inherent architectural limitations of client-side rendering, enabling developers to build fast, scalable, and discoverable web applications with React.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:41:00 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

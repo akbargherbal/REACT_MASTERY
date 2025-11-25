@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>23 Testing</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">06 Production-Ready Patterns</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-23-testing">Chapter 23: Testing</h1>
+<h2 id="vitest-modern-fast-testing">Vitest: modern, fast testing</h2>
+<h2 id="the-confidence-problem">The Confidence Problem</h2>
+<p>So far, we've built components by running our dev server and manually clicking around the browser. This works for a while, but it's slow, error-prone, and doesn't scale. How do you know that a change you made in the <code>UserProfile</code> component didn't accidentally break the <code>PaymentForm</code>? You don't. Not without manually re-testing every part of your application. This is where automated testing comes in. It's not about finding bugs; it's about building a system that gives you the confidence to refactor, add features, and ship code without fear.</p>
+<p>In this chapter, we will build a safety net for our application. We'll start with the foundation—a test runner—and progressively build up to testing complex user interactions, API calls, and even entire user journeys.</p>
+<h3 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h3>
+<p>Our anchor example for this chapter will be a <code>FeedbackForm</code> component. It's a perfect candidate because it involves user input, state changes, and asynchronous operations (API calls).</p>
+<p>Let's create the initial version. It will be simple: a text area and a disabled submit button. The button should only become enabled when the user has typed at least 10 characters.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+└── components/
+    └── FeedbackForm.tsx   ← Our reference component
+</code></pre></div>
+
+<p>Here is the initial implementation. We are deliberately not writing any tests for it yet. This is our starting point: a functional but untested component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/FeedbackForm.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">MIN_COMMENT_LENGTH</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">10</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">FeedbackForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">comment</span><span class="p">,</span><span class="w"> </span><span class="nx">setComment</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">isSubmitDisabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">comment</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">MIN_COMMENT_LENGTH</span><span class="p">;</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="kt">React.FormEvent</span><span class="p">&lt;</span><span class="nt">HTMLFormElement</span><span class="p">&gt;)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Submitting feedback:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">comment</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// API call would go here</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Provide</span><span class="w"> </span><span class="nx">Feedback</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">label</span><span class="w"> </span><span class="na">htmlFor</span><span class="o">=</span><span class="s">&quot;comment-input&quot;</span><span class="p">&gt;</span><span class="nx">Your</span><span class="w"> </span><span class="nx">feedback</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">textarea</span>
+<span class="w">        </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;comment-input&quot;</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">comment</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setComment</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">        </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Let us know what you think...&quot;</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">comment</span><span class="p">.</span><span class="nx">length</span><span class="p">}</span><span class="o">/</span><span class="p">{</span><span class="nx">MIN_COMMENT_LENGTH</span><span class="p">}</span><span class="w"> </span><span class="nx">characters</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="w"> </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">isSubmitDisabled</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="nx">Submit</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="the-need-for-a-test-runner">The Need for a Test Runner</h3>
+<p>To test this component, we can't just run its file with Node.js. Why?
+1.  It contains JSX, which Node can't parse.
+2.  It uses browser-specific APIs like <code>document</code> and <code>window</code> (implicitly via React), which don't exist in Node.
+3.  We need a framework to structure our tests, run them, and report the results.</p>
+<p>This is the job of a <strong>test runner</strong>. For modern React/Next.js projects, <strong>Vitest</strong> is an excellent choice. It's built on top of Vite, making it incredibly fast, and it has a Jest-compatible API, which is the long-standing standard in the JavaScript world.</p>
+<h3 id="setting-up-vitest">Setting Up Vitest</h3>
+<p>Let's add Vitest to our project.</p>
+<p><strong>Step 1: Install dependencies</strong></p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>-D<span class="w"> </span>vitest<span class="w"> </span>@vitejs/plugin-react<span class="w"> </span>jsdom
+</code></pre></div>
+
+<ul>
+<li><code>vitest</code>: The test runner itself.</li>
+<li><code>@vitejs/plugin-react</code>: Allows Vitest to understand JSX and React-specific syntax.</li>
+<li><code>jsdom</code>: A JavaScript implementation of the DOM and browser APIs that lets us run our component tests in a simulated browser environment within Node.js.</li>
+</ul>
+<p><strong>Step 2: Configure Vitest</strong></p>
+<p>Create a <code>vitest.config.ts</code> file in the root of your project.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// vitest.config.ts</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">defineConfig</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;vitest/config&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">react</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@vitejs/plugin-react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">defineConfig</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">plugins</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="nx">react</span><span class="p">()],</span>
+<span class="w">  </span><span class="nx">test</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">globals</span><span class="o">:</span><span class="w"> </span><span class="kt">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">environment</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;jsdom&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<ul>
+<li><code>plugins: [react()]</code>: Tells Vitest to use the React plugin to process our files.</li>
+<li><code>environment: 'jsdom'</code>: This is the magic line. It tells Vitest to set up a <code>jsdom</code> environment before running our tests, so we have access to <code>document</code>, <code>window</code>, etc.</li>
+<li><code>globals: true</code>: This allows us to use Vitest APIs like <code>test</code>, <code>describe</code>, and <code>expect</code> in our test files without importing them, just like in Jest.</li>
+</ul>
+<p><strong>Step 3: Add a test script to <code>package.json</code></strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// package.json</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="nt">&quot;scripts&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;dev&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;next dev&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;build&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;next build&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;start&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;next start&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;lint&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;next lint&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;test&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;vitest&quot;</span><span class="w"> </span><span class="c1">// ← Add this line</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="iteration-0-the-first-failing-test">Iteration 0: The First Failing Test</h3>
+<p>Now, let's write our very first test. The goal is simple: does the component render at all without crashing?</p>
+<p>Create a new file right next to our component. The <code>.test.tsx</code> convention is standard.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+└── components/
+    ├── FeedbackForm.tsx
+    └── FeedbackForm.test.tsx   ← Our new test file
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/FeedbackForm.test.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">describe</span><span class="p">,</span><span class="w"> </span><span class="nx">test</span><span class="p">,</span><span class="w"> </span><span class="nx">expect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;vitest&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">FeedbackForm</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./FeedbackForm&#39;</span><span class="p">;</span>
+
+<span class="nx">describe</span><span class="p">(</span><span class="s1">&#39;FeedbackForm&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">test</span><span class="p">(</span><span class="s1">&#39;should render&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// This is not how we&#39;ll actually test, but it&#39;s a start.</span>
+<span class="w">    </span><span class="c1">// We need a way to render the component into our jsdom environment.</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">component</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">FeedbackForm</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="w">    </span><span class="nx">expect</span><span class="p">(</span><span class="nx">component</span><span class="p">).</span><span class="nx">toBeDefined</span><span class="p">();</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p>Let's run it:</p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span><span class="nb">test</span>
+</code></pre></div>
+
+<p>The test passes! But it's a terrible test. We're not actually rendering the component or checking its output. We've just confirmed that we can create a React element. This doesn't tell us if the component works.</p>
+<p>Let's try to actually render it. How would we do that? We need a library that can take our React component and render it into the <code>jsdom</code> document. This is the perfect entry point for React Testing Library.</p>
+<p>Our current approach is insufficient because we have no way to inspect the DOM that our component <em>would</em> create. We need a tool to bridge the gap between our JSX and the simulated DOM provided by <code>jsdom</code>.</p>
+<h2 id="react-testing-library-user-centric-tests">React Testing Library: user-centric tests</h2>
+<h2 id="testing-from-the-users-perspective">Testing from the User's Perspective</h2>
+<p>The biggest mistake developers make when testing UIs is testing implementation details. They might check if a component's internal state variable is <code>true</code>, or if a specific child component was rendered. This makes tests brittle. A small refactor that doesn't change the user's experience can break dozens of tests.</p>
+<p><strong>React Testing Library (RTL)</strong> offers a better philosophy:</p>
+<blockquote>
+<p>The more your tests resemble the way your software is used, the more confidence they can give you.</p>
+</blockquote>
+<p>Instead of testing a component's internals, RTL forces you to ask questions from a user's perspective:
+-   Can the user see the form title?
+-   Can the user find the input field by its label?
+-   When the user types in the field, does the character count update?
+-   Is the submit button disabled initially?</p>
+<p>This approach leads to resilient tests that verify actual user-facing behavior.</p>
+<h3 id="setting-up-react-testing-library">Setting Up React Testing Library</h3>
+<p><strong>Step 1: Install dependencies</strong></p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>-D<span class="w"> </span>@testing-library/react<span class="w"> </span>@testing-library/jest-dom<span class="w"> </span>@testing-library/user-event
+</code></pre></div>
+
+<ul>
+<li><code>@testing-library/react</code>: Provides the core <code>render</code> function and queries to find elements in the DOM.</li>
+<li><code>@testing-library/jest-dom</code>: Adds custom matchers to <code>expect</code> like <code>.toBeInTheDocument()</code> and <code>.toBeDisabled()</code>, making assertions more readable.</li>
+<li><code>@testing-library/user-event</code>: A companion library for simulating user interactions like typing, clicking, and hovering, which is more robust than firing raw DOM events.</li>
+</ul>
+<p><strong>Step 2: Configure Vitest to use <code>jest-dom</code></strong></p>
+<p>We need to tell Vitest to load the <code>jest-dom</code> matchers for every test. We do this with a setup file.</p>
+<p>First, create the setup file:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/setupTests.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="s1">&#39;@testing-library/jest-dom&#39;</span><span class="p">;</span>
+</code></pre></div>
+
+<p>Next, update <code>vitest.config.ts</code> to use it:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// vitest.config.ts</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">defineConfig</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;vitest/config&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">react</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@vitejs/plugin-react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">defineConfig</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">plugins</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="nx">react</span><span class="p">()],</span>
+<span class="w">  </span><span class="nx">test</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">globals</span><span class="o">:</span><span class="w"> </span><span class="kt">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">environment</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;jsdom&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">setupFiles</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;./src/setupTests.ts&#39;</span><span class="p">,</span><span class="w"> </span><span class="c1">// ← Add this line</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p>Now we're ready to write meaningful tests.</p>
+<h3 id="iteration-1-testing-the-initial-render">Iteration 1: Testing the Initial Render</h3>
+<p>Let's rewrite our test to verify what the user sees when the form first loads.</p>
+<p><strong>The Goal</strong>:
+1.  The heading "Provide Feedback" should be visible.
+2.  The textarea should be identifiable by its label "Your feedback".
+3.  The submit button should be present and disabled.</p>
+<p><strong>Before</strong> (Iteration 0):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/FeedbackForm.test.tsx - Version 0</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">describe</span><span class="p">,</span><span class="w"> </span><span class="nx">test</span><span class="p">,</span><span class="w"> </span><span class="nx">expect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;vitest&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">FeedbackForm</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./FeedbackForm&#39;</span><span class="p">;</span>
+
+<span class="nx">describe</span><span class="p">(</span><span class="s1">&#39;FeedbackForm&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">test</span><span class="p">(</span><span class="s1">&#39;should render&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">component</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">FeedbackForm</span><span class="w"> </span><span class="p">/&gt;;</span>
+<span class="w">    </span><span class="nx">expect</span><span class="p">(</span><span class="nx">component</span><span class="p">).</span><span class="nx">toBeDefined</span><span class="p">();</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 1):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/FeedbackForm.test.tsx - Version 1</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">render</span><span class="p">,</span><span class="w"> </span><span class="nx">screen</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@testing-library/react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">describe</span><span class="p">,</span><span class="w"> </span><span class="nx">test</span><span class="p">,</span><span class="w"> </span><span class="nx">expect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;vitest&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">FeedbackForm</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./FeedbackForm&#39;</span><span class="p">;</span>
+
+<span class="nx">describe</span><span class="p">(</span><span class="s1">&#39;FeedbackForm&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">test</span><span class="p">(</span><span class="s1">&#39;should render the form correctly&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 1. Render the component into the jsdom</span>
+<span class="w">    </span><span class="nx">render</span><span class="p">(&lt;</span><span class="nt">FeedbackForm</span><span class="w"> </span><span class="p">/&gt;);</span>
+
+<span class="w">    </span><span class="c1">// 2. Select elements like a user would</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">heading</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">screen</span><span class="p">.</span><span class="nx">getByRole</span><span class="p">(</span><span class="s1">&#39;heading&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="sr">/provide feedback/i</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">commentInput</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">screen</span><span class="p">.</span><span class="nx">getByLabelText</span><span class="p">(</span><span class="sr">/your feedback/i</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">submitButton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">screen</span><span class="p">.</span><span class="nx">getByRole</span><span class="p">(</span><span class="s1">&#39;button&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="sr">/submit/i</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">    </span><span class="c1">// 3. Assert that the elements are in the document</span>
+<span class="w">    </span><span class="nx">expect</span><span class="p">(</span><span class="nx">heading</span><span class="p">).</span><span class="nx">toBeInTheDocument</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">expect</span><span class="p">(</span><span class="nx">commentInput</span><span class="p">).</span><span class="nx">toBeInTheDocument</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">expect</span><span class="p">(</span><span class="nx">submitButton</span><span class="p">).</span><span class="nx">toBeInTheDocument</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// 4. Assert specific attributes</span>
+<span class="w">    </span><span class="nx">expect</span><span class="p">(</span><span class="nx">submitButton</span><span class="p">).</span><span class="nx">toBeDisabled</span><span class="p">();</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p>Let's break this down:
+-   <code>render(&lt;FeedbackForm /&gt;)</code>: This function from RTL renders our component into a container that is appended to <code>document.body</code>.
+-   <code>screen</code>: This object provides a set of queries (<code>getBy...</code>, <code>findBy...</code>, <code>queryBy...</code>) that search the entire <code>document.body</code>.
+-   <code>getByRole</code>: This is the preferred way to query. It finds elements based on their accessibility role. It's how a screen reader user would navigate your page. The <code>{ name: /.../i }</code> option finds an element with a specific accessible name (e.g., the text content of a button or heading). The <code>i</code> makes it case-insensitive.
+-   <code>getByLabelText</code>: Finds an <code>&lt;input&gt;</code>, <code>&lt;textarea&gt;</code>, or <code>&lt;select&gt;</code> associated with a <code>&lt;label&gt;</code>.
+-   <code>.toBeInTheDocument()</code> and <code>.toBeDisabled()</code>: These are the readable matchers from <code>@testing-library/jest-dom</code>.</p>
+<p>Now, run the test:</p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span><span class="nb">test</span>
+</code></pre></div>
+
+<p><strong>Terminal Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="w"> </span>✓<span class="w"> </span>src/components/FeedbackForm.test.tsx<span class="w"> </span><span class="o">(</span><span class="m">1</span><span class="o">)</span>
+<span class="w">   </span>✓<span class="w"> </span>FeedbackForm<span class="w"> </span><span class="o">(</span><span class="m">1</span><span class="o">)</span>
+<span class="w">     </span>✓<span class="w"> </span>should<span class="w"> </span>render<span class="w"> </span>the<span class="w"> </span>form<span class="w"> </span>correctly
+
+<span class="w"> </span>Test<span class="w"> </span>Files<span class="w">  </span><span class="m">1</span><span class="w"> </span>passed<span class="w"> </span><span class="o">(</span><span class="m">1</span><span class="o">)</span>
+<span class="w">      </span>Tests<span class="w">  </span><span class="m">1</span><span class="w"> </span>passed<span class="w"> </span><span class="o">(</span><span class="m">1</span><span class="o">)</span>
+<span class="w">   </span>Start<span class="w"> </span>at<span class="w">  </span><span class="m">15</span>:30:00
+<span class="w">   </span>Duration<span class="w">  </span>258ms<span class="w"> </span><span class="o">(</span>transform<span class="w"> </span>62ms,<span class="w"> </span>setup<span class="w"> </span>85ms,<span class="w"> </span>collect<span class="w"> </span>24ms,<span class="w"> </span>tests<span class="w"> </span>5ms<span class="o">)</span>
+
+<span class="w"> </span>PASS<span class="w">  </span>Waiting<span class="w"> </span><span class="k">for</span><span class="w"> </span>file<span class="w"> </span>changes...
+<span class="w">       </span>press<span class="w"> </span>h<span class="w"> </span>to<span class="w"> </span>show<span class="w"> </span>help,<span class="w"> </span>press<span class="w"> </span>q<span class="w"> </span>to<span class="w"> </span>quit
+</code></pre></div>
+
+<p>Success! We now have a test that gives us real confidence that our component renders correctly for the user on initial load.</p>
+<h3 id="iteration-2-testing-user-interaction">Iteration 2: Testing User Interaction</h3>
+<p>Our component isn't static. The core logic is that the submit button becomes enabled only after the user types 10 characters. Let's test that.</p>
+<p><strong>The Goal</strong>:
+1.  Simulate a user typing less than 10 characters into the textarea.
+2.  Assert the submit button is still disabled.
+3.  Simulate the user typing more characters to meet the 10-character minimum.
+4.  Assert the submit button is now enabled.</p>
+<p>To do this, we'll use <code>@testing-library/user-event</code>. It provides a <code>setup</code> function that prepares an environment for simulating user interactions more accurately than firing manual events.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/FeedbackForm.test.tsx - Add this new test case</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">render</span><span class="p">,</span><span class="w"> </span><span class="nx">screen</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@testing-library/react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">userEvent</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@testing-library/user-event&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Import user-event</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">describe</span><span class="p">,</span><span class="w"> </span><span class="nx">test</span><span class="p">,</span><span class="w"> </span><span class="nx">expect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;vitest&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">FeedbackForm</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./FeedbackForm&#39;</span><span class="p">;</span>
+
+<span class="nx">describe</span><span class="p">(</span><span class="s1">&#39;FeedbackForm&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... our previous test is still here ...</span>
+
+<span class="w">  </span><span class="nx">test</span><span class="p">(</span><span class="s1">&#39;should enable the submit button only when feedback has enough characters&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// The userEvent methods are async, so the test function must be async</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">userEvent</span><span class="p">.</span><span class="nx">setup</span><span class="p">();</span><span class="w"> </span><span class="c1">// Set up the user-event instance</span>
+<span class="w">    </span><span class="nx">render</span><span class="p">(&lt;</span><span class="nt">FeedbackForm</span><span class="w"> </span><span class="p">/&gt;);</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">commentInput</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">screen</span><span class="p">.</span><span class="nx">getByLabelText</span><span class="p">(</span><span class="sr">/your feedback/i</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">submitButton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">screen</span><span class="p">.</span><span class="nx">getByRole</span><span class="p">(</span><span class="s1">&#39;button&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="sr">/submit/i</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">    </span><span class="c1">// Initially, the button is disabled</span>
+<span class="w">    </span><span class="nx">expect</span><span class="p">(</span><span class="nx">submitButton</span><span class="p">).</span><span class="nx">toBeDisabled</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// 1. User types 9 characters</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="kr">type</span><span class="p">(</span><span class="nx">commentInput</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Too short&#39;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Assert the button is still disabled</span>
+<span class="w">    </span><span class="nx">expect</span><span class="p">(</span><span class="nx">submitButton</span><span class="p">).</span><span class="nx">toBeDisabled</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// 2. User types one more character</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="kr">type</span><span class="p">(</span><span class="nx">commentInput</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;!&#39;</span><span class="p">);</span><span class="w"> </span><span class="c1">// The input value is now &quot;Too short!&quot; (10 chars)</span>
+
+<span class="w">    </span><span class="c1">// Assert the button is now enabled</span>
+<span class="w">    </span><span class="nx">expect</span><span class="p">(</span><span class="nx">submitButton</span><span class="p">).</span><span class="nx">toBeEnabled</span><span class="p">();</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p>Let's run the tests again.</p>
+<p><strong>Terminal Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="w"> </span>✓<span class="w"> </span>src/components/FeedbackForm.test.tsx<span class="w"> </span><span class="o">(</span><span class="m">2</span><span class="o">)</span>
+<span class="w">   </span>✓<span class="w"> </span>FeedbackForm<span class="w"> </span><span class="o">(</span><span class="m">2</span><span class="o">)</span>
+<span class="w">     </span>✓<span class="w"> </span>should<span class="w"> </span>render<span class="w"> </span>the<span class="w"> </span>form<span class="w"> </span>correctly
+<span class="w">     </span>✓<span class="w"> </span>should<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>the<span class="w"> </span>submit<span class="w"> </span>button<span class="w"> </span>only<span class="w"> </span>when<span class="w"> </span>feedback<span class="w"> </span>has<span class="w"> </span>enough<span class="w"> </span>characters
+
+<span class="w"> </span>Test<span class="w"> </span>Files<span class="w">  </span><span class="m">1</span><span class="w"> </span>passed<span class="w"> </span><span class="o">(</span><span class="m">1</span><span class="o">)</span>
+<span class="w">      </span>Tests<span class="w">  </span><span class="m">2</span><span class="w"> </span>passed<span class="w"> </span><span class="o">(</span><span class="m">2</span><span class="o">)</span>
+<span class="w">   </span>Start<span class="w"> </span>at<span class="w">  </span><span class="m">15</span>:35:00
+<span class="w">   </span>Duration<span class="w">  </span>310ms
+
+<span class="w"> </span>PASS<span class="w">  </span>Waiting<span class="w"> </span><span class="k">for</span><span class="w"> </span>file<span class="w"> </span>changes...
+</code></pre></div>
+
+<p>Perfect. We've now tested not just the static view, but the core interactive logic of our component, all from the user's perspective. We didn't need to inspect the <code>comment</code> state variable; we just checked its effect on the UI, which is exactly what a user would experience. This makes our test robust against refactoring.</p>
+<h2 id="what-to-test-and-what-to-skip">What to test (and what to skip)</h2>
+<h2 id="the-art-of-prioritization">The Art of Prioritization</h2>
+<p>Now that we have the tools, a common question arises: "Do I have to test <em>everything</em>?" The answer is a firm <strong>no</strong>. Testing has a cost—it takes time to write and maintain tests. The goal is to maximize confidence for the minimum cost.</p>
+<p>A helpful mental model is the <strong>Testing Trophy</strong>, popularized by Kent C. Dodds. It suggests a balanced portfolio of tests:</p>
+<ol>
+<li><strong>Static Analysis</strong>: At the bottom, the largest and cheapest part, is static analysis. Tools like TypeScript and ESLint catch a huge class of errors before you even run your code. We've been using this all along.</li>
+<li><strong>Unit Tests</strong>: These test a single module or component in isolation. They are fast and precise. Our <code>FeedbackForm</code> tests so far are unit tests.</li>
+<li><strong>Integration Tests</strong>: These verify that several units work together correctly. For us, this often means testing a component that fetches data from a (mocked) API. We'll do this next.</li>
+<li><strong>End-to-End (E2E) Tests</strong>: At the top, the smallest and most expensive part. These test your entire application in a real browser, from the UI to the database.</li>
+</ol>
+<p>The Testing Trophy advises writing lots of static and unit/integration tests, and very few E2E tests.</p>
+<h3 id="what-you-should-test">What You SHOULD Test</h3>
+<p>Focus your efforts on things that have logic and could break.</p>
+<ul>
+<li><strong>User Interactions</strong>: Anything that involves a user event (<code>click</code>, <code>type</code>, <code>submit</code>) and a resulting UI change. We just did this with our form's button logic.</li>
+<li><strong>Conditional Rendering</strong>: If a component can render in different ways based on props or state, test each case. Does the <code>LoadingSpinner</code> appear when <code>isLoading</code> is true? Does the <code>ErrorMessage</code> appear when <code>error</code> is not null?</li>
+<li><strong>Accessibility</strong>: RTL encourages this by default. Can you find all interactive elements by their accessible role and name? If not, your test is telling you your app has an accessibility issue.</li>
+<li><strong>Complex Logic</strong>: If a component contains complex business logic (e.g., a pricing calculator, a data visualization), write tests to cover its edge cases.</li>
+<li><strong>API Communication</strong>: Does your component correctly handle API success, loading, and error states? This is a prime candidate for integration testing.</li>
+</ul>
+<h3 id="what-you-can-often-skip">What You Can OFTEN Skip</h3>
+<p>Don't test things that have no logic or are the responsibility of another part of the system.</p>
+<ul>
+<li><strong>Implementation Details</strong>: <strong>This is the golden rule.</strong> Do not test the internal state of a component, its private methods, or which child components it renders. Test <em>what</em> the user sees, not <em>how</em> it's rendered.<ul>
+<li><strong>Bad</strong>: <code>expect(wrapper.state('comment')).toBe('hello')</code></li>
+<li><strong>Good</strong>: <code>expect(screen.getByLabelText(/your feedback/i)).toHaveValue('hello')</code></li>
+</ul>
+</li>
+<li><strong>Third-Party Libraries</strong>: Don't test that your charting library renders an SVG correctly or that <code>axios</code> sends an HTTP request. Trust that their authors have tested them. Your job is to test that you are <em>using them correctly</em>. This often involves mocking them.</li>
+<li><strong>Static, Presentational Components</strong>: A component that just takes props and renders some styled text or divs with no internal logic often doesn't need its own test file. Its presence will be implicitly tested by the parent component that uses it.</li>
+<li><strong>Framework Internals</strong>: Don't test that <code>useState</code> updates state or that <code>useEffect</code> runs on mount. Trust that React works. Test your application code.</li>
+</ul>
+<p>Applying this to our <code>FeedbackForm</code>, we've correctly tested the interaction and conditional logic (the button's disabled state). The next logical step is to test its integration with an API.</p>
+<h2 id="integration-tests-that-matter">Integration tests that matter</h2>
+<h2 id="testing-beyond-the-component-bubble">Testing Beyond the Component Bubble</h2>
+<p>Our <code>FeedbackForm</code> is meant to submit data to a server. A unit test can't verify this behavior because it runs in isolation. We need an <strong>integration test</strong> to verify the component's interaction with the network layer.</p>
+<p>However, hitting a real network in our tests is a bad idea:
+-   <strong>Slow</strong>: Network requests add seconds to test runs.
+-   <strong>Unreliable</strong>: The test can fail due to network issues, not a code bug.
+-   <strong>Stateful</strong>: Tests could pollute a real database.
+-   <strong>Difficult to test edge cases</strong>: How do you force the server to return a 500 error to test your error handling?</p>
+<p>The solution is to <strong>mock the API</strong>. We'll intercept outgoing network requests during our test run and provide a fake response, giving us full control over the "server."</p>
+<h3 id="introducing-mock-service-worker-msw">Introducing Mock Service Worker (MSW)</h3>
+<p>MSW is a powerful API mocking library. It works by intercepting requests at the network level, meaning your component code doesn't need to change at all. It thinks it's talking to a real server.</p>
+<p><strong>Step 1: Install MSW</strong></p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>-D<span class="w"> </span>msw
+</code></pre></div>
+
+<p><strong>Step 2: Define Mock Handlers</strong></p>
+<p>We'll create a central place for our mock API definitions.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/mocks/handlers.ts</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">http</span><span class="p">,</span><span class="w"> </span><span class="nx">HttpResponse</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;msw&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">handlers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="c1">// Handle POST requests to /api/feedback</span>
+<span class="w">  </span><span class="nx">http</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="s1">&#39;/api/feedback&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Respond with a 200 OK status and a JSON body.</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">HttpResponse</span><span class="p">.</span><span class="nx">json</span><span class="p">({</span><span class="w"> </span><span class="nx">success</span><span class="o">:</span><span class="w"> </span><span class="kt">true</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">}),</span>
+<span class="p">];</span>
+</code></pre></div>
+
+<p><strong>Step 3: Create a Mock Server for Tests</strong></p>
+<p>Now, we'll create a server instance that we can control in our tests.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/mocks/server.ts</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">setupServer</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;msw/node&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">handlers</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./handlers&#39;</span><span class="p">;</span>
+
+<span class="c1">// This configures a request mocking server with the given request handlers.</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">setupServer</span><span class="p">(...</span><span class="nx">handlers</span><span class="p">);</span>
+</code></pre></div>
+
+<p><strong>Step 4: Integrate MSW with Vitest</strong></p>
+<p>We need to start the mock server before our tests run and shut it down after. We can update our test setup file for this.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/setupTests.ts</span>
+
+<span class="k">import</span><span class="w"> </span><span class="s1">&#39;@testing-library/jest-dom&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">server</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./mocks/server&#39;</span><span class="p">;</span>
+
+<span class="c1">// Establish API mocking before all tests.</span>
+<span class="nx">beforeAll</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">listen</span><span class="p">());</span>
+
+<span class="c1">// Reset any request handlers that we may add during tests,</span>
+<span class="c1">// so they don&#39;t affect other tests.</span>
+<span class="nx">afterEach</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">resetHandlers</span><span class="p">());</span>
+
+<span class="c1">// Clean up after the tests are finished.</span>
+<span class="nx">afterAll</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">server</span><span class="p">.</span><span class="nx">close</span><span class="p">());</span>
+</code></pre></div>
+
+<p>With this setup, any <code>fetch</code> request to <code>/api/feedback</code> during our tests will be intercepted by MSW.</p>
+<h3 id="iteration-3-testing-the-full-success-flow">Iteration 3: Testing the Full Success Flow</h3>
+<p>First, let's update our <code>FeedbackForm</code> to handle submission logic, including loading and success states.</p>
+<p><strong>Before</strong> (Component without API logic):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/FeedbackForm.tsx (Partial)</span>
+<span class="c1">// ...</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="kt">React.FormEvent</span><span class="p">&lt;</span><span class="nt">HTMLFormElement</span><span class="p">&gt;)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Submitting feedback:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">comment</span><span class="p">);</span>
+<span class="p">};</span>
+<span class="c1">// ...</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Component with API logic):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/FeedbackForm.tsx (Updated)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">FormStatus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;idle&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;loading&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;success&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;error&#39;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">MIN_COMMENT_LENGTH</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">10</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">FeedbackForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">comment</span><span class="p">,</span><span class="w"> </span><span class="nx">setComment</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">status</span><span class="p">,</span><span class="w"> </span><span class="nx">setStatus</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">FormStatus</span><span class="p">&gt;(</span><span class="s1">&#39;idle&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">isSubmitDisabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">comment</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">MIN_COMMENT_LENGTH</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;loading&#39;</span><span class="p">;</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="kt">React.FormEvent</span><span class="p">&lt;</span><span class="nt">HTMLFormElement</span><span class="p">&gt;)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">setStatus</span><span class="p">(</span><span class="s1">&#39;loading&#39;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="s1">&#39;/api/feedback&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">method</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;POST&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">headers</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s1">&#39;Content-Type&#39;</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;application/json&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nx">body</span><span class="o">:</span><span class="w"> </span><span class="kt">JSON.stringify</span><span class="p">({</span><span class="w"> </span><span class="nx">comment</span><span class="w"> </span><span class="p">}),</span>
+<span class="w">      </span><span class="p">});</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">response</span><span class="p">.</span><span class="nx">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s1">&#39;Server error&#39;</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="nx">setStatus</span><span class="p">(</span><span class="s1">&#39;success&#39;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">setStatus</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;success&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Thank</span><span class="w"> </span><span class="nx">you</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nx">your</span><span class="w"> </span><span class="nx">feedback</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Provide</span><span class="w"> </span><span class="nx">Feedback</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;error&#39;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;</span><span class="nx">Something</span><span class="w"> </span><span class="nx">went</span><span class="w"> </span><span class="nx">wrong</span><span class="p">.</span><span class="w"> </span><span class="nx">Please</span><span class="w"> </span><span class="k">try</span><span class="w"> </span><span class="nx">again</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">label</span><span class="w"> </span><span class="na">htmlFor</span><span class="o">=</span><span class="s">&quot;comment-input&quot;</span><span class="p">&gt;</span><span class="nx">Your</span><span class="w"> </span><span class="nx">feedback</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">textarea</span>
+<span class="w">        </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;comment-input&quot;</span>
+<span class="w">        </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">comment</span><span class="p">}</span>
+<span class="w">        </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setComment</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">        </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Let us know what you think...&quot;</span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">comment</span><span class="p">.</span><span class="nx">length</span><span class="p">}</span><span class="o">/</span><span class="p">{</span><span class="nx">MIN_COMMENT_LENGTH</span><span class="p">}</span><span class="w"> </span><span class="nx">characters</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="w"> </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">isSubmitDisabled</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;loading&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;Submitting...&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Submit&#39;</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, let's write a test for the happy path.</p>
+<p><strong>The Goal</strong>:
+1.  User types valid feedback.
+2.  User clicks "Submit".
+3.  The button text changes to "Submitting..." and becomes disabled.
+4.  After the (mock) API call succeeds, the form is replaced with a "Thank you" message.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/FeedbackForm.test.tsx - Add this new test case</span>
+
+<span class="c1">// ... imports</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">http</span><span class="p">,</span><span class="w"> </span><span class="nx">HttpResponse</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;msw&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">server</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../mocks/server&#39;</span><span class="p">;</span>
+
+<span class="nx">describe</span><span class="p">(</span><span class="s1">&#39;FeedbackForm&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... previous tests</span>
+
+<span class="w">  </span><span class="nx">test</span><span class="p">(</span><span class="s1">&#39;should show a success message after successful submission&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">userEvent</span><span class="p">.</span><span class="nx">setup</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">render</span><span class="p">(&lt;</span><span class="nt">FeedbackForm</span><span class="w"> </span><span class="p">/&gt;);</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">commentInput</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">screen</span><span class="p">.</span><span class="nx">getByLabelText</span><span class="p">(</span><span class="sr">/your feedback/i</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">submitButton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">screen</span><span class="p">.</span><span class="nx">getByRole</span><span class="p">(</span><span class="s1">&#39;button&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="sr">/submit/i</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">    </span><span class="c1">// 1. User types valid feedback</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="kr">type</span><span class="p">(</span><span class="nx">commentInput</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;This is a great feature!&#39;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 2. User clicks submit</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">click</span><span class="p">(</span><span class="nx">submitButton</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 3. Assert loading state</span>
+<span class="w">    </span><span class="nx">expect</span><span class="p">(</span><span class="nx">screen</span><span class="p">.</span><span class="nx">getByRole</span><span class="p">(</span><span class="s1">&#39;button&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="sr">/submitting.../i</span><span class="w"> </span><span class="p">})).</span><span class="nx">toBeDisabled</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// 4. Assert success message appears</span>
+<span class="w">    </span><span class="c1">// `findBy` queries are async and wait for the element to appear</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">successMessage</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">screen</span><span class="p">.</span><span class="nx">findByText</span><span class="p">(</span><span class="sr">/thank you for your feedback/i</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">expect</span><span class="p">(</span><span class="nx">successMessage</span><span class="p">).</span><span class="nx">toBeInTheDocument</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// The form should be gone</span>
+<span class="w">    </span><span class="nx">expect</span><span class="p">(</span><span class="nx">submitButton</span><span class="p">).</span><span class="nx">not</span><span class="p">.</span><span class="nx">toBeInTheDocument</span><span class="p">();</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<h3 id="iteration-4-testing-the-error-handling-flow">Iteration 4: Testing the Error Handling Flow</h3>
+<p>What if the server fails? Our component should show an error message. With MSW, this is easy to test. We can override the mock handler for a single test.</p>
+<p><strong>The Goal</strong>:
+1.  User types valid feedback and clicks "Submit".
+2.  The (mock) API returns a 500 error.
+3.  An error message appears.
+4.  The submit button becomes enabled again, allowing the user to retry.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/FeedbackForm.test.tsx - Add this new test case</span>
+
+<span class="c1">// ... imports</span>
+
+<span class="nx">describe</span><span class="p">(</span><span class="s1">&#39;FeedbackForm&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... previous tests</span>
+
+<span class="w">  </span><span class="nx">test</span><span class="p">(</span><span class="s1">&#39;should show an error message if submission fails&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Override the default MSW handler for this specific test</span>
+<span class="w">    </span><span class="nx">server</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span>
+<span class="w">      </span><span class="nx">http</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="s1">&#39;/api/feedback&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">HttpResponse</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">status</span><span class="o">:</span><span class="w"> </span><span class="kt">500</span><span class="w"> </span><span class="p">});</span>
+<span class="w">      </span><span class="p">})</span>
+<span class="w">    </span><span class="p">);</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">userEvent</span><span class="p">.</span><span class="nx">setup</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">render</span><span class="p">(&lt;</span><span class="nt">FeedbackForm</span><span class="w"> </span><span class="p">/&gt;);</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">commentInput</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">screen</span><span class="p">.</span><span class="nx">getByLabelText</span><span class="p">(</span><span class="sr">/your feedback/i</span><span class="p">);</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">submitButton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">screen</span><span class="p">.</span><span class="nx">getByRole</span><span class="p">(</span><span class="s1">&#39;button&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="sr">/submit/i</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="kr">type</span><span class="p">(</span><span class="nx">commentInput</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;This is a test that will fail.&#39;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">click</span><span class="p">(</span><span class="nx">submitButton</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Assert error message appears</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">errorMessage</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">screen</span><span class="p">.</span><span class="nx">findByText</span><span class="p">(</span><span class="sr">/something went wrong/i</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">expect</span><span class="p">(</span><span class="nx">errorMessage</span><span class="p">).</span><span class="nx">toBeInTheDocument</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// Assert the button is re-enabled and back to its original text</span>
+<span class="w">    </span><span class="nx">expect</span><span class="p">(</span><span class="nx">screen</span><span class="p">.</span><span class="nx">getByRole</span><span class="p">(</span><span class="s1">&#39;button&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="sr">/submit/i</span><span class="w"> </span><span class="p">})).</span><span class="nx">toBeEnabled</span><span class="p">();</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p>Run <code>npm test</code> one more time. All tests should pass. We now have a robust test suite for our component that covers its initial state, user interactions, and its integration with an external service, giving us extremely high confidence in its behavior.</p>
+<h2 id="playwright-for-e2e-when-necessary">Playwright for E2E (when necessary)</h2>
+<h2 id="leaving-the-bubble-end-to-end-testing">Leaving the Bubble: End-to-End Testing</h2>
+<p>Our Vitest/RTL/MSW setup is fantastic for testing components in isolation. We've verified our <code>FeedbackForm</code> works perfectly... assuming everything <em>around</em> it is also working.</p>
+<ul>
+<li>What if we forgot to add the <code>&lt;FeedbackForm /&gt;</code> component to our home page?</li>
+<li>What if a global CSS rule accidentally hides the submit button?</li>
+<li>What if the real API has a CORS issue that our mock server doesn't?</li>
+</ul>
+<p>These are the types of problems that <strong>End-to-End (E2E)</strong> tests are designed to catch. An E2E test automates a real browser, navigating your live application just like a user would.</p>
+<h3 id="introducing-playwright">Introducing Playwright</h3>
+<p>Playwright is a modern E2E testing framework from Microsoft. It's fast, reliable, and can run tests across Chromium (Chrome, Edge), Firefox, and WebKit (Safari).</p>
+<h3 id="when-to-write-e2e-tests">When to Write E2E Tests</h3>
+<p>E2E tests are at the top of the Testing Trophy for a reason: they are powerful but expensive.</p>
+<ul>
+<li><strong>Slow</strong>: They launch a real browser and interact with a running server, taking seconds or minutes to run, compared to milliseconds for unit tests.</li>
+<li><strong>Brittle</strong>: A small UI change (like renaming a button) can break them. They can also fail due to network flakiness.</li>
+<li><strong>Costly</strong>: They take longer to write and debug.</li>
+</ul>
+<p>Therefore, <strong>use E2E tests sparingly for your most critical user flows only.</strong></p>
+<ul>
+<li>✅ <strong>Good candidates</strong>: User registration, login, checkout process, core feature workflows.</li>
+<li>❌ <strong>Bad candidates</strong>: Testing every single form validation, visual styling, or simple component interactions. Use Vitest/RTL for those.</li>
+</ul>
+<h3 id="setting-up-playwright">Setting Up Playwright</h3>
+<p>Playwright has an interactive installer that makes setup easy.</p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>init<span class="w"> </span>playwright@latest
+</code></pre></div>
+
+<p>Follow the prompts. It will:
+1.  Install Playwright and browser binaries.
+2.  Create a <code>playwright.config.ts</code> file.
+3.  Create an example test file in a <code>tests</code> directory.</p>
+<p>You'll want to adjust the <code>playwright.config.ts</code> to tell it how to run your Next.js dev server.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// playwright.config.ts (Key parts)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">defineConfig</span><span class="p">,</span><span class="w"> </span><span class="nx">devices</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@playwright/test&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">defineConfig</span><span class="p">({</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="nx">webServer</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">command</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;npm run dev&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;http://127.0.0.1:3000&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">reuseExistingServer</span><span class="o">:</span><span class="w"> </span><span class="o">!</span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">CI</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nx">use</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">baseURL</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;http://127.0.0.1:3000&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p>This <code>webServer</code> configuration tells Playwright to automatically start your Next.js dev server before running any tests.</p>
+<h3 id="writing-an-e2e-test-for-the-feedback-flow">Writing an E2E Test for the Feedback Flow</h3>
+<p>Let's assume our <code>FeedbackForm</code> is rendered on the home page (<code>/</code>). We'll write a Playwright test to verify the entire submission flow against the real, running application.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>tests/
+└── feedback.spec.ts   ← Our new E2E test
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// tests/feedback.spec.ts</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">test</span><span class="p">,</span><span class="w"> </span><span class="nx">expect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@playwright/test&#39;</span><span class="p">;</span>
+
+<span class="nx">test</span><span class="p">(</span><span class="s1">&#39;should allow a user to submit feedback&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">({</span><span class="w"> </span><span class="nx">page</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// 1. Navigate to the page where the form is located</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="nx">page</span><span class="p">.</span><span class="kr">goto</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// 2. Find elements and interact with them</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">commentInput</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">page</span><span class="p">.</span><span class="nx">getByLabel</span><span class="p">(</span><span class="s1">&#39;Your feedback&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">submitButton</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">page</span><span class="p">.</span><span class="nx">getByRole</span><span class="p">(</span><span class="s1">&#39;button&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Submit&#39;</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">  </span><span class="c1">// Assert initial state</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="nx">expect</span><span class="p">(</span><span class="nx">submitButton</span><span class="p">).</span><span class="nx">toBeDisabled</span><span class="p">();</span>
+
+<span class="w">  </span><span class="c1">// 3. Simulate user input</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="nx">commentInput</span><span class="p">.</span><span class="nx">fill</span><span class="p">(</span><span class="s1">&#39;This is a real E2E test from a happy user!&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Assert button is now enabled</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="nx">expect</span><span class="p">(</span><span class="nx">submitButton</span><span class="p">).</span><span class="nx">toBeEnabled</span><span class="p">();</span>
+
+<span class="w">  </span><span class="c1">// 4. Click the submit button</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="nx">submitButton</span><span class="p">.</span><span class="nx">click</span><span class="p">();</span>
+
+<span class="w">  </span><span class="c1">// 5. Assert the final state</span>
+<span class="w">  </span><span class="c1">// Playwright&#39;s auto-waiting will handle the async nature of the API call.</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="nx">expect</span><span class="p">(</span><span class="nx">page</span><span class="p">.</span><span class="nx">getByText</span><span class="p">(</span><span class="s1">&#39;Thank you for your feedback!&#39;</span><span class="p">)).</span><span class="nx">toBeVisible</span><span class="p">();</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<h3 id="running-the-e2e-test">Running the E2E Test</h3>
+<p>To run it, use the Playwright command line tool.</p>
+<div class="codehilite"><pre><span></span><code>npx<span class="w"> </span>playwright<span class="w"> </span><span class="nb">test</span>
+</code></pre></div>
+
+<p>Playwright will:
+1.  Start your Next.js dev server.
+2.  Launch a headless browser (Chromium by default).
+3.  Navigate to your page and execute the steps in your test.
+4.  Report the results and shut everything down.</p>
+<p>This single test gives you confidence that your frontend, server, and API are all integrated correctly for this critical user path. It's the final, most comprehensive piece of your testing safety net.</p>
+<h3 id="the-journey-from-problem-to-solution">The Journey: From Problem to Solution</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Iteration</th>
+<th style="text-align: left;">Failure Mode / Limitation</th>
+<th style="text-align: left;">Technique Applied</th>
+<th style="text-align: left;">Result</th>
+<th style="text-align: left;">Confidence Level</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">No automated verification; manual clicking required.</td>
+<td style="text-align: left;"><strong>Vitest</strong></td>
+<td style="text-align: left;">A test runner is in place, but tests are meaningless.</td>
+<td style="text-align: left;">Low</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Tests don't check what the user actually sees.</td>
+<td style="text-align: left;"><strong>React Testing Library</strong></td>
+<td style="text-align: left;">Tests verify the initial rendered output from a user's perspective.</td>
+<td style="text-align: left;">Medium</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Static render is tested, but not user interactions.</td>
+<td style="text-align: left;"><strong>User Event</strong></td>
+<td style="text-align: left;">Core component logic (e.g., enabling a button) is verified.</td>
+<td style="text-align: left;">High</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">Component is tested in a bubble, without API calls.</td>
+<td style="text-align: left;"><strong>MSW (Mocking)</strong></td>
+<td style="text-align: left;">Component's integration with the network layer is verified.</td>
+<td style="text-align: left;">Very High</td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">No verification that the component works in the app.</td>
+<td style="text-align: left;"><strong>Playwright (E2E)</strong></td>
+<td style="text-align: left;">The entire user flow is verified in a real browser.</td>
+<td style="text-align: left;">Complete</td>
+</tr>
+</tbody>
+</table>
+<h3 id="final-decision-framework-which-test-type-when">Final Decision Framework: Which Test Type When?</h3>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Use This Tool</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Does my code have the correct types?</td>
+<td><strong>TypeScript / ESLint</strong> (Static)</td>
+<td><code>const name: string = 123;</code> (Error)</td>
+</tr>
+<tr>
+<td>Does my single component render and behave correctly?</td>
+<td><strong>Vitest + RTL + User Event</strong> (Unit)</td>
+<td>Does clicking the "Show More" button reveal more text?</td>
+</tr>
+<tr>
+<td>Does my component handle API loading/error states?</td>
+<td><strong>Vitest + RTL + MSW</strong> (Integration)</td>
+<td>Does a loading spinner show while fetching data?</td>
+</tr>
+<tr>
+<td>Does a critical, multi-page user journey work?</td>
+<td><strong>Playwright</strong> (E2E)</td>
+<td>Can a user sign up, log in, and add an item to their cart?</td>
+</tr>
+<tr>
+<td>Am I using a third-party library?</td>
+<td><strong>Don't test the library itself</strong></td>
+<td>Trust that <code>react-query</code> fetches data; test that your UI uses it correctly.</td>
+</tr>
+</tbody>
+</table>
+<p>By combining these layers, you build a robust, fast, and maintainable testing strategy that provides maximum confidence with minimum friction.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:41:01 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

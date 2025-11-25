@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>21 Deployment and Performance</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">05 Next.js — Server-Side React</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-21-deployment-and-performance">Chapter 21: Deployment and Performance</h1>
+<h2 id="deploying-to-vercel-the-path-of-least-resistance">Deploying to Vercel (the path of least resistance)</h2>
+<h2 id="the-final-mile-from-localhost-to-live">The Final Mile: From Localhost to Live</h2>
+<p>So far, our application has lived exclusively on our local machine. It's fast, it's responsive, and it works perfectly... for an audience of one. The ultimate goal of web development is to share our creations with the world. This chapter is about crossing that final mile: deploying our Next.js application and ensuring it performs exceptionally for every user, everywhere.</p>
+<p>We'll begin with the simplest, most integrated deployment experience for Next.js: Vercel. Vercel is the company behind Next.js, and their platform is purpose-built to host Next.js applications, offering a seamless "it just works" experience.</p>
+<h3 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h3>
+<p>To explore deployment and performance, we need an application to work with. Let's build a simple "DevProfile Showcase" app. It will display a developer's profile picture, a short bio, and a list of projects fetched from a mock API.</p>
+<p>This initial version will be functional but deeply flawed from a performance and security perspective. These flaws are intentional; they will serve as the problems we will diagnose and solve throughout this chapter.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">src</span><span class="o">/</span>
+├──<span class="w"> </span><span class="nv">app</span><span class="o">/</span>
+│<span class="w">   </span>├──<span class="w"> </span><span class="nv">api</span><span class="o">/</span>
+│<span class="w">   </span>│<span class="w">   </span>└──<span class="w"> </span><span class="nv">projects</span><span class="o">/</span>
+│<span class="w">   </span>│<span class="w">       </span>└──<span class="w"> </span><span class="nv">route</span>.<span class="nv">ts</span><span class="w">  </span><span class="o">&lt;--</span><span class="w"> </span><span class="nv">Mock</span><span class="w"> </span><span class="nv">API</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">projects</span>
+│<span class="w">   </span>├──<span class="w"> </span><span class="nv">globals</span>.<span class="nv">css</span>
+│<span class="w">   </span>├──<span class="w"> </span><span class="nv">layout</span>.<span class="nv">tsx</span>
+│<span class="w">   </span>└──<span class="w"> </span><span class="nv">page</span>.<span class="nv">tsx</span><span class="w">        </span><span class="o">&lt;--</span><span class="w"> </span><span class="nv">Our</span><span class="w"> </span><span class="nv">reference</span><span class="w"> </span><span class="nv">component</span>
+└──<span class="w"> </span><span class="nv">public</span><span class="o">/</span>
+<span class="w">    </span>└──<span class="w"> </span><span class="nv">avatar</span>.<span class="nv">jpg</span><span class="w">      </span><span class="o">&lt;--</span><span class="w"> </span><span class="nv">A</span><span class="w"> </span><span class="nv">large</span>,<span class="w"> </span><span class="nv">unoptimized</span><span class="w"> </span><span class="nv">image</span>
+</code></pre></div>
+
+<p>First, let's create the main page component. It fetches user data and projects, and displays them. Notice the intentional problems: a hardcoded API key and a standard <code>&lt;img&gt;</code> tag.</p>
+<h2 id="environment-variables-and-secrets">Environment variables and secrets</h2>
+<h2 id="iteration-1-securing-our-secrets">Iteration 1: Securing Our Secrets</h2>
+<p>Our application is live, but it has a critical security vulnerability. We've committed a secret API key directly into our source code.</p>
+<h3 id="current-limitation-exposed-api-key">Current Limitation: Exposed API Key</h3>
+<p>Anyone with access to our GitHub repository can see our <code>secret-api-key-do-not-commit</code>. If this were a real key for a paid service (like a database, payment gateway, or AI API), this would be a catastrophic leak, potentially leading to abuse and financial loss.</p>
+<h3 id="failure-demonstration-the-evidence-in-plain-sight">Failure Demonstration: The Evidence in Plain Sight</h3>
+<p>The failure isn't a runtime error; it's a security flaw.</p>
+<p><strong>Diagnostic Analysis: Reading the Failure</strong></p>
+<p><strong>Code Repository Evidence</strong>:
+-   File: <code>src/app/page.tsx</code>
+-   Line: <code>const apiKey = 'secret-api-key-do-not-commit';</code>
+-   File: <code>src/app/api/projects/route.ts</code>
+-   Line: <code>if (authHeader !== 'Bearer secret-api-key-do-not-commit')</code></p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: The site works perfectly. There is no visible error. This is what makes security flaws so insidious.</p>
+</li>
+<li>
+<p><strong>What the repository reveals</strong>: The secret is stored in plain text and is part of the Git history. Even if we remove it now, it remains in past commits unless we rewrite the history.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: We have mixed configuration/secrets (the API key) with application code.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: Code committed to a public repository is, by definition, public. We cannot store private information there.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A mechanism to provide secret values to our application <em>at runtime</em> in the deployment environment, without ever storing them in the source code. This mechanism is <strong>environment variables</strong>.</p>
+</li>
+</ol>
+<h3 id="technique-introduced-environment-variables">Technique Introduced: Environment Variables</h3>
+<p>Environment variables are values that exist outside your application's code, provided by the operating system or hosting environment (like Vercel). Next.js has built-in support for them via <code>.env</code> files for local development and a UI for production environments.</p>
+<p>There are two types of environment variables in Next.js:</p>
+<ol>
+<li><strong>Server-Side</strong>: Accessible only in server-side code (Server Components, API routes, <code>getStaticProps</code>, etc.). These are the default. Example: <code>DATABASE_URL</code>, <code>API_KEY</code>.</li>
+<li><strong>Client-Side (Public)</strong>: Accessible in browser-facing code. These <strong>must</strong> be prefixed with <code>NEXT_PUBLIC_</code>. Example: <code>NEXT_PUBLIC_GOOGLE_ANALYTICS_ID</code>.</li>
+</ol>
+<h3 id="solution-implementation-using-environment-variables">Solution Implementation: Using Environment Variables</h3>
+<p>Let's fix our security flaw.</p>
+<h4 id="step-1-create-envlocal-for-local-development">Step 1: Create <code>.env.local</code> for Local Development</h4>
+<p>Create a new file at the root of your project called <code>.env.local</code>. This file should be added to <code>.gitignore</code> immediately to prevent it from ever being committed.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># .gitignore</span>
+<span class="c1"># ... other entries</span>
+.env.local
+</code></pre></div>
+
+<p>Now, add your secret to this file.</p>
+<div class="codehilite"><pre><span></span><code># .env.local
+PROJECTS_API_KEY=&quot;secret-api-key-do-not-commit&quot;
+</code></pre></div>
+
+<h4 id="step-2-update-the-code">Step 2: Update the Code</h4>
+<p>Now, we'll refactor our code to read from <code>process.env</code>.</p>
+<p><strong>Before</strong> (Iteration 0):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx (snippet)</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getProjects</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// DANGER: Hardcoded secret API key!</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">apiKey</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;secret-api-key-do-not-commit&#39;</span><span class="p">;</span><span class="w"> </span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="nx">projectsUrl</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">headers</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s1">&#39;Authorization&#39;</span><span class="o">:</span><span class="w"> </span><span class="sb">`Bearer </span><span class="si">${</span><span class="nx">apiKey</span><span class="si">}</span><span class="sb">`</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/api/projects/route.ts (snippet)</span>
+<span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">GET</span><span class="p">(</span><span class="nx">request</span><span class="o">:</span><span class="w"> </span><span class="kt">Request</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">authHeader</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s1">&#39;Bearer secret-api-key-do-not-commit&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">NextResponse</span><span class="p">.</span><span class="nx">json</span><span class="p">({</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Unauthorized&#39;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">status</span><span class="o">:</span><span class="w"> </span><span class="kt">401</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 1):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx (snippet)</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getProjects</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ✅ Reading from environment variable</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">apiKey</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">PROJECTS_API_KEY</span><span class="p">;</span><span class="w"> </span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="nx">projectsUrl</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">headers</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s1">&#39;Authorization&#39;</span><span class="o">:</span><span class="w"> </span><span class="sb">`Bearer </span><span class="si">${</span><span class="nx">apiKey</span><span class="si">}</span><span class="sb">`</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/api/projects/route.ts (snippet)</span>
+<span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">GET</span><span class="p">(</span><span class="nx">request</span><span class="o">:</span><span class="w"> </span><span class="kt">Request</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">authHeader</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">request</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">apiKey</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">PROJECTS_API_KEY</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">authHeader</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="sb">`Bearer </span><span class="si">${</span><span class="nx">apiKey</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">NextResponse</span><span class="p">.</span><span class="nx">json</span><span class="p">({</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Unauthorized&#39;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">status</span><span class="o">:</span><span class="w"> </span><span class="kt">401</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">NextResponse</span><span class="p">.</span><span class="nx">json</span><span class="p">(</span><span class="nx">projects</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>After making these changes, you must <strong>restart your local development server</strong> for Next.js to pick up the new variables from <code>.env.local</code>.</p>
+<h4 id="step-3-add-environment-variables-to-vercel">Step 3: Add Environment Variables to Vercel</h4>
+<p>Our code is fixed, but if we deploy it now, it will fail. Vercel doesn't have our <code>.env.local</code> file (because it's in <code>.gitignore</code>), so <code>process.env.PROJECTS_API_KEY</code> will be <code>undefined</code>.</p>
+<ol>
+<li>Go to your project's dashboard on Vercel.</li>
+<li>Click the "Settings" tab.</li>
+<li>In the side menu, click "Environment Variables".</li>
+<li>Add a new variable:<ul>
+<li><strong>Name</strong>: <code>PROJECTS_API_KEY</code></li>
+<li><strong>Value</strong>: <code>secret-api-key-do-not-commit</code></li>
+</ul>
+</li>
+<li>Ensure it's set for "Production", "Preview", and "Development" environments.</li>
+<li>Click "Save".</li>
+</ol>
+<h4 id="step-4-redeploy">Step 4: Redeploy</h4>
+<p>Commit your code changes and push them to GitHub.</p>
+<div class="codehilite"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: Use environment variables for API key&quot;</span>
+git<span class="w"> </span>push
+</code></pre></div>
+
+<p>Vercel will automatically detect the push and start a new deployment. This new build will have access to the environment variable you just configured.</p>
+<h3 id="verification">Verification</h3>
+<p>Visit your deployed URL. The site should function exactly as before. The project list loads correctly.</p>
+<p><strong>Expected vs. Actual Improvement</strong>:
+-   <strong>Expected</strong>: The application continues to function, but the secret API key is no longer visible in the source code.
+-   <strong>Actual</strong>: The application works, and checking the source code on GitHub confirms the key is gone, replaced by <code>process.env.PROJECTS_API_KEY</code>. Our application is now secure.</p>
+<h3 id="limitation-preview">Limitation Preview</h3>
+<p>Our app is secure, but it's slow. The large profile picture takes a long time to load, causing a poor user experience and hurting our performance scores. Next, we'll tackle image optimization.</p>
+<h2 id="image-optimization-with-nextimage">Image optimization with next/image</h2>
+<h2 id="iteration-2-taming-the-image-beast">Iteration 2: Taming the Image Beast</h2>
+<p>Our "DevProfile Showcase" app is secure, but it's not performant. The most glaring issue is the large, unoptimized avatar image. On a slow connection, users will see a blank space for seconds before the image appears, and the layout might shift once it does.</p>
+<h3 id="current-limitation-unoptimized-images">Current Limitation: Unoptimized Images</h3>
+<p>We are using a standard <code>&lt;img&gt;</code> tag to serve a high-resolution JPEG file directly from our <code>/public</code> folder. This is inefficient for several reasons:
+*   <strong>File Size</strong>: The browser is forced to download the full, multi-megabyte image, even if it's only displayed in a 150x150 pixel space.
+*   <strong>Format</strong>: We're using JPEG, but modern formats like WebP or AVIF offer better compression at higher quality.
+*   <strong>Layout Shift</strong>: Without explicit sizing placeholders, the page layout can reflow as the image loads, creating a jarring user experience. This is measured by the Core Web Vital metric <strong>Cumulative Layout Shift (CLS)</strong>.
+*   <strong>Loading Strategy</strong>: The image is loaded immediately, even if it's off-screen, which can slow down the initial page render.</p>
+<h3 id="failure-demonstration-the-performance-report-card">Failure Demonstration: The Performance Report Card</h3>
+<p>Let's use Chrome DevTools to diagnose the problem on our live Vercel deployment.</p>
+<ol>
+<li>Open your deployed site in an incognito window.</li>
+<li>Open DevTools (<code>Cmd+Opt+I</code> or <code>Ctrl+Shift+I</code>).</li>
+<li>Go to the <strong>Lighthouse</strong> tab.</li>
+<li>Select "Performance" and "Desktop" (or "Mobile" for a stricter test).</li>
+<li>Click "Analyze page load".</li>
+</ol>
+<p><strong>Diagnostic Analysis: Reading the Failure</strong></p>
+<p><strong>Lighthouse Report Evidence</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">Performance</span><span class="o">:</span><span class="w"> </span><span class="mi">65</span><span class="w"> </span><span class="o">(</span><span class="n">example</span><span class="w"> </span><span class="n">score</span><span class="o">)</span>
+
+<span class="n">Opportunities</span><span class="o">:</span>
+<span class="o">-</span><span class="w"> </span><span class="n">Serve</span><span class="w"> </span><span class="n">images</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">next</span><span class="o">-</span><span class="n">gen</span><span class="w"> </span><span class="n">formats</span><span class="o">:</span><span class="w"> </span><span class="n">Potential</span><span class="w"> </span><span class="n">savings</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="mf">1.8</span><span class="w"> </span><span class="n">MB</span>
+<span class="o">-</span><span class="w"> </span><span class="n">Properly</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="n">images</span><span class="o">:</span><span class="w"> </span><span class="n">Potential</span><span class="w"> </span><span class="n">savings</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="mf">1.5</span><span class="w"> </span><span class="n">MB</span>
+<span class="o">-</span><span class="w"> </span><span class="n">Defer</span><span class="w"> </span><span class="n">offscreen</span><span class="w"> </span><span class="n">images</span>
+
+<span class="n">Diagnostics</span><span class="o">:</span>
+<span class="o">-</span><span class="w"> </span><span class="n">Largest</span><span class="w"> </span><span class="n">Contentful</span><span class="w"> </span><span class="n">Paint</span><span class="w"> </span><span class="n">element</span><span class="o">:</span><span class="w"> </span><span class="o">&lt;</span><span class="n">img</span><span class="o">&gt;</span><span class="w"> </span><span class="o">(</span><span class="mf">4.2</span><span class="n">s</span><span class="o">)</span>
+<span class="o">-</span><span class="w"> </span><span class="n">Avoid</span><span class="w"> </span><span class="n">large</span><span class="w"> </span><span class="n">layout</span><span class="w"> </span><span class="n">shifts</span><span class="o">:</span><span class="w"> </span><span class="n">Cumulative</span><span class="w"> </span><span class="n">Layout</span><span class="w"> </span><span class="n">Shift</span><span class="w"> </span><span class="n">score</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="mf">0.15</span>
+</code></pre></div>
+
+<p><strong>Browser DevTools - Network Tab Analysis</strong>:
+-   Filter: Img
+-   Observation: <code>avatar.jpg</code> is 2.1MB.
+-   Timing: Takes 3.5s to load on a "Fast 3G" connection.
+-   Waterfall: The image download blocks or delays other resources.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: The page loads, but the spot for the avatar is empty for several seconds. When the image finally appears, the text below it jumps down.</p>
+</li>
+<li>
+<p><strong>What the Lighthouse report reveals</strong>: Our performance score is poor. It explicitly tells us to use better formats and resize the image. Our <strong>Largest Contentful Paint (LCP)</strong> is high because the largest element (the avatar) takes a long time to load. Our <strong>Cumulative Layout Shift (CLS)</strong> is also poor because of the layout jump.</p>
+</li>
+<li>
+<p><strong>What the Network tab shows</strong>: The raw data confirms the diagnosis. We are sending a massive 2.1MB file when a file of a few kilobytes would suffice.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: We are serving a raw, unoptimized image asset without any modern performance considerations.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A component that automates image optimization: resizing, format conversion, lazy loading, and preventing layout shift.</p>
+</li>
+</ol>
+<h3 id="technique-introduced-the-nextimage-component">Technique Introduced: The <code>next/image</code> Component</h3>
+<p>Next.js provides a powerful, built-in solution: the <code>&lt;Image&gt;</code> component from <code>next/image</code>. It's a drop-in replacement for the <code>&lt;img&gt;</code> tag that solves all our problems automatically:</p>
+<ul>
+<li><strong>Resizing</strong>: Serves smaller, appropriately-sized images based on the device's viewport.</li>
+<li><strong>Optimization</strong>: Automatically converts images to modern, efficient formats like WebP on-the-fly.</li>
+<li><strong>CLS Prevention</strong>: Requires <code>width</code> and <code>height</code> props to automatically reserve space for the image before it loads, preventing layout shift.</li>
+<li><strong>Lazy Loading</strong>: Images are loaded by default only when they enter the viewport. You can mark critical images (like our avatar) for priority loading.</li>
+</ul>
+<h3 id="solution-implementation-replacing-img-with-image">Solution Implementation: Replacing <code>&lt;img&gt;</code> with <code>&lt;Image&gt;</code></h3>
+<p>The change is minimal but impactful.</p>
+<p><strong>Before</strong> (Iteration 1):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx (snippet)</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">promises</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">fs</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;fs&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">path</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;path&#39;</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">getUserData</span><span class="p">();</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;container&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">header</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;profile-header&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* PROBLEM: Using a standard, unoptimized img tag */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">img</span><span class="w"> </span>
+<span class="w">          </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">}</span><span class="w"> </span>
+<span class="w">          </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="sb">`</span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="si">}</span><span class="sb">&#39;s avatar`</span><span class="p">}</span>
+<span class="w">          </span><span class="na">width</span><span class="o">=</span><span class="p">{</span><span class="mf">150</span><span class="p">}</span><span class="w"> </span>
+<span class="w">          </span><span class="na">height</span><span class="o">=</span><span class="p">{</span><span class="mf">150</span><span class="p">}</span>
+<span class="w">          </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;avatar&quot;</span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">header</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 2):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx (snippet)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Image</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/image&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// ← Import the component</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">promises</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">fs</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;fs&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">path</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;path&#39;</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">getUserData</span><span class="p">();</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;container&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">header</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;profile-header&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* ✅ SOLUTION: Using the next/image component */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Image</span>
+<span class="w">          </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">}</span>
+<span class="w">          </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="sb">`</span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="si">}</span><span class="sb">&#39;s avatar`</span><span class="p">}</span>
+<span class="w">          </span><span class="na">width</span><span class="o">=</span><span class="p">{</span><span class="mf">150</span><span class="p">}</span>
+<span class="w">          </span><span class="na">height</span><span class="o">=</span><span class="p">{</span><span class="mf">150</span><span class="p">}</span>
+<span class="w">          </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;avatar&quot;</span>
+<span class="w">          </span><span class="na">priority</span><span class="w"> </span><span class="err">//</span><span class="w"> </span><span class="err">←</span><span class="w"> </span><span class="na">Tell</span><span class="w"> </span><span class="na">Next.js</span><span class="w"> </span><span class="na">to</span><span class="w"> </span><span class="na">load</span><span class="w"> </span><span class="na">this</span><span class="w"> </span><span class="na">critical</span><span class="w"> </span><span class="na">image</span><span class="w"> </span><span class="na">ASAP</span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">header</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>We've made two changes:
+1.  Imported <code>Image</code> from <code>next/image</code> and replaced the <code>&lt;img&gt;</code> tag.
+2.  Added the <code>priority</code> prop. Since this avatar is "above the fold" (visible on initial load), this tells Next.js to preload it, which improves our LCP score.</p>
+<p>Commit and push this change. Vercel will redeploy automatically.</p>
+<h3 id="verification_1">Verification</h3>
+<p>Let's re-run our analysis on the newly deployed site.</p>
+<p><strong>Lighthouse Report Evidence (After)</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">Performance</span><span class="o">:</span><span class="w"> </span><span class="mi">98</span><span class="w"> </span><span class="o">(</span><span class="n">example</span><span class="w"> </span><span class="n">score</span><span class="o">)</span>
+
+<span class="n">Opportunities</span><span class="o">:</span>
+<span class="o">-</span><span class="w"> </span><span class="o">(</span><span class="n">All</span><span class="w"> </span><span class="n">image</span><span class="o">-</span><span class="n">related</span><span class="w"> </span><span class="n">opportunities</span><span class="w"> </span><span class="n">are</span><span class="w"> </span><span class="n">gone</span><span class="o">)</span>
+
+<span class="n">Diagnostics</span><span class="o">:</span>
+<span class="o">-</span><span class="w"> </span><span class="n">Largest</span><span class="w"> </span><span class="n">Contentful</span><span class="w"> </span><span class="n">Paint</span><span class="w"> </span><span class="n">element</span><span class="o">:</span><span class="w"> </span><span class="o">&lt;</span><span class="n">Image</span><span class="o">&gt;</span><span class="w"> </span><span class="o">(</span><span class="mf">1.1</span><span class="n">s</span><span class="o">)</span>
+<span class="o">-</span><span class="w"> </span><span class="n">Avoid</span><span class="w"> </span><span class="n">large</span><span class="w"> </span><span class="n">layout</span><span class="w"> </span><span class="n">shifts</span><span class="o">:</span><span class="w"> </span><span class="n">Cumulative</span><span class="w"> </span><span class="n">Layout</span><span class="w"> </span><span class="n">Shift</span><span class="w"> </span><span class="n">score</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="mi">0</span>
+</code></pre></div>
+
+<p><strong>Browser DevTools - Network Tab Analysis (After)</strong>:
+-   Filter: Img
+-   Observation: A request is made for <code>/_next/image?url=%2Favatar.jpg&amp;w=384&amp;q=75</code>. The response is a <code>.webp</code> file.
+-   File Size: 35KB (down from 2.1MB!)
+-   Timing: Loads in 250ms on a "Fast 3G" connection.</p>
+<p><strong>Expected vs. Actual Improvement</strong>:
+-   <strong>Expected</strong>: The image should load faster and the performance scores should improve.
+-   <strong>Actual</strong>: The improvements are dramatic. The image is now served as a tiny, next-gen WebP file. Our LCP is 4x faster, our CLS is eliminated, and our overall performance score is in the green. The user experience is significantly better.</p>
+<h3 id="limitation-preview_1">Limitation Preview</h3>
+<p>Our images are optimized, but what about our code? Large JavaScript bundles can make a site feel sluggish and unresponsive, even if it looks like it loaded quickly. Next, we'll analyze our JavaScript bundle and trim the fat.</p>
+<h2 id="bundle-analysis-and-core-web-vitals">Bundle analysis and Core Web Vitals</h2>
+<h2 id="iteration-3-analyzing-the-javascript-bundle">Iteration 3: Analyzing the JavaScript Bundle</h2>
+<p>Our app feels faster now that the images are optimized. However, another major factor in web performance is the size of the JavaScript bundle that a user must download, parse, and execute. Large bundles can lead to long interaction delays, measured by the Core Web Vital <strong>Total Blocking Time (TBT)</strong> or its field equivalent, <strong>First Input Delay (FID)</strong>.</p>
+<h3 id="current-limitation-bloated-dependencies">Current Limitation: Bloated Dependencies</h3>
+<p>To demonstrate this, let's introduce a notoriously large library into our project: <code>moment.js</code>. It's a powerful date/time library, but it's large and not tree-shakeable, making it a common cause of bundle bloat.</p>
+<p>Let's add a "Member Since" date to our profile page using <code>moment</code>.</p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>moment
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx (updated)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Image</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/image&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">promises</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">fs</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;fs&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">path</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;path&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">moment</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;moment&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// ← PROBLEM: Importing a large library</span>
+
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getUserData</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Alex Doe&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A full-stack developer...&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">avatarUrl</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;/avatar.jpg&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">joinDate</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2021-08-15T12:00:00Z&#39;</span><span class="p">,</span><span class="w"> </span><span class="c1">// ← Add join date</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="p">}</span>
+<span class="c1">// ... (getProjects remains the same)</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">getUserData</span><span class="p">();</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">projects</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">getProjects</span><span class="p">();</span>
+
+<span class="w">  </span><span class="c1">// Format the date using moment.js</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">memberSince</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">moment</span><span class="p">(</span><span class="nx">user</span><span class="p">.</span><span class="nx">joinDate</span><span class="p">).</span><span class="nx">format</span><span class="p">(</span><span class="s1">&#39;MMMM YYYY&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;container&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">header</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;profile-header&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Image</span>
+<span class="w">          </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">}</span>
+<span class="w">          </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="sb">`</span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="si">}</span><span class="sb">&#39;s avatar`</span><span class="p">}</span>
+<span class="w">          </span><span class="na">width</span><span class="o">=</span><span class="p">{</span><span class="mf">150</span><span class="p">}</span>
+<span class="w">          </span><span class="na">height</span><span class="o">=</span><span class="p">{</span><span class="mf">150</span><span class="p">}</span>
+<span class="w">          </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;avatar&quot;</span>
+<span class="w">          </span><span class="na">priority</span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Member</span><span class="w"> </span><span class="nx">since</span><span class="w"> </span><span class="p">{</span><span class="nx">memberSince</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span><span class="cm">/* ← Display formatted date */</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">bio</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">header</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Commit and push this change. The site will still work, but we've unknowingly introduced a performance bottleneck.</p>
+<h3 id="failure-demonstration-the-invisible-weight">Failure Demonstration: The Invisible Weight</h3>
+<p>The "failure" here is subtle. The site might not feel dramatically slower on a fast developer machine, but users on average devices or slower networks will feel it.</p>
+<p><strong>Diagnostic Analysis: Reading the Failure</strong></p>
+<p><strong>Lighthouse Report Evidence</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">Performance</span><span class="o">:</span><span class="w"> </span><span class="mi">85</span><span class="w"> </span><span class="o">(</span><span class="n">down</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="mi">98</span><span class="o">)</span>
+
+<span class="n">Opportunities</span><span class="o">:</span>
+<span class="o">-</span><span class="w"> </span><span class="n">Reduce</span><span class="w"> </span><span class="n">unused</span><span class="w"> </span><span class="n">JavaScript</span>
+<span class="o">-</span><span class="w"> </span><span class="n">Minimize</span><span class="w"> </span><span class="n">main</span><span class="o">-</span><span class="n">thread</span><span class="w"> </span><span class="n">work</span>
+
+<span class="n">Diagnostics</span><span class="o">:</span>
+<span class="o">-</span><span class="w"> </span><span class="n">Total</span><span class="w"> </span><span class="n">Blocking</span><span class="w"> </span><span class="n">Time</span><span class="o">:</span><span class="w"> </span><span class="mi">350</span><span class="n">ms</span><span class="w"> </span><span class="o">(</span><span class="n">previously</span><span class="w"> </span><span class="o">~</span><span class="mi">50</span><span class="n">ms</span><span class="o">)</span>
+</code></pre></div>
+
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: The page appears quickly, but if they try to click or interact with something immediately, there might be a noticeable delay. The page feels "janky".</p>
+</li>
+<li>
+<p><strong>What the Lighthouse report reveals</strong>: Our TBT has skyrocketed. This metric measures how long the main thread was blocked, preventing user interaction. The report suggests we are shipping JavaScript that isn't being used.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: We've added a large, monolithic library to our application for a very small task (date formatting). The entire library is being added to our JavaScript bundle.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A tool to visualize what's inside our JavaScript bundle so we can identify the largest contributors and find alternatives.</p>
+</li>
+</ol>
+<h3 id="technique-introduced-bundle-analysis-with-nextbundle-analyzer">Technique Introduced: Bundle Analysis with <code>@next/bundle-analyzer</code></h3>
+<p>Next.js can be configured to generate a visual report of your application's bundles. This allows you to see exactly which packages are taking up the most space.</p>
+<h4 id="step-1-install-the-analyzer">Step 1: Install the Analyzer</h4>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>@next/bundle-analyzer<span class="w"> </span>--save-dev
+</code></pre></div>
+
+<h4 id="step-2-configure-nextconfigjs">Step 2: Configure <code>next.config.js</code></h4>
+<p>Update your <code>next.config.js</code> file to enable the analyzer when a specific environment variable is set.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// next.config.js</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">withBundleAnalyzer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s1">&#39;@next/bundle-analyzer&#39;</span><span class="p">)({</span>
+<span class="w">  </span><span class="nx">enabled</span><span class="o">:</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">ANALYZE</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;true&#39;</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="cm">/** @type {import(&#39;next&#39;).NextConfig} */</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">nextConfig</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Your existing config can go here</span>
+<span class="p">};</span>
+
+<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">withBundleAnalyzer</span><span class="p">(</span><span class="nx">nextConfig</span><span class="p">);</span>
+</code></pre></div>
+
+<h4 id="step-3-run-the-build-with-analysis">Step 3: Run the Build with Analysis</h4>
+<p>Now, run your build command with the <code>ANALYZE</code> variable set to <code>true</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">ANALYZE</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>build
+</code></pre></div>
+
+<p>This will perform the standard Next.js build and then open two HTML files in your browser: <code>client.html</code> and <code>server.html</code>. We are most concerned with <code>client.html</code>, which shows the JavaScript sent to the browser.</p>
+<p>You will see a treemap visualization. The largest rectangle is <code>moment.js</code>, confirming our diagnosis. It's taking up a significant portion of the bundle.</p>
+<h3 id="solution-implementation-replacing-the-heavy-dependency">Solution Implementation: Replacing the Heavy Dependency</h3>
+<p>The solution is to replace <code>moment.js</code> with a lighter, more modern alternative like <code>date-fns</code> or <code>dayjs</code>. These libraries are modular, so you only import the functions you need. Let's use <code>date-fns</code>.</p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>uninstall<span class="w"> </span>moment
+npm<span class="w"> </span>install<span class="w"> </span>date-fns
+</code></pre></div>
+
+<p>Now, update the code to use <code>date-fns</code>.</p>
+<p><strong>Before</strong> (Iteration 2):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx (snippet)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">moment</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;moment&#39;</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">memberSince</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">moment</span><span class="p">(</span><span class="nx">user</span><span class="p">.</span><span class="nx">joinDate</span><span class="p">).</span><span class="nx">format</span><span class="p">(</span><span class="s1">&#39;MMMM YYYY&#39;</span><span class="p">);</span>
+<span class="c1">// ...</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 3):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx (snippet)</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">format</span><span class="p">,</span><span class="w"> </span><span class="nx">parseISO</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;date-fns&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// ← Import specific functions</span>
+
+<span class="c1">// ...</span>
+<span class="c1">// Format the date using date-fns</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">memberSince</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">format</span><span class="p">(</span><span class="nx">parseISO</span><span class="p">(</span><span class="nx">user</span><span class="p">.</span><span class="nx">joinDate</span><span class="p">),</span><span class="w"> </span><span class="s1">&#39;MMMM yyyy&#39;</span><span class="p">);</span>
+<span class="c1">// ...</span>
+</code></pre></div>
+
+<h3 id="verification_2">Verification</h3>
+<p>Let's re-run the bundle analyzer.</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">ANALYZE</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>build
+</code></pre></div>
+
+<p>In the new <code>client.html</code> report, the giant <code>moment.js</code> block is gone, replaced by a tiny sliver representing the <code>format</code> and <code>parseISO</code> functions from <code>date-fns</code>.</p>
+<p><strong>Performance Metrics</strong>:
+-   <strong>Before</strong>:
+    -   Page Bundle Size (JS): ~250KB (gzipped)
+    -   TBT: 350ms
+-   <strong>After</strong>:
+    -   Page Bundle Size (JS): ~80KB (gzipped) (68% reduction)
+    -   TBT: 45ms (87% improvement)</p>
+<p>Commit and push the changes. A new Lighthouse report on the deployed site will confirm the improved TBT score.</p>
+<h3 id="core-web-vitals-a-quick-review">Core Web Vitals: A Quick Review</h3>
+<p>Throughout these optimizations, we've directly improved all three Core Web Vitals:
+1.  <strong>Largest Contentful Paint (LCP)</strong>: Improved by using <code>next/image</code> with the <code>priority</code> prop.
+2.  <strong>Cumulative Layout Shift (CLS)</strong>: Eliminated by providing <code>width</code> and <code>height</code> to <code>next/image</code>, which prevents content from jumping.
+3.  <strong>First Input Delay (FID) / Total Blocking Time (TBT)</strong>: Improved by reducing the JavaScript bundle size, which frees up the main thread for user interaction.</p>
+<h2 id="edge-runtime-vs-nodejs-runtime">Edge runtime vs. Node.js runtime</h2>
+<h2 id="iteration-4-choosing-the-right-runtime">Iteration 4: Choosing the Right Runtime</h2>
+<p>Our application's frontend is now highly optimized. The final frontier for performance is the backend: the code that runs on the server to fetch data and render pages. In Next.js, this code can run in one of two environments: the <strong>Node.js runtime</strong> or the <strong>Edge runtime</strong>.</p>
+<h3 id="current-state-recap">Current State Recap</h3>
+<p>By default, all our server-side code (Server Components, API routes) runs in the Node.js runtime. This is a robust, full-featured environment that is hosted in a single region (e.g., <code>us-east-1</code>). When a user from Japan requests our page, their request must travel all the way to the US East server and back. This travel time is called <strong>latency</strong>.</p>
+<h3 id="new-scenario-minimizing-global-latency">New Scenario: Minimizing Global Latency</h3>
+<p>What if we want our site to feel just as fast for a user in Tokyo as it does for a user in New York? We need to reduce latency by running our code closer to the user. This is precisely what the Edge runtime is for.</p>
+<h3 id="technique-introduced-the-edge-runtime">Technique Introduced: The Edge Runtime</h3>
+<p>The Edge runtime is a lightweight JavaScript execution environment based on V8 isolates (the same technology behind Chrome). It's designed to be deployed globally across a content delivery network (CDN).</p>
+<p>When you deploy a function to the Edge:
+*   Your code is replicated in dozens of locations around the world.
+*   When a user makes a request, it's automatically routed to the nearest physical server.
+*   This dramatically reduces latency, resulting in faster data fetching and page loads for a global audience.</p>
+<p><strong>Trade-offs</strong>: The Edge runtime is not a full Node.js environment. It's a subset of web APIs and does not support native Node.js APIs like <code>fs</code> (filesystem access) or many database drivers that rely on them.</p>
+<h3 id="solution-implementation-opting-into-the-edge-runtime">Solution Implementation: Opting into the Edge Runtime</h3>
+<p>Let's convert our mock API route to run on the Edge. The change is a single line of code.</p>
+<p><strong>Before</strong> (Iteration 3 - Node.js Runtime):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/api/projects/route.ts</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">NextResponse</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/server&#39;</span><span class="p">;</span>
+
+<span class="c1">// No runtime specified, defaults to &#39;nodejs&#39;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">projects</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">];</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">GET</span><span class="p">(</span><span class="nx">request</span><span class="o">:</span><span class="w"> </span><span class="kt">Request</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">authHeader</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">request</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">apiKey</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">PROJECTS_API_KEY</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">authHeader</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="sb">`Bearer </span><span class="si">${</span><span class="nx">apiKey</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">NextResponse</span><span class="p">.</span><span class="nx">json</span><span class="p">({</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Unauthorized&#39;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">status</span><span class="o">:</span><span class="w"> </span><span class="kt">401</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">NextResponse</span><span class="p">.</span><span class="nx">json</span><span class="p">(</span><span class="nx">projects</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 4 - Edge Runtime):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/api/projects/route.ts</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">NextResponse</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/server&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">runtime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;edge&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// ← Opt into the Edge runtime</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">projects</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">];</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">GET</span><span class="p">(</span><span class="nx">request</span><span class="o">:</span><span class="w"> </span><span class="kt">Request</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">authHeader</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">request</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">apiKey</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">PROJECTS_API_KEY</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">authHeader</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="sb">`Bearer </span><span class="si">${</span><span class="nx">apiKey</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">NextResponse</span><span class="p">.</span><span class="nx">json</span><span class="p">({</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Unauthorized&#39;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">status</span><span class="o">:</span><span class="w"> </span><span class="kt">401</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">NextResponse</span><span class="p">.</span><span class="nx">json</span><span class="p">(</span><span class="nx">projects</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>By adding <code>export const runtime = 'edge'</code>, we've instructed Next.js and Vercel to deploy this API route as a globally distributed Edge Function.</p>
+<h3 id="verification_3">Verification</h3>
+<p>The functional behavior of the API will not change. The improvement is in non-functional performance (latency).</p>
+<p>On Vercel, you can verify this:
+1.  Go to your project dashboard and click the "Functions" tab.
+2.  You will see the <code>/api/projects</code> function listed.
+3.  The "Runtime" column will now say "Edge" instead of the region name (e.g., "IAD1" for Washington, D.C.).</p>
+<p>This confirms the function is deployed globally. A user in Europe will now hit a server in Frankfurt or London instead of one in the US, receiving their data much faster.</p>
+<h3 id="when-to-apply-this-solution-a-decision-framework">When to Apply This Solution: A Decision Framework</h3>
+<p>Choosing a runtime is a key architectural decision.</p>
+<table>
+<thead>
+<tr>
+<th>Feature / Use Case</th>
+<th>Choose Edge Runtime</th>
+<th>Choose Node.js Runtime</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Primary Goal</strong></td>
+<td>Lowest possible latency for a global audience.</td>
+<td>Maximum compatibility and computational power.</td>
+</tr>
+<tr>
+<td><strong>Typical Tasks</strong></td>
+<td>API routes, middleware, personalization, A/B testing, streaming responses.</td>
+<td>Complex data processing, database connections (with traditional drivers), file system access.</td>
+</tr>
+<tr>
+<td><strong>API Support</strong></td>
+<td>Subset of Web APIs (<code>fetch</code>, <code>Request</code>, <code>Response</code>). No native Node.js APIs.</td>
+<td>Full Node.js API support (<code>fs</code>, <code>path</code>, <code>crypto</code>, etc.).</td>
+</tr>
+<tr>
+<td><strong>Cold Starts</strong></td>
+<td>Extremely fast (near zero).</td>
+<td>Can be slower (hundreds of milliseconds).</td>
+</tr>
+<tr>
+<td><strong>Database Connections</strong></td>
+<td>Requires a database provider with a modern, HTTP-based driver (e.g., Neon, PlanetScale).</td>
+<td>Compatible with any database that has a Node.js driver.</td>
+</tr>
+<tr>
+<td><strong>Example</strong></td>
+<td>A function that fetches user data from a serverless KV store and returns it.</td>
+<td>A function that generates a PDF report using a library that writes to a temp file.</td>
+</tr>
+</tbody>
+</table>
+<p>For our <code>HomePage</code> Server Component, which reads from the filesystem (<code>fs</code>) in our simulation, it <em>must</em> run in the Node.js runtime. Our API route, however, is a perfect candidate for the Edge as it's simple and benefits greatly from low latency.</p>
+<h2 id="synthesis-the-complete-journey">Synthesis: The Complete Journey</h2>
+<h2 id="the-journey-from-problem-to-solution">The Journey: From Problem to Solution</h2>
+<p>We took a simple, functional application and systematically hardened it for production. Each step addressed a specific failure mode, applying a targeted technique to improve security, performance, and user experience.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Iteration</th>
+<th style="text-align: left;">Failure Mode</th>
+<th style="text-align: left;">Technique Applied</th>
+<th style="text-align: left;">Result</th>
+<th style="text-align: left;">Performance Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">No live deployment; code is local only.</td>
+<td style="text-align: left;">Vercel Git Integration</td>
+<td style="text-align: left;">Application is live on a public URL.</td>
+<td style="text-align: left;">Baseline established.</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">API key exposed in public source code.</td>
+<td style="text-align: left;">Environment Variables</td>
+<td style="text-align: left;">Secrets are securely managed in the deployment environment.</td>
+<td style="text-align: left;">None (Security fix).</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Large, unoptimized images causing slow LCP and high CLS.</td>
+<td style="text-align: left;"><code>next/image</code> Component</td>
+<td style="text-align: left;">Images are resized, optimized, and served in modern formats.</td>
+<td style="text-align: left;">LCP, CLS dramatically improved. Image size reduced by &gt;95%.</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">Bloated JS bundle causing high TBT.</td>
+<td style="text-align: left;"><code>@next/bundle-analyzer</code>, Dependency Swap</td>
+<td style="text-align: left;">Identified and replaced heavy library with a lightweight alternative.</td>
+<td style="text-align: left;">TBT improved by &gt;80%. JS bundle size reduced by &gt;60%.</td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">High global latency for API requests.</td>
+<td style="text-align: left;">Edge Runtime</td>
+<td style="text-align: left;">API route is deployed globally, reducing latency for all users.</td>
+<td style="text-align: left;">Time To First Byte (TTFB) for API calls is minimized.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="final-implementation">Final Implementation</h3>
+<p>Here is the final, production-ready code for our main page, incorporating all our improvements.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:41:01 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

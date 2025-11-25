@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>20 Styling in Next.js</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">05 Next.js — Server-Side React</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-20-styling-in-nextjs">Chapter 20: Styling in Next.js</h1>
+<h2 id="tailwind-css-the-pragmatic-choice">Tailwind CSS: the pragmatic choice</h2>
+<h2 id="the-styling-challenge">The Styling Challenge</h2>
+<p>In modern web development, styling is more than just making things look good. It's about creating maintainable, scalable, and performant design systems. A poor styling strategy can lead to bloated CSS files, conflicting class names, and a frustrating developer experience.</p>
+<p>In this chapter, we'll explore the modern, pragmatic approach to styling in Next.js. We'll start with the industry standard, Tailwind CSS, and build upon it with other powerful tools.</p>
+<h3 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h3>
+<p>To ground our exploration, we'll build a single, realistic component: a <code>UserProfileCard</code>. We will evolve this component's styling throughout the chapter, demonstrating the pros and cons of each approach.</p>
+<p>Our starting point is a completely unstyled, functional React component. This is our "problem state."</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+└── app/
+    ├── components/
+    │   └── UserProfileCard.tsx  &lt;-- Our anchor component
+    └── page.tsx
+</code></pre></div>
+
+<p>Here is the initial, unstyled code.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">user</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">username</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nx">avatarUrl</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">stats</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">followers</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">      </span><span class="nx">following</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">img</span><span class="w"> </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">}</span><span class="w"> </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="sb">`</span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="si">}</span><span class="sb">&#39;s avatar`</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="err">@</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">username</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">bio</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">span</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">stats</span><span class="p">.</span><span class="nx">followers</span><span class="p">}&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">span</span><span class="p">&gt;</span><span class="nx">Followers</span><span class="p">&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">span</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">stats</span><span class="p">.</span><span class="nx">following</span><span class="p">}&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">span</span><span class="p">&gt;</span><span class="nx">Following</span><span class="p">&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="p">&gt;</span><span class="nx">Follow</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/UserProfileCard&#39;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">sampleUser</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Ada Lovelace&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">username</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;ada&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">avatarUrl</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;https://via.placeholder.com/150&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;The first computer programmer and an English mathematician and writer.&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">stats</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">followers</span><span class="o">:</span><span class="w"> </span><span class="kt">1815</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">following</span><span class="o">:</span><span class="w"> </span><span class="kt">10</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">UserProfileCard</span><span class="w"> </span><span class="na">user</span><span class="o">=</span><span class="p">{</span><span class="nx">sampleUser</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="diagnostic-analysis-reading-the-failure">Diagnostic Analysis: Reading the Failure</h3>
+<p>Running this code gives us a functional but visually unappealing result.</p>
+<p><strong>Browser Behavior</strong>:
+The browser displays a jumble of unstyled HTML elements. The image is too large, the text has no hierarchy, and the layout is a simple vertical stack. It's technically working, but it's not a usable UI.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: A raw, unformatted page that looks broken.</li>
+<li><strong>What the console reveals</strong>: No errors. The code is correct, but lacks presentation.</li>
+<li><strong>Root cause identified</strong>: We have written semantic HTML (and JSX), but we haven't provided any CSS rules to tell the browser how to render it.</li>
+<li><strong>Why the current approach can't solve this</strong>: Plain JSX without a styling system offers no visual control.</li>
+<li><strong>What we need</strong>: A systematic way to apply styles to our components. We'll start with the most popular and productive choice in the Next.js ecosystem: Tailwind CSS.</li>
+</ol>
+<h3 id="iteration-1-setting-up-and-applying-tailwind-css">Iteration 1: Setting Up and Applying Tailwind CSS</h3>
+<p>Tailwind CSS is a utility-first CSS framework. Instead of writing CSS files, you apply pre-existing "utility" classes directly in your JSX. This approach promotes co-location of styles and logic, speeds up development, and enforces a consistent design system.</p>
+<h4 id="step-1-installation-and-setup">Step 1: Installation and Setup</h4>
+<p>First, we'll install Tailwind CSS and its dependencies, then initialize it for our Next.js project.</p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>-D<span class="w"> </span>tailwindcss<span class="w"> </span>postcss<span class="w"> </span>autoprefixer
+npx<span class="w"> </span>tailwindcss<span class="w"> </span>init<span class="w"> </span>-p
+</code></pre></div>
+
+<p>This creates two configuration files: <code>tailwind.config.ts</code> and <code>postcss.config.js</code>.</p>
+<h4 id="step-2-configure-template-paths">Step 2: Configure Template Paths</h4>
+<p>Next, we need to tell Tailwind where our component and page files are so it can scan them for class names and generate the necessary CSS.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// tailwind.config.ts</span>
+
+<span class="k">import</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Config</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;tailwindcss&#39;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">config</span><span class="o">:</span><span class="w"> </span><span class="kt">Config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">content</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s1">&#39;./src/pages/**/*.{js,ts,jsx,tsx,mdx}&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="s1">&#39;./src/components/**/*.{js,ts,jsx,tsx,mdx}&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="s1">&#39;./src/app/**/*.{js,ts,jsx,tsx,mdx}&#39;</span><span class="p">,</span><span class="w"> </span><span class="c1">// &lt;-- Make sure this is included</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nx">theme</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">extend</span><span class="o">:</span><span class="w"> </span><span class="p">{},</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nx">plugins</span><span class="o">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="p">}</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">config</span>
+</code></pre></div>
+
+<h4 id="step-3-add-tailwind-directives-to-global-css">Step 3: Add Tailwind Directives to Global CSS</h4>
+<p>Finally, we add Tailwind's base styles, component classes, and utility classes to our global CSS file. Next.js creates this for you at <code>src/app/globals.css</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c">/* src/app/globals.css */</span>
+
+<span class="p">@</span><span class="k">tailwind</span><span class="w"> </span><span class="nt">base</span><span class="p">;</span>
+<span class="p">@</span><span class="k">tailwind</span><span class="w"> </span><span class="nt">components</span><span class="p">;</span>
+<span class="p">@</span><span class="k">tailwind</span><span class="w"> </span><span class="nt">utilities</span><span class="p">;</span>
+
+<span class="c">/* You can add any other global styles below */</span>
+</code></pre></div>
+
+<p>With the setup complete, we can now refactor our <code>UserProfileCard</code> to use Tailwind's utility classes.</p>
+<h4 id="step-4-applying-utility-classes">Step 4: Applying Utility Classes</h4>
+<p>We'll go through our component and add classes to style each element.</p>
+<p><strong>Before</strong> (Unstyled):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx (Initial Version)</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">img</span><span class="w"> </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">}</span><span class="w"> </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="sb">`</span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="si">}</span><span class="sb">&#39;s avatar`</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="err">@</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">username</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">bio</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">span</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">stats</span><span class="p">.</span><span class="nx">followers</span><span class="p">}&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">span</span><span class="p">&gt;</span><span class="nx">Followers</span><span class="p">&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">span</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">stats</span><span class="p">.</span><span class="nx">following</span><span class="p">}&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">span</span><span class="p">&gt;</span><span class="nx">Following</span><span class="p">&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="p">&gt;</span><span class="nx">Follow</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Styled with Tailwind):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx (Tailwind Version)</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">user</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">username</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">avatarUrl</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">stats</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">followers</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">      </span><span class="nx">following</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;max-w-sm mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;md:flex&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;md:shrink-0&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">img</span><span class="w"> </span>
+<span class="w">            </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;h-48 w-full object-cover md:h-full md:w-48&quot;</span><span class="w"> </span>
+<span class="w">            </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">}</span><span class="w"> </span>
+<span class="w">            </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="sb">`</span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="si">}</span><span class="sb">&#39;s avatar`</span><span class="p">}</span><span class="w"> </span>
+<span class="w">          </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-8&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;uppercase tracking-wide text-sm text-indigo-500 font-semibold&quot;</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="err">@</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">username</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">h2</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;block mt-1 text-lg leading-tight font-medium text-black&quot;</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;mt-2 text-slate-500&quot;</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">bio</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;mt-4 flex space-x-4&quot;</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">span</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;font-bold text-black&quot;</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">stats</span><span class="p">.</span><span class="nx">followers</span><span class="p">}&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">span</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-slate-500&quot;</span><span class="p">&gt;</span><span class="w"> </span><span class="nx">Followers</span><span class="p">&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">span</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;font-bold text-black&quot;</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">stats</span><span class="p">.</span><span class="nx">following</span><span class="p">}&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">&lt;</span><span class="nt">span</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-slate-500&quot;</span><span class="p">&gt;</span><span class="w"> </span><span class="nx">Following</span><span class="p">&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;mt-6 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded&quot;</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="nx">Follow</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification">Verification</h3>
+<p><strong>Browser Behavior</strong>:
+The component is now beautifully styled. The layout is responsive, text has proper hierarchy and color, and the button has interactive states.</p>
+<p><strong>Expected vs. Actual Improvement</strong>:
+- <strong>Expected</strong>: The component should look like a proper UI element.
+- <strong>Actual</strong>: The component is fully styled, responsive, and interactive, all without writing a single line of custom CSS.</p>
+<h3 id="when-to-apply-this-solution">When to Apply This Solution</h3>
+<ul>
+<li><strong>What it optimizes for</strong>: Development speed, design consistency, co-location of styles, and performance (Tailwind purges unused CSS for tiny production builds).</li>
+<li><strong>What it sacrifices</strong>: The familiarity of traditional CSS syntax for those new to utility-first frameworks.</li>
+<li><strong>When to choose this approach</strong>: For almost all new Next.js projects. It is the de-facto standard and integrates seamlessly.</li>
+<li><strong>When to avoid this approach</strong>: In projects with a pre-existing, large CSS codebase that cannot be refactored, or if your team has a strong, unmovable preference for another styling methodology.</li>
+</ul>
+<h3 id="limitation-preview">Limitation Preview</h3>
+<p>This works great, but look at the <code>button</code> element. Its <code>className</code> string is quite long: <code>mt-6 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded</code>. If we use this button style elsewhere, we'd have to copy and paste this long string, which is a violation of the DRY (Don't Repeat Yourself) principle.</p>
+<p>What if we want to create a reusable, encapsulated style for specific elements like buttons, without polluting our JSX with dozens of utility classes? This leads us to our next tool: CSS Modules.</p>
+<h2 id="css-modules-as-a-fallback">CSS Modules as a fallback</h2>
+<h2 id="encapsulating-styles-with-css-modules">Encapsulating Styles with CSS Modules</h2>
+<p>Our <code>UserProfileCard</code> is now styled with Tailwind, but we've identified a potential maintenance issue: long, repeated strings of utility classes for common elements like buttons. While Tailwind offers solutions for this (like the <code>@apply</code> directive or component plugins), Next.js has a powerful built-in feature that provides another excellent option: <strong>CSS Modules</strong>.</p>
+<p>CSS Modules allow you to write standard CSS in a file, but when you import it into a component, the class names are automatically scoped to that component. This prevents class name collisions and encapsulates styles effectively.</p>
+<h3 id="iteration-2-combining-tailwind-with-css-modules">Iteration 2: Combining Tailwind with CSS Modules</h3>
+<p>Let's refactor our button to use CSS Modules, while leaving the rest of the component styled with Tailwind utilities. This demonstrates how the two systems can work together harmoniously.</p>
+<h4 id="current-limitation">Current Limitation</h4>
+<p>The button's styling is defined inline within the JSX.</p>
+<div class="codehilite"><pre><span></span><code><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;mt-6 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded&quot;</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="nx">Follow</span>
+<span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+</code></pre></div>
+
+<p>If we need another button with the exact same style, we have to copy this entire string. If we need to update the style, we have to find and replace it everywhere.</p>
+<h4 id="new-scenario-creating-a-reusable-button-style">New Scenario: Creating a Reusable Button Style</h4>
+<p>We want to define our "primary button" style once and apply it by referencing a single, meaningful name.</p>
+<h4 id="failure-demonstration-the-global-css-pitfall">Failure Demonstration: The Global CSS Pitfall</h4>
+<p>A naive approach would be to create a global CSS class.</p>
+<p><strong>File Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+└── app/
+    ├── styles/
+    │   └── buttons.css  &lt;-- New global CSS file
+    ├── components/
+    │   └── UserProfileCard.tsx
+    └── layout.tsx       &lt;-- Import the CSS here
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c">/* src/app/styles/buttons.css */</span>
+
+<span class="c">/* </span>
+<span class="c">  We are using Tailwind&#39;s @apply directive here to use Tailwind tokens,</span>
+<span class="c">  but the core problem is the global nature of the class name.</span>
+<span class="c">*/</span>
+<span class="p">.</span><span class="nc">primary-button</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="err">@apply</span><span class="w"> </span><span class="err">mt-6</span><span class="w"> </span><span class="err">bg-blue-500</span><span class="w"> </span><span class="n">hover</span><span class="p">:</span><span class="n">bg-blue-700</span><span class="w"> </span><span class="kc">text</span><span class="o">-</span><span class="kc">white</span><span class="w"> </span><span class="k">font</span><span class="o">-</span><span class="kc">bold</span><span class="w"> </span><span class="n">py-2</span><span class="w"> </span><span class="n">px-4</span><span class="w"> </span><span class="n">rounded</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/layout.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="s1">&#39;./styles/buttons.css&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// &lt;-- Import globally</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RootLayout</span><span class="p">({</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">children</span><span class="o">:</span><span class="w"> </span><span class="kt">React.ReactNode</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx</span>
+<span class="c1">// ...</span>
+<span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;primary-button&quot;</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="nx">Follow</span>
+<span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="c1">// ...</span>
+</code></pre></div>
+
+<h3 id="diagnostic-analysis-reading-the-failure_1">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+The button looks correct. The styles are applied. So what's the failure? The failure is not visual; it's architectural.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: Everything looks fine.</li>
+<li><strong>What the console reveals</strong>: No errors.</li>
+<li><strong>Root cause identified</strong>: We've introduced a global class name, <code>.primary-button</code>. In a small project, this is fine. In a large application with multiple developers, someone else might unknowingly define their own <code>.primary-button</code> class in another file. The last one loaded wins, leading to unpredictable styling bugs that are incredibly difficult to debug. This is known as "global namespace pollution."</li>
+<li><strong>Why the current approach can't solve this</strong>: Global CSS by its very nature lacks scoping. Any class can affect any element anywhere in the application.</li>
+<li><strong>What we need</strong>: A way to write CSS that is scoped <em>locally</em> to the component that imports it.</li>
+</ol>
+<h4 id="technique-introduced-css-modules">Technique Introduced: CSS Modules</h4>
+<p>A CSS Module is a CSS file where all class names and animation names are scoped locally by default. To use it, you name your file with the <code>.module.css</code> extension (e.g., <code>Button.module.css</code>).</p>
+<h4 id="solution-implementation">Solution Implementation</h4>
+<p>Let's create a CSS Module specifically for our <code>UserProfileCard</code> component.</p>
+<p><strong>File Structure Update</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+└── app/
+    └── components/
+        ├── UserProfileCard.tsx
+        └── UserProfileCard.module.css  &lt;-- New CSS Module
+</code></pre></div>
+
+<p><strong>Before</strong> (Global CSS class):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// UserProfileCard.tsx</span>
+<span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;primary-button&quot;</span><span class="p">&gt;</span><span class="nx">Follow</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Using CSS Modules):</p>
+<p>First, create the CSS Module file.</p>
+<div class="codehilite"><pre><span></span><code><span class="c">/* src/app/components/UserProfileCard.module.css */</span>
+
+<span class="p">.</span><span class="nc">followButton</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c">/* We can use @apply to leverage Tailwind&#39;s design tokens */</span>
+<span class="w">  </span><span class="err">@apply</span><span class="w"> </span><span class="err">mt-6</span><span class="w"> </span><span class="err">bg-blue-500</span><span class="w"> </span><span class="n">hover</span><span class="p">:</span><span class="n">bg-blue-700</span><span class="w"> </span><span class="kc">text</span><span class="o">-</span><span class="kc">white</span><span class="w"> </span><span class="k">font</span><span class="o">-</span><span class="kc">bold</span><span class="w"> </span><span class="n">py-2</span><span class="w"> </span><span class="n">px-4</span><span class="w"> </span><span class="n">rounded</span><span class="p">;</span>
+
+<span class="w">  </span><span class="c">/* We can also add standard CSS properties */</span>
+<span class="w">  </span><span class="k">transition</span><span class="p">:</span><span class="w"> </span><span class="k">transform</span><span class="w"> </span><span class="mf">0.1</span><span class="kt">s</span><span class="w"> </span><span class="kc">ease-in-out</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">followButton</span><span class="p">:</span><span class="nd">active</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">transform</span><span class="p">:</span><span class="w"> </span><span class="nb">scale</span><span class="p">(</span><span class="mf">0.95</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, import and use it in the component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx (CSS Modules Version)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">styles</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./UserProfileCard.module.css&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// &lt;-- Import the module</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... (props are the same)</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;max-w-sm mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;md:flex&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* ... other JSX remains the same ... */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-8&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">styles</span><span class="p">.</span><span class="nx">followButton</span><span class="p">}&gt;</span><span class="w"> </span><span class="p">{</span><span class="cm">/* &lt;-- Apply the scoped class */</span><span class="p">}</span>
+<span class="w">            </span><span class="nx">Follow</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification_1">Verification</h3>
+<p><strong>Browser Behavior</strong>:
+The button looks identical to the previous versions, but now includes the new <code>transition</code> and <code>transform</code> effects we added.</p>
+<p><strong>Browser DevTools - Elements Tab</strong>:
+If you inspect the button in the browser's developer tools, you'll see the magic of CSS Modules. The rendered class name is not <code>followButton</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="p">&lt;</span><span class="nt">button</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;UserProfileCard_followButton__a1B2c&quot;</span><span class="p">&gt;</span>Follow<span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+</code></pre></div>
+
+<p>Next.js has automatically generated a unique class name (<code>UserProfileCard_followButton__</code> followed by a unique hash) to guarantee it will never conflict with any other style in your application.</p>
+<p><strong>Expected vs. Actual Improvement</strong>:
+- <strong>Expected</strong>: To have a reusable, named style for our button.
+- <strong>Actual</strong>: We achieved that <em>and</em> gained guaranteed style encapsulation, preventing any future global CSS conflicts.</p>
+<h3 id="when-to-apply-this-solution_1">When to Apply This Solution</h3>
+<ul>
+<li><strong>What it optimizes for</strong>: Style encapsulation, preventing global namespace pollution, and allowing the use of traditional CSS syntax for complex styles (animations, pseudo-selectors) that can be verbose with utility classes.</li>
+<li><strong>What it sacrifices</strong>: Co-location. The styles for the button are now in a separate file, requiring a context switch.</li>
+<li><strong>When to choose this approach</strong>:<ul>
+<li>When you have a complex, component-specific style that would be unwieldy as a long utility string.</li>
+<li>When you need to apply styles based on dynamic logic that is easier to express by conditionally including a single class name.</li>
+<li>When integrating with third-party libraries that expect traditional CSS class names.</li>
+</ul>
+</li>
+<li><strong>When to avoid this approach</strong>: As your primary styling method. Stick with Tailwind for 90% of your styling and use CSS Modules as a powerful tool for the remaining 10% where encapsulation is key.</li>
+</ul>
+<h3 id="limitation-preview_1">Limitation Preview</h3>
+<p>We've now built and styled a component from scratch using the best of both utility classes and scoped CSS. But this is still a lot of work. We had to build the card, the button, and the layout ourselves. What if we could leverage pre-built, accessible, and themeable components to build UIs even faster, without giving up control? This brings us to <code>shadcn/ui</code>.</p>
+<h2 id="shadcnui-pre-built-components-done-right">shadcn/ui: pre-built components done right</h2>
+<h2 id="accelerating-development-with-shadcnui">Accelerating Development with shadcn/ui</h2>
+<p>So far, we've focused on writing CSS. But modern frontend development is about building with <em>components</em>. We've built our <code>UserProfileCard</code> from low-level <code>div</code>, <code>img</code>, and <code>button</code> elements. This gives us full control, but it's slow and requires us to handle details like accessibility (ARIA attributes, keyboard navigation) ourselves.</p>
+<p><strong>shadcn/ui</strong> is not a traditional component library like Material-UI or Bootstrap. Instead, it's a collection of beautifully designed, accessible, and reusable components that you copy and paste directly into your project. You own the code. This gives you the speed of a component library with the flexibility of writing it yourself.</p>
+<h3 id="iteration-3-rebuilding-with-shadcnui">Iteration 3: Rebuilding with shadcn/ui</h3>
+<p>Let's see how we can dramatically simplify our <code>UserProfileCard</code> by rebuilding it with components from shadcn/ui.</p>
+<h4 id="current-limitation_1">Current Limitation</h4>
+<p>Our current implementation is bespoke. Every piece of it was hand-coded. To build another UI element, like a dialog box or a dropdown menu, we would have to start from scratch again. This doesn't scale.</p>
+<h4 id="technique-introduced-composable-owned-components">Technique Introduced: Composable, Owned Components</h4>
+<p>The philosophy of shadcn/ui is to provide the building blocks, not a finished house. It uses Tailwind CSS for styling and Radix UI for accessibility primitives, giving you a best-in-class foundation.</p>
+<h4 id="step-1-initialize-shadcnui">Step 1: Initialize shadcn/ui</h4>
+<p>First, we add the shadcn/ui CLI to our project and run the <code>init</code> command. It will ask a few questions about your project setup (TypeScript, <code>tailwind.config.js</code> location, etc.).</p>
+<div class="codehilite"><pre><span></span><code>npx<span class="w"> </span>shadcn-ui@latest<span class="w"> </span>init
+</code></pre></div>
+
+<p>This command does a few things:
+1.  Installs necessary dependencies (<code>class-variance-authority</code>, <code>clsx</code>, <code>tailwind-merge</code>).
+2.  Creates a <code>components/ui</code> directory for the components you'll add.
+3.  Creates a <code>lib/utils.ts</code> file with a helper function (<code>cn</code>) for merging Tailwind classes.
+4.  Updates <code>tailwind.config.ts</code> with theme variables for colors, border radius, etc.</p>
+<h4 id="step-2-add-required-components">Step 2: Add Required Components</h4>
+<p>Instead of installing a whole library, you add only the components you need. For our card, we need a <code>Card</code>, an <code>Avatar</code>, and a <code>Button</code>.</p>
+<div class="codehilite"><pre><span></span><code>npx<span class="w"> </span>shadcn-ui@latest<span class="w"> </span>add<span class="w"> </span>card
+npx<span class="w"> </span>shadcn-ui@latest<span class="w"> </span>add<span class="w"> </span>avatar
+npx<span class="w"> </span>shadcn-ui@latest<span class="w"> </span>add<span class="w"> </span>button
+</code></pre></div>
+
+<p>Now, check your project structure. You'll see the new component files. You can open them, read them, and even modify them. You own this code.</p>
+<p><strong>New Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+├── components/
+│   ├── ui/
+│   │   ├── avatar.tsx   &lt;-- Added by CLI
+│   │   ├── button.tsx   &lt;-- Added by CLI
+│   │   └── card.tsx     &lt;-- Added by CLI
+│   └── UserProfileCard.tsx
+├── lib/
+│   └── utils.ts         &lt;-- Added by CLI
+└── app/
+    └── page.tsx
+</code></pre></div>
+
+<h4 id="step-3-refactor-the-userprofilecard">Step 3: Refactor the UserProfileCard</h4>
+<p>Now we can refactor our component to use these new, high-level building blocks.</p>
+<p><strong>Before</strong> (Manual Tailwind/CSS Modules):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx (Previous Version)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">styles</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./UserProfileCard.module.css&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;max-w-sm mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;md:flex&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;md:shrink-0&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">img</span><span class="w"> </span>
+<span class="w">            </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;h-48 w-full object-cover md:h-full md:w-48&quot;</span><span class="w"> </span>
+<span class="w">            </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">}</span><span class="w"> </span>
+<span class="w">            </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="sb">`</span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="si">}</span><span class="sb">&#39;s avatar`</span><span class="p">}</span><span class="w"> </span>
+<span class="w">          </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-8&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="cm">/* ... a lot of divs and manual styling ... */</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">styles</span><span class="p">.</span><span class="nx">followButton</span><span class="p">}&gt;</span>
+<span class="w">            </span><span class="nx">Follow</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Using shadcn/ui components):</p>
+<p>The new version is much more declarative and readable. We're composing components, not styling divs.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx (shadcn/ui Version)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Avatar</span><span class="p">,</span><span class="w"> </span><span class="nx">AvatarFallback</span><span class="p">,</span><span class="w"> </span><span class="nx">AvatarImage</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/components/ui/avatar&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Button</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/components/ui/button&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span>
+<span class="w">  </span><span class="nx">Card</span><span class="p">,</span><span class="w"> </span>
+<span class="w">  </span><span class="nx">CardContent</span><span class="p">,</span><span class="w"> </span>
+<span class="w">  </span><span class="nx">CardDescription</span><span class="p">,</span><span class="w"> </span>
+<span class="w">  </span><span class="nx">CardFooter</span><span class="p">,</span><span class="w"> </span>
+<span class="w">  </span><span class="nx">CardHeader</span><span class="p">,</span><span class="w"> </span>
+<span class="w">  </span><span class="nx">CardTitle</span><span class="w"> </span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/components/ui/card&quot;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">user</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">username</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">avatarUrl</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">stats</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">followers</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">      </span><span class="nx">following</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">Card</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;max-w-sm mx-auto&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">CardHeader</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex flex-row items-center gap-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Avatar</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;h-16 w-16&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">AvatarImage</span><span class="w"> </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">}</span><span class="w"> </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="sb">`@</span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">username</span><span class="si">}</span><span class="sb">`</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">AvatarFallback</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">.</span><span class="nx">charAt</span><span class="p">(</span><span class="mf">0</span><span class="p">)}&lt;/</span><span class="nt">AvatarFallback</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">Avatar</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">CardTitle</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">CardTitle</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">CardDescription</span><span class="p">&gt;</span><span class="err">@</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">username</span><span class="p">}&lt;/</span><span class="nt">CardDescription</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">CardHeader</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">CardContent</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">bio</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;mt-4 flex space-x-4&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">span</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;font-bold&quot;</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">stats</span><span class="p">.</span><span class="nx">followers</span><span class="p">}&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">span</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-muted-foreground&quot;</span><span class="p">&gt;</span><span class="w"> </span><span class="nx">Followers</span><span class="p">&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">span</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;font-bold&quot;</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">stats</span><span class="p">.</span><span class="nx">following</span><span class="p">}&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">span</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-muted-foreground&quot;</span><span class="p">&gt;</span><span class="w"> </span><span class="nx">Following</span><span class="p">&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">CardContent</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">CardFooter</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Button</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;w-full&quot;</span><span class="p">&gt;</span><span class="nx">Follow</span><span class="p">&lt;/</span><span class="nt">Button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">CardFooter</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">Card</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification_2">Verification</h3>
+<p><strong>Browser Behavior</strong>:
+The component looks similar to our manually styled version, but it's more polished and consistent with a professional design system. The <code>Avatar</code> component automatically handles fallbacks if the image fails to load. The <code>Button</code> has built-in accessibility and focus states. The <code>Card</code> components provide semantic structure.</p>
+<p><strong>Expected vs. Actual Improvement</strong>:
+-   <strong>Expected</strong>: A faster way to build the component.
+-   <strong>Actual</strong>: We built the component faster, with more robust and accessible code. The resulting JSX is more semantic and easier to read. We now have a system for adding other complex components to our app consistently. Notice the use of <code>text-muted-foreground</code> - this class comes from the shadcn/ui setup and uses CSS variables, which is a perfect segue into theming.</p>
+<h3 id="limitation-preview_2">Limitation Preview</h3>
+<p>Our application looks great... in light mode. If a user has their operating system set to dark mode, our UI doesn't adapt. It's a jarring experience. We've built a static theme. How can we make our application's appearance adapt to user preferences and allow them to toggle between themes?</p>
+<h2 id="dark-mode-and-theming">Dark mode and theming</h2>
+<h2 id="dark-mode-and-theming_1">Dark Mode and Theming</h2>
+<p>A modern web application is incomplete without support for dark mode. Providing a theme that respects user preferences is a critical aspect of good user experience. Thanks to our choice of Tailwind CSS and shadcn/ui, implementing robust theming is surprisingly straightforward.</p>
+<h3 id="current-limitation_2">Current Limitation</h3>
+<p>Our <code>UserProfileCard</code> has hardcoded colors (e.g., <code>bg-white</code>, <code>text-black</code>). These look fine in a light-themed environment but provide a poor experience in the dark. The UI doesn't respond to the user's OS-level preference for a dark color scheme.</p>
+<h3 id="technique-introduced-class-based-theming-with-next-themes">Technique Introduced: Class-based Theming with <code>next-themes</code></h3>
+<p>The standard and most effective way to handle theming in Next.js is to use a class-based strategy.
+1.  We'll use the <code>next-themes</code> library to manage the theme state (light, dark, or system) and apply a class (e.g., <code>dark</code>) to the <code>&lt;html&gt;</code> element.
+2.  We'll configure Tailwind to use this class to apply different styles via the <code>dark:</code> variant.
+3.  We'll use CSS variables for our colors, which shadcn/ui has already set up for us.</p>
+<h3 id="iteration-4-implementing-dark-mode">Iteration 4: Implementing Dark Mode</h3>
+<h4 id="step-1-install-next-themes">Step 1: Install <code>next-themes</code></h4>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>next-themes
+</code></pre></div>
+
+<h4 id="step-2-configure-tailwind-for-class-based-dark-mode">Step 2: Configure Tailwind for Class-based Dark Mode</h4>
+<p>Open your <code>tailwind.config.ts</code> and tell Tailwind to use the <code>class</code> strategy for dark mode. The shadcn/ui <code>init</code> command should have already done this, but it's crucial to verify.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// tailwind.config.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Config</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;tailwindcss&#39;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">darkMode</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;class&quot;</span><span class="p">],</span><span class="w"> </span><span class="c1">// &lt;-- This is the key</span>
+<span class="w">  </span><span class="nx">content</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span><span class="w"> </span><span class="nx">satisfies</span><span class="w"> </span><span class="nx">Config</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">config</span>
+</code></pre></div>
+
+<h4 id="step-3-create-a-theme-provider">Step 3: Create a Theme Provider</h4>
+<p>Because <code>next-themes</code> uses React Context and needs to know when the component is mounted to read the user's system theme, we must use it within a Client Component. We'll create a dedicated provider component to wrap our entire application.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/theme-provider.tsx</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ThemeProvider</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">NextThemesProvider</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-themes&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">ThemeProviderProps</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-themes/dist/types&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ThemeProvider</span><span class="p">({</span><span class="w"> </span><span class="nx">children</span><span class="p">,</span><span class="w"> </span><span class="p">...</span><span class="nx">props</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">ThemeProviderProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">NextThemesProvider</span><span class="w"> </span><span class="p">{</span><span class="na">...props</span><span class="p">}&gt;{</span><span class="nx">children</span><span class="p">}&lt;/</span><span class="nt">NextThemesProvider</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="step-4-apply-the-provider-in-the-root-layout">Step 4: Apply the Provider in the Root Layout</h4>
+<p>Now, wrap the <code>&lt;body&gt;</code> of your root layout (<code>src/app/layout.tsx</code>) with this new <code>ThemeProvider</code>. This makes the theme available to every component in your app.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/layout.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Metadata</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Inter</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next/font/google&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="s2">&quot;./globals.css&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ThemeProvider</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/components/theme-provider&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// &lt;-- Import</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">inter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">Inter</span><span class="p">({</span><span class="w"> </span><span class="nx">subsets</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;latin&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">});</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">metadata</span><span class="o">:</span><span class="w"> </span><span class="kt">Metadata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">title</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Create Next App&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Generated by create next app&quot;</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RootLayout</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">children</span><span class="p">,</span>
+<span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">children</span><span class="o">:</span><span class="w"> </span><span class="kt">React.ReactNode</span><span class="p">;</span>
+<span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">html</span><span class="w"> </span><span class="na">lang</span><span class="o">=</span><span class="s">&quot;en&quot;</span><span class="w"> </span><span class="na">suppressHydrationWarning</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">body</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">inter</span><span class="p">.</span><span class="nx">className</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">ThemeProvider</span>
+<span class="w">          </span><span class="na">attribute</span><span class="o">=</span><span class="s">&quot;class&quot;</span>
+<span class="w">          </span><span class="na">defaultTheme</span><span class="o">=</span><span class="s">&quot;system&quot;</span>
+<span class="w">          </span><span class="na">enableSystem</span>
+<span class="w">          </span><span class="na">disableTransitionOnChange</span>
+<span class="w">        </span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">children</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">ThemeProvider</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="step-5-create-a-theme-toggle-component">Step 5: Create a Theme Toggle Component</h4>
+<p>To allow users to manually switch themes, we need a UI control. Let's create a simple button that toggles between light, dark, and system preferences. This component will also be a Client Component because it uses the <code>useTheme</code> hook.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/theme-toggle.tsx</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Moon</span><span class="p">,</span><span class="w"> </span><span class="nx">Sun</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;lucide-react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useTheme</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-themes&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Button</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/components/ui/button&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ThemeToggle</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">theme</span><span class="p">,</span><span class="w"> </span><span class="nx">setTheme</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useTheme</span><span class="p">();</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">toggleTheme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setTheme</span><span class="p">(</span><span class="nx">theme</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;light&quot;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;dark&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;light&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">Button</span><span class="w"> </span><span class="na">variant</span><span class="o">=</span><span class="s">&quot;outline&quot;</span><span class="w"> </span><span class="na">size</span><span class="o">=</span><span class="s">&quot;icon&quot;</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span><span class="nx">toggleTheme</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Sun</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Moon</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">span</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;sr-only&quot;</span><span class="p">&gt;</span><span class="nx">Toggle</span><span class="w"> </span><span class="nx">theme</span><span class="p">&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">Button</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="step-6-add-the-toggle-to-the-ui">Step 6: Add the Toggle to the UI</h4>
+<p>Let's add our new <code>ThemeToggle</code> to the main page so we can test it.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/UserProfileCard&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ThemeToggle</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/theme-toggle&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// &lt;-- Import</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">sampleUser</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="c1">// Added a dark background for the page itself for better contrast</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;min-h-screen bg-background flex flex-col items-center justify-center p-4&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;absolute top-4 right-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">ThemeToggle</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">UserProfileCard</span><span class="w"> </span><span class="na">user</span><span class="o">=</span><span class="p">{</span><span class="nx">sampleUser</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification_3">Verification</h3>
+<p><strong>Browser Behavior</strong>:
+The application now loads with a theme that matches your OS preference. Clicking the toggle button instantly switches between light and dark modes. All the shadcn/ui components (<code>Card</code>, <code>Button</code>, <code>Avatar</code>) automatically adapt their colors.</p>
+<p><strong>Light Mode</strong>:</p>
+<p><strong>Dark Mode</strong>:</p>
+<h3 id="banish-magic-how-it-works">Banish Magic: How It Works</h3>
+<p>This feels magical, but it's a clear, mechanical process:
+1.  <strong><code>ThemeProvider</code></strong>: On load, it checks <code>localStorage</code> for a saved theme or queries the OS for its preference (<code>prefers-color-scheme</code>). It then adds <code>class="dark"</code> or <code>class="light"</code> to the <code>&lt;html&gt;</code> tag.
+2.  <strong><code>ThemeToggle</code></strong>: The <code>useTheme</code> hook communicates with the <code>ThemeProvider</code>'s context. Calling <code>setTheme('dark')</code> updates the context, which in turn changes the class on the <code>&lt;html&gt;</code> tag.
+3.  <strong>CSS Variables</strong>: Your <code>globals.css</code> file (configured by shadcn/ui) defines all colors as CSS variables.
+    ```css
+    /<em> src/app/globals.css </em>/
+    :root {
+      --background: 0 0% 100%; /<em> White </em>/
+      --foreground: 222.2 84% 4.9%; /<em> Black </em>/
+      /<em> ... other light theme colors </em>/
+    }</p>
+<div class="codehilite"><pre><span></span><code><span class="na">.dark</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="err">--</span><span class="nl">background:</span><span class="w"> </span><span class="err">222</span><span class="nf">.2</span><span class="w"> </span><span class="mi">84</span><span class="err">%</span><span class="w"> </span><span class="mi">4</span><span class="no">.9</span><span class="err">%</span><span class="c1">; /* Black */</span>
+<span class="w">  </span><span class="err">--</span><span class="nl">foreground:</span><span class="w"> </span><span class="err">210</span><span class="w"> </span><span class="err">40%</span><span class="w"> </span><span class="err">98%</span><span class="c1">; /* White */</span>
+<span class="w">  </span><span class="cm">/* ... other dark theme colors */</span>
+<span class="err">}</span>
+<span class="err">```</span>
+</code></pre></div>
+
+<ol>
+<li><strong>Tailwind Integration</strong>: Tailwind utility classes like <code>bg-background</code> and <code>text-foreground</code> are configured in <code>tailwind.config.ts</code> to use these CSS variables.
+    <code>ts
+    // tailwind.config.ts
+    // ...
+    theme: {
+      extend: {
+        colors: {
+          background: "hsl(var(--background))",
+          foreground: "hsl(var(--foreground))",
+          // ...
+        }
+      }
+    }</code>
+When the class on the <code>&lt;html&gt;</code> tag changes from <code>light</code> to <code>dark</code>, the CSS variables defined inside the <code>.dark</code> block take precedence, and every component using those variables instantly updates its appearance.</li>
+</ol>
+<h3 id="the-journey-from-problem-to-solution">The Journey: From Problem to Solution</h3>
+<div class="codehilite"><pre><span></span><code>| Iteration | Problem                                     | Technique Applied      | Result                                                              | Key Insight                                                              |
+| --------- | ------------------------------------------- | ---------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 0         | Unstyled, unusable UI                       | Plain JSX/HTML         | A functional but ugly component.                                    | HTML provides structure, but CSS provides presentation.                  |
+| 1         | No styling system                           | Tailwind CSS           | A fully styled, responsive component with utility classes.          | Utility-first CSS is fast and maintains co-location.                     |
+| 2         | Long, un-reusable class strings             | CSS Modules            | Encapsulated, reusable style for the button, preventing conflicts.  | Scoped CSS is a powerful tool for complex, component-specific styles.    |
+| 3         | Building everything from scratch is slow    | shadcn/ui              | Rebuilt with accessible, pre-made components. Drastically less code. | Don&#39;t reinvent the wheel. Use component systems you own and control.     |
+| 4         | UI is stuck in light mode, ignores user prefs | <span class="sb">`next-themes`</span> + CSS Vars | Fully themeable UI with light/dark mode toggle.                     | A class on the root element + CSS variables is the key to modern theming. |
+</code></pre></div>
+
+<h3 id="final-implementation">Final Implementation</h3>
+<p>Here is our final, production-ready <code>UserProfileCard</code> component. It's built with high-level components, is fully themeable, accessible, and the code is clean and declarative.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx (Final Version)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Avatar</span><span class="p">,</span><span class="w"> </span><span class="nx">AvatarFallback</span><span class="p">,</span><span class="w"> </span><span class="nx">AvatarImage</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/components/ui/avatar&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Button</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/components/ui/button&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span>
+<span class="w">  </span><span class="nx">Card</span><span class="p">,</span><span class="w"> </span>
+<span class="w">  </span><span class="nx">CardContent</span><span class="p">,</span><span class="w"> </span>
+<span class="w">  </span><span class="nx">CardDescription</span><span class="p">,</span><span class="w"> </span>
+<span class="w">  </span><span class="nx">CardFooter</span><span class="p">,</span><span class="w"> </span>
+<span class="w">  </span><span class="nx">CardHeader</span><span class="p">,</span><span class="w"> </span>
+<span class="w">  </span><span class="nx">CardTitle</span><span class="w"> </span>
+<span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/components/ui/card&quot;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">user</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">username</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">avatarUrl</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">stats</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">followers</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">      </span><span class="nx">following</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">({</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">Card</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;w-full max-w-sm&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">CardHeader</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex flex-row items-center gap-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Avatar</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;h-16 w-16&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">AvatarImage</span><span class="w"> </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">}</span><span class="w"> </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="sb">`@</span><span class="si">${</span><span class="nx">user</span><span class="p">.</span><span class="nx">username</span><span class="si">}</span><span class="sb">`</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">AvatarFallback</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">.</span><span class="nx">charAt</span><span class="p">(</span><span class="mf">0</span><span class="p">)}&lt;/</span><span class="nt">AvatarFallback</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">Avatar</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">CardTitle</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">CardTitle</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">CardDescription</span><span class="p">&gt;</span><span class="err">@</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">username</span><span class="p">}&lt;/</span><span class="nt">CardDescription</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">CardHeader</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">CardContent</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-sm text-muted-foreground&quot;</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">bio</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;mt-4 flex divide-x rounded-lg border&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex-1 p-2 text-center&quot;</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;font-bold&quot;</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">stats</span><span class="p">.</span><span class="nx">followers</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-xs text-muted-foreground&quot;</span><span class="p">&gt;</span><span class="nx">Followers</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex-1 p-2 text-center&quot;</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;font-bold&quot;</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">stats</span><span class="p">.</span><span class="nx">following</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-xs text-muted-foreground&quot;</span><span class="p">&gt;</span><span class="nx">Following</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">CardContent</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">CardFooter</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Button</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;w-full&quot;</span><span class="p">&gt;</span><span class="nx">Follow</span><span class="p">&lt;/</span><span class="nt">Button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">CardFooter</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">Card</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="decision-framework-which-styling-approach-when">Decision Framework: Which Styling Approach When?</h3>
+<table>
+<thead>
+<tr>
+<th>Approach</th>
+<th>Best For</th>
+<th>Trade-offs</th>
+<th>Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Tailwind CSS</strong></td>
+<td>The vast majority of styling needs. Layout, typography, color, spacing.</td>
+<td>Can lead to long <code>className</code> strings for complex components.</td>
+<td><strong>Use as your default.</strong> The foundation of your styling system.</td>
+</tr>
+<tr>
+<td><strong>CSS Modules</strong></td>
+<td>Complex, state-dependent styles, animations, or encapsulating a set of utilities under one name.</td>
+<td>Separates styles from the component, breaking co-location.</td>
+<td><strong>Use sparingly as a powerful escape hatch.</strong> Perfect for the 10% of cases where utilities are cumbersome.</td>
+</tr>
+<tr>
+<td><strong>shadcn/ui</strong></td>
+<td>Building your application's UI. Buttons, forms, cards, dialogs, etc.</td>
+<td>It's a methodology, not a library. Requires setup and owning the code.</td>
+<td><strong>Adopt for your component architecture.</strong> Build on top of it, don't just use it.</td>
+</tr>
+<tr>
+<td><strong>CSS-in-JS</strong> (e.g. Emotion)</td>
+<td>Highly dynamic styles that depend on component props in complex ways. (Not covered in detail)</td>
+<td>Can have a performance cost in Server Components. Less popular in App Router.</td>
+<td><strong>Avoid in new Next.js App Router projects</strong> unless you have a specific need that other methods can't solve.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="lessons-learned">Lessons Learned</h3>
+<ul>
+<li><strong>Start with a solid foundation</strong>: Tailwind CSS provides the best-in-class foundation for styling modern Next.js applications.</li>
+<li><strong>Combine tools strategically</strong>: Tailwind and CSS Modules are not mutually exclusive. Use them together, leveraging the strengths of each.</li>
+<li><strong>Build with components, not primitives</strong>: Accelerate your development and improve quality by using a component system like shadcn/ui. Owning the code is a superpower.</li>
+<li><strong>Design for themes from the start</strong>: Implementing theming with CSS variables and <code>next-themes</code> is simple if you plan for it, and it dramatically improves user experience.</li>
+</ul>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:41:01 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

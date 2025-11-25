@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>19 Authentication and Authorization</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">05 Next.js — Server-Side React</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-19-authentication-and-authorization">Chapter 19: Authentication and Authorization</h1>
+<h2 id="nextauthjs-authjs-setup">NextAuth.js (Auth.js) setup</h2>
+<h2 id="the-unprotected-application-a-security-failure-by-default">The Unprotected Application: A Security Failure by Default</h2>
+<p>Authentication isn't a feature you add at the end; it's a foundational concern. To understand its importance, we'll start with a common scenario: a simple blog application that is completely unprotected. This application will be our <strong>anchor example</strong> for the entire chapter.</p>
+<p>Our goal is to build a blog where only authenticated administrators can create new posts.</p>
+<h3 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h3>
+<p>First, let's set up the initial, insecure version of our application.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="nx">src</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="nx">app</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="nx">layout</span><span class="p">.</span><span class="nx">tsx</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="nx">page</span><span class="p">.</span><span class="nx">tsx</span><span class="w">                  </span><span class="err">#</span><span class="w"> </span><span class="nx">Public</span><span class="w"> </span><span class="nx">homepage</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="nx">admin</span><span class="o">/</span>
+<span class="err">│</span><span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="nx">create</span><span class="o">-</span><span class="nx">post</span><span class="o">/</span>
+<span class="err">│</span><span class="w">           </span><span class="err">└──</span><span class="w"> </span><span class="nx">page</span><span class="p">.</span><span class="nx">tsx</span><span class="w">          </span><span class="err">#</span><span class="w"> </span><span class="nx">The</span><span class="w"> </span><span class="nx">page</span><span class="w"> </span><span class="nx">that</span><span class="w"> </span><span class="nx">SHOULD</span><span class="w"> </span><span class="nx">be</span><span class="w"> </span><span class="k">private</span>
+<span class="err">└──</span><span class="w"> </span><span class="nx">components</span><span class="o">/</span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="nx">Header</span><span class="p">.</span><span class="nx">tsx</span><span class="w">                </span><span class="err">#</span><span class="w"> </span><span class="nx">A</span><span class="w"> </span><span class="nx">simple</span><span class="w"> </span><span class="nx">site</span><span class="w"> </span><span class="nx">header</span>
+</code></pre></div>
+
+<p>Here is the code for our key files.</p>
+<p><strong>The "Create Post" Page (Problematic Version)</strong>:
+This page is currently accessible to anyone who knows the URL.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/admin/create-post/page.tsx</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">CreatePostPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-8&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-2xl font-bold mb-4&quot;</span><span class="p">&gt;</span><span class="nx">Create</span><span class="w"> </span><span class="nx">New</span><span class="w"> </span><span class="nx">Post</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex flex-col gap-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">label</span><span class="w"> </span><span class="na">htmlFor</span><span class="o">=</span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;block mb-1&quot;</span><span class="p">&gt;</span><span class="nx">Title</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;w-full p-2 border rounded&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">label</span><span class="w"> </span><span class="na">htmlFor</span><span class="o">=</span><span class="s">&quot;content&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;block mb-1&quot;</span><span class="p">&gt;</span><span class="nx">Content</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">textarea</span><span class="w"> </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;content&quot;</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;content&quot;</span><span class="w"> </span><span class="na">rows</span><span class="o">=</span><span class="p">{</span><span class="mf">10</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;w-full p-2 border rounded&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">textarea</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-blue-500 text-white p-2 rounded self-start&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="nx">Submit</span><span class="w"> </span><span class="nx">Post</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>The Homepage</strong>:
+This page links to the supposedly "admin" area.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Link</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/link&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-8&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-2xl font-bold&quot;</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">Blog</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">This</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="nx">homepage</span><span class="p">.</span><span class="w"> </span><span class="nx">Everyone</span><span class="w"> </span><span class="nx">can</span><span class="w"> </span><span class="nx">see</span><span class="w"> </span><span class="k">this</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>The Header</strong>:
+A shared header component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Header.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Link</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/link&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Header</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">header</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-gray-100 p-4 border-b&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">nav</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex justify-between&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">href</span><span class="o">=</span><span class="s">&quot;/&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;font-bold&quot;</span><span class="p">&gt;</span><span class="nx">My</span><span class="w"> </span><span class="nx">Blog</span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* We will add auth controls here later */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">href</span><span class="o">=</span><span class="s">&quot;/admin/create-post&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-blue-600 hover:underline&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="nx">Create</span><span class="w"> </span><span class="nx">Post</span><span class="w"> </span><span class="p">(</span><span class="nx">Admin</span><span class="p">)</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">header</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>The Root Layout</strong>:
+We'll add our header to the main layout.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/layout.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Metadata</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Inter</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next/font/google&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="s2">&quot;./globals.css&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Header</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/components/Header&quot;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">inter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">Inter</span><span class="p">({</span><span class="w"> </span><span class="nx">subsets</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;latin&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">});</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">metadata</span><span class="o">:</span><span class="w"> </span><span class="kt">Metadata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">title</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Auth.js Demo&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;A demo of Next.js authentication&quot;</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RootLayout</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">children</span><span class="p">,</span>
+<span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">Readonly</span><span class="o">&lt;</span><span class="p">{</span>
+<span class="w">  </span><span class="nx">children</span><span class="o">:</span><span class="w"> </span><span class="kt">React.ReactNode</span><span class="p">;</span>
+<span class="p">}</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">html</span><span class="w"> </span><span class="na">lang</span><span class="o">=</span><span class="s">&quot;en&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">body</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">inter</span><span class="p">.</span><span class="nx">className</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Header</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">children</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="diagnostic-analysis-reading-the-failure">Diagnostic Analysis: Reading the Failure</h3>
+<p>Let's run this application and diagnose its fundamental flaw.</p>
+<p><strong>Browser Behavior</strong>:
+A user clicks the "Create Post (Admin)" link. They are immediately taken to the <code>/admin/create-post</code> page and can see the form to create a new post. There is no login prompt, no access check, nothing.</p>
+<p><strong>Network Tab Analysis</strong>:
+- Request pattern: A simple GET request to <code>/admin/create-post</code>.
+- Response codes: 200 OK.
+- Cookies: No session or authentication-related cookies are sent or received.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: The application has no concept of "admin" vs. "public" areas. All routes are public.</p>
+<ul>
+<li><strong>Expected</strong>: Accessing <code>/admin/create-post</code> should require a login.</li>
+<li><strong>Actual</strong>: Anyone can access <code>/admin/create-post</code>.</li>
+</ul>
+</li>
+<li>
+<p><strong>What the network reveals</strong>: The server happily serves the page to any browser that asks for it. There is no authentication mechanism in place.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: The application lacks an authentication system to identify users and a mechanism to protect routes based on that identity.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: Standard Next.js routing is based on the file system and is public by default. It has no built-in knowledge of user sessions or permissions.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A robust, centralized authentication library that integrates with Next.js to manage user sessions and provide tools for protecting pages. This is the problem that Auth.js (formerly NextAuth.js) is designed to solve.</p>
+</li>
+</ol>
+<h3 id="iteration-1-installing-and-configuring-authjs">Iteration 1: Installing and Configuring Auth.js</h3>
+<p>Let's introduce Auth.js to our project to add a basic authentication layer. We'll use the GitHub provider for a simple OAuth login.</p>
+<p>First, install the necessary package.</p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>next-auth@beta
+</code></pre></div>
+
+<blockquote>
+<p><strong>Note</strong>: We are using <code>next-auth@beta</code> which is the latest version, commonly referred to as Auth.js v5, designed for the Next.js App Router.</p>
+</blockquote>
+<p>Next, we need to set up environment variables for our authentication provider and a secret key for signing session cookies.</p>
+<p><strong>Create a <code>.env.local</code> file</strong> in the root of your project.</p>
+<div class="codehilite"><pre><span></span><code># .env.local
+
+# Generate a secret with: openssl rand -base64 32
+AUTH_SECRET=&quot;your-super-secret-value-here&quot;
+
+# GitHub OAuth App credentials
+AUTH_GITHUB_ID=&quot;your-github-client-id&quot;
+AUTH_GITHUB_SECRET=&quot;your-github-client-secret&quot;
+</code></pre></div>
+
+<p>You can get your GitHub credentials by creating a new OAuth App in your GitHub developer settings. The "Authorization callback URL" should be <code>http://localhost:3000/api/auth/callback/github</code>.</p>
+<p>Now, we create the core of our authentication logic: the Auth.js configuration and API route handler.</p>
+<p><strong>Project Structure Change</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+├── app/
+│   ├── api/
+│   │   └── auth/
+│   │       └── [...nextauth]/
+│   │           └── route.ts      # ← New Auth.js API route
+...
+├── auth.ts                       # ← New Auth.js config file
+...
+</code></pre></div>
+
+<p><strong>The Auth.js Configuration</strong>:
+This file defines our authentication strategies (providers).</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/auth.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">NextAuth</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-auth&quot;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">GitHub</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-auth/providers/github&quot;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">handlers</span><span class="p">,</span><span class="w"> </span><span class="nx">auth</span><span class="p">,</span><span class="w"> </span><span class="nx">signIn</span><span class="p">,</span><span class="w"> </span><span class="nx">signOut</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">NextAuth</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">providers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="nx">GitHub</span><span class="p">],</span>
+<span class="p">})</span>
+</code></pre></div>
+
+<p><strong>The Auth.js API Route</strong>:
+This file exposes the <code>GET</code> and <code>POST</code> handlers from our configuration as a catch-all API route. This single route handles sign-in, sign-out, callbacks, and session management.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/api/auth/[...nextauth]/route.ts</span>
+<span class="k">export</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">handlers</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">GET</span><span class="p">,</span><span class="w"> </span><span class="nx">handlers</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">POST</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/auth&quot;</span>
+</code></pre></div>
+
+<p>With these two files, we now have a fully functional set of authentication API endpoints. However, our application's UI doesn't know about them yet. We need to provide a way for users to sign in and out.</p>
+<p>Let's create a component to handle this.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/AuthButtons.tsx</span>
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">signIn</span><span class="p">,</span><span class="w"> </span><span class="nx">signOut</span><span class="p">,</span><span class="w"> </span><span class="nx">useSession</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-auth/react&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">AuthButtons</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="kt">session</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useSession</span><span class="p">();</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">session</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex items-center gap-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="nx">Signed</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="p">{</span><span class="nx">session</span><span class="p">.</span><span class="nx">user</span><span class="o">?</span><span class="p">.</span><span class="nx">email</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">signOut</span><span class="p">()}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-red-500 text-white px-3 py-1 rounded&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="nx">Sign</span><span class="w"> </span><span class="nx">Out</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">signIn</span><span class="p">(</span><span class="s2">&quot;github&quot;</span><span class="p">)}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-blue-500 text-white px-3 py-1 rounded&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="nx">Sign</span><span class="w"> </span><span class="nx">In</span><span class="w"> </span><span class="kd">with</span><span class="w"> </span><span class="nx">GitHub</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This component uses the <code>useSession</code> hook, which requires a client-side context provider. We must wrap our application in <code>SessionProvider</code>.</p>
+<p><strong>Updating the Root Layout</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/layout.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Metadata</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Inter</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next/font/google&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="s2">&quot;./globals.css&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Header</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/components/Header&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">SessionProvider</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-auth/react&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// ← Import</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">inter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">Inter</span><span class="p">({</span><span class="w"> </span><span class="nx">subsets</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;latin&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">});</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">metadata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RootLayout</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">children</span><span class="p">,</span>
+<span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">Readonly</span><span class="o">&lt;</span><span class="p">{</span>
+<span class="w">  </span><span class="nx">children</span><span class="o">:</span><span class="w"> </span><span class="kt">React.ReactNode</span><span class="p">;</span>
+<span class="p">}</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">html</span><span class="w"> </span><span class="na">lang</span><span class="o">=</span><span class="s">&quot;en&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">body</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="p">{</span><span class="nx">inter</span><span class="p">.</span><span class="nx">className</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">SessionProvider</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span><span class="cm">/* ← Wrap children */</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Header</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">children</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">SessionProvider</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Finally, let's replace the hardcoded link in our <code>Header</code> with the new <code>AuthButtons</code> component.</p>
+<p><strong>Updating the Header</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Header.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Link</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/link&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">AuthButtons</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./AuthButtons&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// ← Import</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Header</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">header</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-gray-100 p-4 border-b&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">nav</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex justify-between items-center&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex items-center gap-4&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">href</span><span class="o">=</span><span class="s">&quot;/&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;font-bold&quot;</span><span class="p">&gt;</span><span class="nx">My</span><span class="w"> </span><span class="nx">Blog</span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">href</span><span class="o">=</span><span class="s">&quot;/admin/create-post&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-blue-600 hover:underline&quot;</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="nx">Create</span><span class="w"> </span><span class="nx">Post</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">AuthButtons</span><span class="w"> </span><span class="p">/&gt;</span><span class="w"> </span><span class="p">{</span><span class="cm">/* ← Use the component */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">header</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification">Verification</h3>
+<p>Let's run the app now.
+- The header now shows a "Sign In with GitHub" button.
+- Clicking it redirects you to GitHub to authorize the application.
+- After authorizing, you are redirected back to the homepage.
+- The header now displays "Signed in as your.email@example.com" and a "Sign Out" button.</p>
+<p><strong>Expected vs. Actual Improvement</strong>:
+- <strong>Expected</strong>: A way for users to establish an identity within the application.
+- <strong>Actual</strong>: We have a complete login/logout flow. The application can now distinguish between authenticated and anonymous users.</p>
+<p><strong>Limitation Preview</strong>:
+This is a huge step forward, but we've only solved half the problem. We can <em>identify</em> users, but we aren't <em>using</em> that identity to control access. Anyone, logged in or not, can still navigate directly to <code>/admin/create-post</code> and see the form. Our next step is to use the session data to protect content.</p>
+<h2 id="session-management">Session management</h2>
+<h2 id="accessing-the-user-session">Accessing the User Session</h2>
+<p>Our application now has a concept of a "logged-in user," but this information is currently confined to the <code>AuthButtons</code> component. To make our application truly auth-aware, we need to access the user's session data in different contexts:
+1.  <strong>Client Components</strong>: To conditionally render UI elements (like we did with <code>AuthButtons</code>).
+2.  <strong>Server Components</strong>: To fetch user-specific data or render content on the server based on the user's identity.
+3.  <strong>API Routes / Route Handlers</strong>: To authorize API requests.</p>
+<p>Auth.js provides different methods for each context.</p>
+<h3 id="iteration-2-making-the-application-session-aware">Iteration 2: Making the Application Session-Aware</h3>
+<p><strong>Current State Recap</strong>: Users can log in and out, but the rest of the application is oblivious to their authentication status. The <code>/admin/create-post</code> page is still wide open.</p>
+<p><strong>Current Limitation</strong>: We can't personalize content or protect pages because we aren't checking for a valid session outside of our <code>Header</code>.</p>
+<p><strong>New Scenario Introduction</strong>: What if we want to greet the user by name on the homepage? And what if the "Create Post" page should only be visible to logged-in users?</p>
+<h3 id="accessing-the-session-in-server-components">Accessing the Session in Server Components</h3>
+<p>Let's start by personalizing the homepage, which is a Server Component. We can use the <code>auth()</code> function exported from our <code>src/auth.ts</code> file.</p>
+<p><strong>Before</strong>: The homepage is static.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx (Old version)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Link</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/link&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-8&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-2xl font-bold&quot;</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">Blog</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">This</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="nx">homepage</span><span class="p">.</span><span class="w"> </span><span class="nx">Everyone</span><span class="w"> </span><span class="nx">can</span><span class="w"> </span><span class="nx">see</span><span class="w"> </span><span class="k">this</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong>: The homepage greets the logged-in user.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx (New version)</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">auth</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/auth&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// ← Import auth</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">session</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">auth</span><span class="p">();</span><span class="w"> </span><span class="c1">// ← Get session on the server</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-8&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-2xl font-bold&quot;</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">Blog</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">session</span><span class="o">?</span><span class="p">.</span><span class="nx">user</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Hello</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="nx">session</span><span class="p">.</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span><span class="o">!</span><span class="w"> </span><span class="nx">You</span><span class="w"> </span><span class="nx">are</span><span class="w"> </span><span class="nx">signed</span><span class="w"> </span><span class="ow">in</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">This</span><span class="w"> </span><span class="nx">is</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="nx">homepage</span><span class="p">.</span><span class="w"> </span><span class="nx">Please</span><span class="w"> </span><span class="nx">sign</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">create</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="nx">post</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">)}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, when a logged-in user visits the homepage, they see a personalized greeting. An anonymous user sees the original message. This happens entirely on the server, resulting in a fast, non-interactive initial page load.</p>
+<h3 id="accessing-the-session-in-client-components">Accessing the Session in Client Components</h3>
+<p>We've already seen this in action with our <code>AuthButtons</code> component. The <code>useSession</code> hook is the primary way to access session data in Client Components. It's provided by the <code>SessionProvider</code> we added in <code>layout.tsx</code>.</p>
+<p>Let's try to "protect" our <code>create-post</code> page using this client-side technique. This approach is flawed, but it's a crucial step in understanding <em>why</em> we need server-side protection.</p>
+<p><strong>Attempting Client-Side Protection</strong>:
+We'll convert the <code>CreatePostPage</code> to a Client Component and use <code>useSession</code> to check for a user.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/admin/create-post/page.tsx (Client-side protection attempt)</span>
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useSession</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-auth/react&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useRouter</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next/navigation&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">CreatePostPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="kt">session</span><span class="p">,</span><span class="w"> </span><span class="nx">status</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useSession</span><span class="p">();</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">router</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRouter</span><span class="p">();</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// If the session is loading, do nothing yet.</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;loading&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// If there is no session, redirect to the homepage.</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">session</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">router</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">session</span><span class="p">,</span><span class="w"> </span><span class="nx">status</span><span class="p">,</span><span class="w"> </span><span class="nx">router</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="c1">// While loading, show a message.</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">status</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;loading&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-8&quot;</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">session</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="c1">// If there&#39;s no session after loading, the redirect is in progress.</span>
+<span class="w">  </span><span class="c1">// Render null or a message to avoid flashing the protected content.</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">session</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-8&quot;</span><span class="p">&gt;</span><span class="nx">Redirecting</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="c1">// If we have a session, render the protected content.</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-8&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-2xl font-bold mb-4&quot;</span><span class="p">&gt;</span><span class="nx">Create</span><span class="w"> </span><span class="nx">New</span><span class="w"> </span><span class="nx">Post</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;mb-4&quot;</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="nx">session</span><span class="p">.</span><span class="nx">user</span><span class="o">?</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex flex-col gap-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* Form fields... */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="diagnostic-analysis-the-failure-of-client-side-protection">Diagnostic Analysis: The Failure of Client-Side Protection</h3>
+<p>Let's analyze what happens when a logged-out user tries to access <code>/admin/create-post</code>.</p>
+<p><strong>Browser Behavior</strong>:
+The user sees a "Loading session..." message for a brief moment, which is then replaced by "Redirecting...". The page content might flash on the screen for a split second before the JavaScript kicks in and redirects them to the homepage. This is known as a "flash of unprotected content."</p>
+<p><strong>Network Tab Analysis</strong>:
+1.  The browser sends a GET request for the <code>/admin/create-post</code> page.
+2.  The server, which doesn't know about the user's session for this page, sends back the full HTML and JavaScript for the <code>CreatePostPage</code> component (including the form!).
+3.  The browser renders this page.
+4.  The client-side JavaScript runs. The <code>useSession</code> hook makes a request to <code>/api/auth/session</code> to get the session data.
+5.  The session API returns that there is no active session.
+6.  The <code>useEffect</code> hook runs, sees there is no session, and triggers <code>router.push('/')</code>.
+7.  The browser navigates to the homepage.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: A flicker of the protected page before being redirected. It feels slow and insecure.</p>
+</li>
+<li>
+<p><strong>What the network reveals</strong>: The key failure is that the protected content (the HTML for the form) is sent to the browser <em>before</em> the authentication check is complete.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: The protection logic runs on the client, but the content is delivered from the server. The server has already sent the sensitive data before the client has a chance to stop it.</p>
+</li>
+<li>
+<p><strong>Why this approach can't solve this</strong>: Client-side rendering and redirection for security is fundamentally flawed. It's a UX problem (the flicker) and a security risk (sensitive data is sent to the browser, even if briefly).</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A way to perform the authentication check on the server <em>before</em> any of the page's HTML is rendered or sent to the client. This is the job of Next.js Middleware.</p>
+</li>
+</ol>
+<h2 id="protected-routes-and-middleware">Protected routes and middleware</h2>
+<h2 id="server-side-protection-with-middleware">Server-Side Protection with Middleware</h2>
+<p>We've seen that client-side redirects are insufficient for protecting routes. The check must happen on the server before the request is handed over to the page component. In Next.js, the perfect place for this is Middleware.</p>
+<p>Middleware is a function that runs before a request is completed. Based on the incoming request, you can rewrite, redirect, or modify headers before passing the request along to be rendered.</p>
+<h3 id="iteration-3-implementing-middleware-for-route-protection">Iteration 3: Implementing Middleware for Route Protection</h3>
+<p><strong>Current State Recap</strong>: We can access session data, but our attempt to protect the <code>/admin/create-post</code> page on the client-side resulted in a "flash of unprotected content."</p>
+<p><strong>Current Limitation</strong>: Our security check happens too late in the request lifecycle.</p>
+<p><strong>New Scenario Introduction</strong>: How can we ensure that a request from a logged-out user to <code>/admin/create-post</code> is <em>never</em> allowed to reach the page component, and is instead redirected to a login page instantly?</p>
+<p>First, let's simplify our <code>CreatePostPage</code> back to a Server Component. It no longer needs to worry about redirecting; it can assume that if it renders, the user is authenticated.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/admin/create-post/page.tsx (Simplified Server Component)</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">auth</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/auth&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">CreatePostPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">session</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">auth</span><span class="p">();</span>
+
+<span class="w">  </span><span class="c1">// We can be reasonably sure session exists because of middleware,</span>
+<span class="w">  </span><span class="c1">// but it&#39;s good practice to handle the edge case.</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">session</span><span class="o">?</span><span class="p">.</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-8&quot;</span><span class="p">&gt;</span><span class="nx">Access</span><span class="w"> </span><span class="nx">Denied</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;p-8&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-2xl font-bold mb-4&quot;</span><span class="p">&gt;</span><span class="nx">Create</span><span class="w"> </span><span class="nx">New</span><span class="w"> </span><span class="nx">Post</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;mb-4&quot;</span><span class="p">&gt;</span><span class="nx">Welcome</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="nx">session</span><span class="p">.</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex flex-col gap-4&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">label</span><span class="w"> </span><span class="na">htmlFor</span><span class="o">=</span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;block mb-1&quot;</span><span class="p">&gt;</span><span class="nx">Title</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;w-full p-2 border rounded&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">label</span><span class="w"> </span><span class="na">htmlFor</span><span class="o">=</span><span class="s">&quot;content&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;block mb-1&quot;</span><span class="p">&gt;</span><span class="nx">Content</span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">textarea</span><span class="w"> </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;content&quot;</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;content&quot;</span><span class="w"> </span><span class="na">rows</span><span class="o">=</span><span class="p">{</span><span class="mf">10</span><span class="p">}</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;w-full p-2 border rounded&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">textarea</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-blue-500 text-white p-2 rounded self-start&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="nx">Submit</span><span class="w"> </span><span class="nx">Post</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, let's create the middleware file. This file must be placed at the root of your project (or inside <code>src/</code>).</p>
+<p><strong>Project Structure Change</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+├── middleware.ts                 # ← New middleware file
+...
+</code></pre></div>
+
+<p>Auth.js v5 provides a convenient way to integrate with Next.js middleware. We can simply export the <code>auth</code> function from our <code>auth.ts</code> file as the default export in <code>middleware.ts</code>.</p>
+<p><strong>The Middleware Implementation</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/middleware.ts</span>
+<span class="k">export</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">auth</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/auth&quot;</span>
+</code></pre></div>
+
+<p>This is a great start, but by default, this protects <em>all</em> routes in your application, which is not what we want. We need to tell the middleware which routes to protect and which to leave public. We do this by adding a <code>matcher</code> configuration to our <code>auth.ts</code> file.</p>
+<p>Let's update our Auth.js config to include authorization logic.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/auth.ts (Updated with authorization logic)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">NextAuth</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-auth&quot;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">GitHub</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-auth/providers/github&quot;</span>
+<span class="k">import</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">NextAuthConfig</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-auth&quot;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">theme</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">logo</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://next-auth.js.org/img/logo/logo-sm.png&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nx">providers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="nx">GitHub</span><span class="p">],</span>
+<span class="w">  </span><span class="nx">callbacks</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">authorized</span><span class="p">({</span><span class="w"> </span><span class="nx">request</span><span class="p">,</span><span class="w"> </span><span class="nx">auth</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">pathname</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">request</span><span class="p">.</span><span class="nx">nextUrl</span>
+<span class="w">      </span><span class="c1">// Protect any route under /admin</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">pathname</span><span class="p">.</span><span class="nx">startsWith</span><span class="p">(</span><span class="s2">&quot;/admin&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Returns true if the user is logged in, false otherwise.</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">!!</span><span class="nx">auth</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="c1">// All other routes are public</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">}</span><span class="w"> </span><span class="nx">satisfies</span><span class="w"> </span><span class="nx">NextAuthConfig</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">handlers</span><span class="p">,</span><span class="w"> </span><span class="nx">auth</span><span class="p">,</span><span class="w"> </span><span class="nx">signIn</span><span class="p">,</span><span class="w"> </span><span class="nx">signOut</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">NextAuth</span><span class="p">(</span><span class="nx">config</span><span class="p">)</span>
+</code></pre></div>
+
+<p>The <code>authorized</code> callback is the heart of our middleware's logic.
+1.  It receives the <code>request</code> and the <code>auth</code> object (the session).
+2.  We check if the request's <code>pathname</code> starts with <code>/admin</code>.
+3.  If it does, we return <code>!!auth</code>. This expression converts the <code>auth</code> object (which is either the session object or <code>null</code>) into a boolean. If the user is logged in, it returns <code>true</code> (access granted). If not, it returns <code>false</code> (access denied).
+4.  If the route is not under <code>/admin</code>, we return <code>true</code>, making it public.</p>
+<p>When <code>authorized</code> returns <code>false</code>, Auth.js will automatically redirect the user to the sign-in page.</p>
+<h3 id="verification_1">Verification</h3>
+<p>Let's test the new behavior as a logged-out user:
+1.  Navigate to the homepage (<code>/</code>). It loads normally.
+2.  Click the "Create Post" link, or manually type <code>http://localhost:3000/admin/create-post</code> into the address bar.</p>
+<p><strong>Browser Behavior</strong>:
+You are instantly redirected to the Auth.js default sign-in page, which prompts you to "Sign in with GitHub". There is no flicker, no flash of unprotected content.</p>
+<p><strong>Network Tab Analysis</strong>:
+1.  The browser sends a GET request for <code>/admin/create-post</code>.
+2.  The Next.js server runs the middleware <em>before</em> looking for the page component.
+3.  The <code>authorized</code> callback runs, finds no session (<code>auth</code> is <code>null</code>), and returns <code>false</code>.
+4.  The middleware intercepts the request and returns a <code>307 Temporary Redirect</code> response, with the <code>Location</code> header pointing to <code>/api/auth/signin?callbackUrl=%2Fadmin%2Fcreate-post</code>.
+5.  The browser follows the redirect to the sign-in page.</p>
+<p><strong>Expected vs. Actual Improvement</strong>:
+- <strong>Expected</strong>: A secure way to prevent unauthorized access to a route.
+- <strong>Actual</strong>: We have implemented robust, server-side route protection. The protected page's code is never even executed, let alone sent to an unauthorized user's browser.</p>
+<p><strong>Limitation Preview</strong>:
+Our application can now distinguish between anonymous users and logged-in users. But what if we have different <em>types</em> of logged-in users? For example, "subscribers" who can read content and "admins" who can write content. Currently, <em>any</em> user who logs in via GitHub can access the <code>/admin</code> area. We need a more granular level of control: Role-Based Access Control (RBAC).</p>
+<h2 id="role-based-access-control">Role-based access control</h2>
+<h2 id="implementing-role-based-access-control-rbac">Implementing Role-Based Access Control (RBAC)</h2>
+<p>Authentication answers the question, "Who are you?". Authorization answers the question, "What are you allowed to do?". So far, we've only implemented authentication. Now, we'll add authorization by assigning roles to users.</p>
+<p>For our blog, we'll define two roles:
+-   <code>reader</code>: A standard logged-in user.
+-   <code>admin</code>: A user who can create posts.</p>
+<h3 id="iteration-4-adding-roles-to-the-session">Iteration 4: Adding Roles to the Session</h3>
+<p><strong>Current State Recap</strong>: Any user who successfully logs in can access the <code>/admin</code> routes.</p>
+<p><strong>Current Limitation</strong>: Our authorization logic is binary: you're either logged in or you're not. It doesn't account for different permission levels among authenticated users.</p>
+<p><strong>New Scenario Introduction</strong>: How can we ensure that only a specific user (e.g., the one whose email matches a predefined admin email) can access <code>/admin/create-post</code>, while all other logged-in users are denied access?</p>
+<p>To implement this, we need to inject custom data—our <code>role</code> field—into the Auth.js session token. We can do this using the <code>jwt</code> and <code>session</code> callbacks in our <code>auth.ts</code> configuration.</p>
+<ol>
+<li><strong><code>jwt</code> callback</strong>: This is called whenever a JSON Web Token is created or updated. We can use it to add the user's role to the token itself.</li>
+<li><strong><code>session</code> callback</strong>: This is called whenever a session is accessed. We use it to take the data from the token (like our custom role) and make it available on the session object that our application code uses.</li>
+</ol>
+<p>Let's update <code>auth.ts</code> to include these callbacks. For this example, we'll hardcode a single email address as the admin. In a real application, this would come from a database.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/auth.ts (Updated with RBAC)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">NextAuth</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-auth&quot;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">GitHub</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-auth/providers/github&quot;</span>
+<span class="k">import</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">NextAuthConfig</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-auth&quot;</span>
+
+<span class="c1">// Define the admin email in an environment variable for security</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">ADMIN_EMAIL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">ADMIN_EMAIL</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">theme</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="nx">providers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="nx">GitHub</span><span class="p">],</span>
+<span class="w">  </span><span class="nx">callbacks</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// This callback is used to customize the JWT.</span>
+<span class="w">    </span><span class="k">async</span><span class="w"> </span><span class="nx">jwt</span><span class="p">({</span><span class="w"> </span><span class="nx">token</span><span class="p">,</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// On initial sign-in, the `user` object is available.</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Check if the signed-in user is the admin.</span>
+<span class="w">        </span><span class="nx">token</span><span class="p">.</span><span class="nx">role</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">ADMIN_EMAIL</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;admin&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;reader&quot;</span><span class="p">;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="nx">token</span><span class="p">;</span>
+<span class="w">    </span><span class="p">},</span>
+
+<span class="w">    </span><span class="c1">// This callback is used to customize the session object.</span>
+<span class="w">    </span><span class="k">async</span><span class="w"> </span><span class="nx">session</span><span class="p">({</span><span class="w"> </span><span class="nx">session</span><span class="p">,</span><span class="w"> </span><span class="nx">token</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// Add the role from the token to the session object.</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">session</span><span class="o">?</span><span class="p">.</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">session</span><span class="p">.</span><span class="nx">user</span><span class="p">.</span><span class="nx">role</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">token</span><span class="p">.</span><span class="nx">role</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="nx">session</span><span class="p">;</span>
+<span class="w">    </span><span class="p">},</span>
+
+<span class="w">    </span><span class="nx">authorized</span><span class="p">({</span><span class="w"> </span><span class="nx">request</span><span class="p">,</span><span class="w"> </span><span class="nx">auth</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">pathname</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">request</span><span class="p">.</span><span class="nx">nextUrl</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">pathname</span><span class="p">.</span><span class="nx">startsWith</span><span class="p">(</span><span class="s2">&quot;/admin&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Check for both a session AND the admin role.</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">auth</span><span class="o">?</span><span class="p">.</span><span class="nx">user</span><span class="o">?</span><span class="p">.</span><span class="nx">role</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;admin&quot;</span><span class="p">;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">}</span><span class="w"> </span><span class="nx">satisfies</span><span class="w"> </span><span class="nx">NextAuthConfig</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">handlers</span><span class="p">,</span><span class="w"> </span><span class="nx">auth</span><span class="p">,</span><span class="w"> </span><span class="nx">signIn</span><span class="p">,</span><span class="w"> </span><span class="nx">signOut</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">NextAuth</span><span class="p">(</span><span class="nx">config</span><span class="p">)</span>
+</code></pre></div>
+
+<p>And add the admin email to your <code>.env.local</code> file:</p>
+<div class="codehilite"><pre><span></span><code># .env.local
+...
+ADMIN_EMAIL=&quot;your-admin-email@example.com&quot;
+</code></pre></div>
+
+<blockquote>
+<p><strong>Type Safety Note</strong>: The default <code>session.user</code> object doesn't have a <code>role</code> property. To make TypeScript aware of our custom property, you can extend the <code>next-auth</code> types using module augmentation. Create a file <code>types/next-auth.d.ts</code>:</p>
+</blockquote>
+<div class="codehilite"><pre><span></span><code><span class="c1">// types/next-auth.d.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="s1">&#39;next-auth&#39;</span><span class="p">;</span>
+
+<span class="kr">declare</span><span class="w"> </span><span class="nx">module</span><span class="w"> </span><span class="s1">&#39;next-auth&#39;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">interface</span><span class="w"> </span><span class="nx">Session</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">user</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">role?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="nx">DefaultSession</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">];</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="kd">interface</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">role?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kr">declare</span><span class="w"> </span><span class="nx">module</span><span class="w"> </span><span class="s1">&#39;next-auth/jwt&#39;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">interface</span><span class="w"> </span><span class="nx">JWT</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">role?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="diagnostic-analysis-testing-the-role-based-failure">Diagnostic Analysis: Testing the Role-Based Failure</h3>
+<p>Let's demonstrate the failure this new system prevents.
+1.  Log out of the application.
+2.  Log in with a GitHub account whose email is <strong>not</strong> the <code>ADMIN_EMAIL</code>. You are now a <code>reader</code>.
+3.  Try to navigate to <code>/admin/create-post</code>.</p>
+<p><strong>Browser Behavior</strong>:
+You are logged in, but when you try to access the admin page, you are redirected back to the sign-in page with an "Access Denied" error message. The system correctly identifies that while you are authenticated, you are not authorized.</p>
+<p><strong>Let's parse this evidence</strong>:
+1.  <strong>What the user experiences</strong>: A clear denial of access, even though they are logged in.
+    -   <strong>Expected</strong>: Only admins should see the create post page.
+    -   <strong>Actual</strong>: The middleware correctly blocks non-admin users.
+2.  <strong>How it works</strong>:
+    -   When you logged in, the <code>jwt</code> callback ran and assigned <code>token.role = "reader"</code>.
+    -   When you requested <code>/admin/create-post</code>, the middleware ran.
+    -   The <code>authorized</code> callback was executed. It found a session (<code>auth</code> was not null).
+    -   However, the check <code>auth?.user?.role === "admin"</code> failed because <code>auth.user.role</code> was <code>"reader"</code>.
+    -   The callback returned <code>false</code>, triggering the redirect to the sign-in page with an error.</p>
+<h3 id="conditionally-rendering-ui-based-on-role">Conditionally Rendering UI Based on Role</h3>
+<p>We can also use this new <code>role</code> property to conditionally render UI elements. For example, we could hide the "Create Post" link from users who are not admins.</p>
+<p><strong>Updating the Header</strong>:
+This requires converting <code>Header</code> to a Server Component to access the session.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Header.tsx (Updated for RBAC)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Link</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/link&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">AuthButtons</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./AuthButtons&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">auth</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/auth&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// ← Import auth</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Header</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">session</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">auth</span><span class="p">();</span><span class="w"> </span><span class="c1">// ← Get session on the server</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">isAdmin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">session</span><span class="o">?</span><span class="p">.</span><span class="nx">user</span><span class="o">?</span><span class="p">.</span><span class="nx">role</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;admin&#39;</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">header</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;bg-gray-100 p-4 border-b&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">nav</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex justify-between items-center&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;flex items-center gap-4&quot;</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">href</span><span class="o">=</span><span class="s">&quot;/&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;font-bold&quot;</span><span class="p">&gt;</span><span class="nx">My</span><span class="w"> </span><span class="nx">Blog</span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">isAdmin</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="c1">// ← Conditionally render the link</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">href</span><span class="o">=</span><span class="s">&quot;/admin/create-post&quot;</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;text-blue-600 hover:underline&quot;</span><span class="p">&gt;</span>
+<span class="w">              </span><span class="nx">Create</span><span class="w"> </span><span class="nx">Post</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">)}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">AuthButtons</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">header</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, a user with the <code>reader</code> role won't even see the link to the admin section, providing a cleaner user experience on top of the robust server-side security.</p>
+<h3 id="common-failure-modes-and-their-signatures">Common Failure Modes and Their Signatures</h3>
+<h4 id="symptom-custom-session-properties-like-role-are-undefined">Symptom: Custom session properties (like <code>role</code>) are <code>undefined</code>.</h4>
+<p><strong>Browser behavior</strong>:
+UI that depends on the role doesn't render, or server-side checks fail.</p>
+<p><strong>Console pattern</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">TypeError</span><span class="o">:</span><span class="w"> </span><span class="n">Cannot</span><span class="w"> </span><span class="n">read</span><span class="w"> </span><span class="n">properties</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="kc">undefined</span><span class="w"> </span><span class="o">(</span><span class="n">reading</span><span class="w"> </span><span class="s1">&#39;role&#39;</span><span class="o">)</span>
+</code></pre></div>
+
+<p><strong>DevTools clues</strong>:
+- In React DevTools, inspecting the <code>useSession</code> hook shows a <code>session</code> object, but the <code>user</code> object is missing the custom field.</p>
+<p><strong>Root cause</strong>: The <code>jwt</code> and/or <code>session</code> callbacks in <code>auth.ts</code> are missing or incorrect. You must pass the custom data from the <code>token</code> to the <code>session</code> object in the <code>session</code> callback.
+<strong>Solution</strong>: Ensure both <code>jwt</code> and <code>session</code> callbacks are correctly implemented to persist the custom data.</p>
+<h4 id="symptom-infinite-redirect-loop-after-logging-in">Symptom: Infinite redirect loop after logging in.</h4>
+<p><strong>Browser behavior</strong>:
+The page continuously reloads between the page you're trying to access and the login page.</p>
+<p><strong>Network Tab clues</strong>:
+- A rapid sequence of 307 redirects between, for example, <code>/admin</code> and <code>/api/auth/signin</code>.</p>
+<p><strong>Root cause</strong>: The middleware logic is flawed. A common mistake is protecting a route that is part of the login flow itself, or a logic error in the <code>authorized</code> callback that denies access even to valid users.
+<strong>Solution</strong>: Carefully review the <code>authorized</code> callback logic. Use <code>console.log(pathname, auth)</code> inside the callback to trace what's happening on each request. Ensure you are not protecting public pages like the homepage if that's where you redirect after login.</p>
+<h4 id="symptom-error-next_auth_secret-is-not-set-or-auth_secret-is-not-set">Symptom: <code>Error: NEXT_AUTH_SECRET is not set</code> or <code>AUTH_SECRET is not set</code></h4>
+<p><strong>Terminal Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="o">[</span>next-auth<span class="o">][</span>error<span class="o">][</span>NO_SECRET<span class="o">]</span>
+https://next-auth.js.org/errors#no_secret
+</code></pre></div>
+
+<p><strong>Root cause</strong>: The <code>AUTH_SECRET</code> (or <code>NEXTAUTH_SECRET</code> for older versions) environment variable is missing from <code>.env.local</code> or is not accessible by the server process. This is critical for production builds.
+<strong>Solution</strong>: Generate a strong secret (<code>openssl rand -base64 32</code>) and add it to your <code>.env.local</code> and your production environment variables.</p>
+<h2 id="synthesis-the-complete-journey">Synthesis - The Complete Journey</h2>
+<h2 id="the-journey-from-unprotected-to-role-based-security">The Journey: From Unprotected to Role-Based Security</h2>
+<p>We have progressively transformed our application from a completely open public site to a secure application with granular, role-based access control. Each step solved a critical flaw in the previous iteration.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Iteration</th>
+<th style="text-align: left;">Failure Mode</th>
+<th style="text-align: left;">Technique Applied</th>
+<th style="text-align: left;">Result</th>
+<th style="text-align: left;">Security Posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">All routes are public by default.</td>
+<td style="text-align: left;">None</td>
+<td style="text-align: left;">Anyone can access the admin page.</td>
+<td style="text-align: left;">Insecure</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">No user identity.</td>
+<td style="text-align: left;">Install and configure Auth.js with a provider.</td>
+<td style="text-align: left;">Users can log in and out.</td>
+<td style="text-align: left;">Authenticated</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Protected content flashes on screen.</td>
+<td style="text-align: left;">Client-side <code>useSession</code> check and redirect.</td>
+<td style="text-align: left;">Content is hidden after a delay, but still sent.</td>
+<td style="text-align: left;">Flawed</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">Client-side checks are insecure.</td>
+<td style="text-align: left;">Next.js Middleware with <code>authorized</code> callback.</td>
+<td style="text-align: left;">Unauthorized requests are blocked on the server.</td>
+<td style="text-align: left;">Secure</td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">All logged-in users have the same access.</td>
+<td style="text-align: left;">RBAC via <code>jwt</code> and <code>session</code> callbacks.</td>
+<td style="text-align: left;">Access is granted based on user role.</td>
+<td style="text-align: left;">Granular</td>
+</tr>
+</tbody>
+</table>
+<h3 id="final-implementation">Final Implementation</h3>
+<p>Here is the complete, production-ready code for our authentication system, incorporating all the improvements.</p>
+<p><strong>Final <code>src/auth.ts</code></strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/auth.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">NextAuth</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-auth&quot;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">GitHub</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-auth/providers/github&quot;</span>
+<span class="k">import</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">NextAuthConfig</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;next-auth&quot;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">ADMIN_EMAIL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">ADMIN_EMAIL</span><span class="p">;</span>
+
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">ADMIN_EMAIL</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;ADMIN_EMAIL environment variable is not set&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">theme</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">logo</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://next-auth.js.org/img/logo/logo-sm.png&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nx">providers</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="nx">GitHub</span><span class="p">({</span>
+<span class="w">      </span><span class="nx">clientId</span><span class="o">:</span><span class="w"> </span><span class="kt">process.env.AUTH_GITHUB_ID</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">clientSecret</span><span class="o">:</span><span class="w"> </span><span class="kt">process.env.AUTH_GITHUB_SECRET</span><span class="p">,</span>
+<span class="w">    </span><span class="p">}),</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nx">callbacks</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">async</span><span class="w"> </span><span class="nx">jwt</span><span class="p">({</span><span class="w"> </span><span class="nx">token</span><span class="p">,</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">token</span><span class="p">.</span><span class="nx">role</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">ADMIN_EMAIL</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">&quot;admin&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;reader&quot;</span><span class="p">;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="nx">token</span><span class="p">;</span>
+<span class="w">    </span><span class="p">},</span>
+
+<span class="w">    </span><span class="k">async</span><span class="w"> </span><span class="nx">session</span><span class="p">({</span><span class="w"> </span><span class="nx">session</span><span class="p">,</span><span class="w"> </span><span class="nx">token</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">session</span><span class="o">?</span><span class="p">.</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">session</span><span class="p">.</span><span class="nx">user</span><span class="p">.</span><span class="nx">role</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">token</span><span class="p">.</span><span class="nx">role</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="nx">session</span><span class="p">;</span>
+<span class="w">    </span><span class="p">},</span>
+
+<span class="w">    </span><span class="nx">authorized</span><span class="p">({</span><span class="w"> </span><span class="nx">request</span><span class="p">,</span><span class="w"> </span><span class="nx">auth</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">pathname</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">request</span><span class="p">.</span><span class="nx">nextUrl</span><span class="p">;</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">pathname</span><span class="p">.</span><span class="nx">startsWith</span><span class="p">(</span><span class="s2">&quot;/admin&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">auth</span><span class="o">?</span><span class="p">.</span><span class="nx">user</span><span class="o">?</span><span class="p">.</span><span class="nx">role</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;admin&quot;</span><span class="p">;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="c1">// All other routes are public and do not require authentication.</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">}</span><span class="w"> </span><span class="nx">satisfies</span><span class="w"> </span><span class="nx">NextAuthConfig</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">handlers</span><span class="p">,</span><span class="w"> </span><span class="nx">auth</span><span class="p">,</span><span class="w"> </span><span class="nx">signIn</span><span class="p">,</span><span class="w"> </span><span class="nx">signOut</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">NextAuth</span><span class="p">(</span><span class="nx">config</span><span class="p">)</span>
+</code></pre></div>
+
+<p><strong>Final <code>src/middleware.ts</code></strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/middleware.ts</span>
+<span class="k">export</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">auth</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/auth&quot;</span>
+
+<span class="c1">// Optionally, you can use a matcher to specify which routes the middleware should run on.</span>
+<span class="c1">// This is often more performant than running it on every request.</span>
+<span class="c1">// export const config = {</span>
+<span class="c1">//   matcher: [&quot;/admin/:path*&quot;],</span>
+<span class="c1">// };</span>
+</code></pre></div>
+
+<h3 id="decision-framework-authorization-strategies">Decision Framework: Authorization Strategies</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Strategy</th>
+<th style="text-align: left;">When to Use</th>
+<th style="text-align: left;">Pros</th>
+<th style="text-align: left;">Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Middleware (<code>authorized</code> callback)</strong></td>
+<td style="text-align: left;">For protecting entire route segments (<code>/admin</code>, <code>/dashboard</code>). The primary line of defense.</td>
+<td style="text-align: left;">Runs first, highly secure, blocks requests on the server, central logic.</td>
+<td style="text-align: left;">Less granular than per-component checks.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Server Component (<code>await auth()</code>)</strong></td>
+<td style="text-align: left;">To fetch user-specific data or make authorization decisions within a page that is already protected.</td>
+<td style="text-align: left;">Integrates seamlessly with server-side data fetching.</td>
+<td style="text-align: left;">Runs after middleware; should not be the <em>only</em> line of defense.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Client Component (<code>useSession</code>)</strong></td>
+<td style="text-align: left;">For purely cosmetic UI changes (e.g., showing/hiding a "Profile" link). <strong>Never for security.</strong></td>
+<td style="text-align: left;">Responsive, provides loading states.</td>
+<td style="text-align: left;">Insecure for protecting content, causes layout shifts/flickering.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="lessons-learned">Lessons Learned</h3>
+<ol>
+<li><strong>Security is Server-First</strong>: True security for web applications must be enforced on the server. Client-side checks are for user experience, not for protection.</li>
+<li><strong>Middleware is the Gatekeeper</strong>: Next.js Middleware is the ideal tool for protecting routes, as it runs at the edge before any page-specific logic is executed.</li>
+<li><strong>Separate Authentication from Authorization</strong>: Auth.js provides the tools for both. Use providers for authentication (<code>who you are</code>) and callbacks/middleware for authorization (<code>what you can do</code>).</li>
+<li><strong>The Session is Your Source of Truth</strong>: By enriching the session token with custom data like roles, you create a single, reliable source of truth for authorization decisions throughout your application.</li>
+</ol>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:41:00 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

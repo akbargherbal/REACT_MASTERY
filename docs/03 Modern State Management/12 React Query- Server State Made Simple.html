@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>12 React Query- Server State Made Simple</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">03 Modern State Management</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-12-react-query-server-state-made-simple">Chapter 12: React Query: Server State Made Simple</h1>
+<h2 id="client-state-vs-server-state">Client State vs. Server State</h2>
+<h2 id="the-two-states-of-your-application">The Two States of Your Application</h2>
+<p>In modern web applications, not all state is created equal. For years, we've treated all application data as a single entity, often managed by tools like <code>useState</code>, <code>useReducer</code>, or Redux. This approach, however, overlooks a fundamental distinction that is the source of countless bugs, complex boilerplate, and performance issues: the difference between <strong>Client State</strong> and <strong>Server State</strong>.</p>
+<p>Understanding this distinction is the key to writing simpler, more robust React and Next.js applications.</p>
+<h3 id="client-state-what-your-app-knows">Client State: What Your App Knows</h3>
+<p>Client State is the state that is owned and controlled exclusively by the client (the user's browser). It's synchronous, predictable, and completely under your control.</p>
+<p><strong>Characteristics of Client State:</strong></p>
+<ul>
+<li><strong>Owned by the client:</strong> It lives and dies in the browser. No external system can change it without the client's knowledge.</li>
+<li><strong>Synchronous:</strong> When you call <code>setIsOpen(true)</code>, the state is updated immediately (pending React's next render). There's no network latency.</li>
+<li><strong>Predictable:</strong> You know its exact shape and value at all times. It doesn't become "stale" unless your own code changes it.</li>
+<li><strong>Ephemeral:</strong> It's typically reset when the user refreshes the page.</li>
+</ul>
+<p><strong>Examples of Client State:</strong></p>
+<ul>
+<li>The current value of a form input.</li>
+<li>Whether a modal dialog is open or closed.</li>
+<li>The selected tab in a navigation component.</li>
+<li>The current theme of the application (e.g., 'dark' or 'light').</li>
+</ul>
+<p>React's built-in hooks like <code>useState</code> and <code>useReducer</code> are perfectly designed for managing client state.</p>
+<h3 id="server-state-what-your-app-remembers">Server State: What Your App Remembers</h3>
+<p>Server State is a completely different beast. It's a snapshot or a cache of data that is persisted remotely, somewhere you don't directly control. Your application is just "borrowing" it for a while to display to the user.</p>
+<p><strong>Characteristics of Server State:</strong></p>
+<ul>
+<li><strong>Owned by the server:</strong> It's stored in a database, miles away. You can't directly modify it; you can only request changes.</li>
+<li><strong>Asynchronous:</strong> Fetching or updating it requires an async API call, which introduces latency, loading states, and potential errors.</li>
+<li><strong>Shared:</strong> Multiple clients (and even server processes) can be changing the same data simultaneously.</li>
+<li><strong>Can become stale:</strong> The data you have on the client can become outdated at any moment without you knowing. The "source of truth" is remote.</li>
+</ul>
+<p><strong>Examples of Server State:</strong></p>
+<ul>
+<li>A user's profile information.</li>
+<li>A list of products in an e-commerce store.</li>
+<li>Blog posts fetched from a CMS.</li>
+<li>The results of a search query.</li>
+</ul>
+<h3 id="the-mismatch-why-usestate-and-useeffect-fall-short">The Mismatch: Why <code>useState</code> and <code>useEffect</code> Fall Short</h3>
+<p>For years, we've managed server state using client state tools. The typical pattern looks like this:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// The classic (and problematic) data fetching pattern</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">};</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">undefined</span><span class="p">&gt;(</span><span class="kc">undefined</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">setIsLoading</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">boolean</span><span class="p">&gt;(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="nx">setError</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Error</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">fetchUser</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setIsLoading</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/users/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">response</span><span class="p">.</span><span class="nx">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s1">&#39;Failed to fetch user&#39;</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">response</span><span class="p">.</span><span class="nx">json</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setError</span><span class="p">(</span><span class="nx">err</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="ne">Error</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">finally</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setIsLoading</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="nx">fetchUser</span><span class="p">();</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span><span class="w"> </span><span class="c1">// Refetch when userId changes</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">isLoading</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="p">...&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="ne">Error</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">error</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This code seems reasonable, but it's a house of cards. It fails to address the inherent nature of server state.</p>
+<p><strong>What critical questions does this code NOT answer?</strong></p>
+<ol>
+<li><strong>Caching:</strong> What if we navigate away and come back to this component? It will re-fetch the same data, even if it hasn't changed.</li>
+<li><strong>Stale Data:</strong> What if the user's name was updated in another browser tab? This component will continue showing the old, stale name until the page is refreshed.</li>
+<li><strong>Background Updates:</strong> Wouldn't it be nice to show the user the stale data while we silently refetch a fresh copy in the background?</li>
+<li><strong>Request Deduplication:</strong> If ten components on the page all need the same user data, will they make ten identical requests? Yes.</li>
+<li><strong>Memory Management:</strong> How do we manage the cache? When do we garbage-collect old data?</li>
+</ol>
+<p>Trying to solve these problems with <code>useState</code> and <code>useEffect</code> leads to a mountain of complex, custom, and often buggy code. We are, in effect, rebuilding a data-fetching client from scratch inside our components.</p>
+<p>This is the problem that <strong>TanStack Query (formerly React Query)</strong> was built to solve. It's not just another state management library; it's a <strong>server state management library</strong>. It provides the machinery to handle caching, background updates, stale data, and all the other complexities of server state, letting you focus on your application logic.</p>
+<h2 id="tanstack-query-react-query-fundamentals">TanStack Query (React Query) fundamentals</h2>
+<h2 id="from-manual-fetching-to-declarative-queries">From Manual Fetching to Declarative Queries</h2>
+<p>Let's see how React Query transforms data fetching from an imperative, manual process into a declarative one. We'll build a simple Todo application and progressively refactor it, demonstrating how React Query solves the problems we identified.</p>
+<h3 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h3>
+<p>Our anchor example will be a <code>TodoApp</code> component. To focus on the client-side logic, we'll simulate a backend API with simple functions that return Promises.</p>
+<p><strong>Project Structure:</strong></p>
+<p>We'll start with a simple setup.</p>
+<div class="codehilite"><pre><span></span><code><span class="nx">src</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="kn">api</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="nx">todos</span><span class="p">.</span><span class="nx">ts</span><span class="w">       </span><span class="err">←</span><span class="w"> </span><span class="nx">Our</span><span class="w"> </span><span class="nx">mock</span><span class="w"> </span><span class="nx">API</span><span class="w"> </span><span class="nx">functions</span>
+<span class="err">└──</span><span class="w"> </span><span class="nx">components</span><span class="o">/</span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="nx">TodoApp</span><span class="p">.</span><span class="nx">tsx</span><span class="w">    </span><span class="err">←</span><span class="w"> </span><span class="nx">Our</span><span class="w"> </span><span class="nx">reference</span><span class="w"> </span><span class="nx">implementation</span>
+</code></pre></div>
+
+<p>First, let's define our mock API. This simulates the network latency and potential failures of a real backend.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/api/todos.ts</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">Todo</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Simulate a database</span>
+<span class="kd">let</span><span class="w"> </span><span class="nx">todos</span><span class="o">:</span><span class="w"> </span><span class="kt">Todo</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">1</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Learn React&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="kt">true</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">2</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Learn React Query&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">3</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Build a cool app&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="w"> </span><span class="p">},</span>
+<span class="p">];</span>
+
+<span class="kd">let</span><span class="w"> </span><span class="nx">nextId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">4</span><span class="p">;</span>
+
+<span class="c1">// Simulate network delay</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">delay</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">ms</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">res</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span><span class="w"> </span><span class="nx">ms</span><span class="p">));</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">fetchTodos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">Todo</span><span class="p">[]</span><span class="o">&gt;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="nx">delay</span><span class="p">(</span><span class="mf">1000</span><span class="p">);</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;API: Fetched Todos&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">todos</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">[...</span><span class="nx">todos</span><span class="p">];</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">addTodo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">Todo</span><span class="o">&gt;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="nx">delay</span><span class="p">(</span><span class="mf">1000</span><span class="p">);</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// Simulate a 10% chance of failure</span>
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s1">&#39;Failed to add todo&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">newTodo</span><span class="o">:</span><span class="w"> </span><span class="kt">Todo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">nextId</span><span class="o">++</span><span class="p">,</span><span class="w"> </span><span class="nx">text</span><span class="p">,</span><span class="w"> </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="nx">todos</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">newTodo</span><span class="p">);</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;API: Added Todo&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">newTodo</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">newTodo</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>Now, let's build the <code>TodoApp</code> component using the classic <code>useState</code> and <code>useEffect</code> approach. This is our "naive" implementation that we will improve upon.</p>
+<p><strong>Iteration 0: The <code>useState</code> + <code>useEffect</code> Approach</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/TodoApp.tsx (Version 0)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fetchTodos</span><span class="p">,</span><span class="w"> </span><span class="nx">Todo</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../api/todos&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">TodoApp</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">todos</span><span class="p">,</span><span class="w"> </span><span class="nx">setTodos</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Todo</span><span class="err">[]</span><span class="p">&gt;([]);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">setIsLoading</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="nx">setError</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Error</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">getTodos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setIsLoading</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetchTodos</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">setTodos</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setError</span><span class="p">(</span><span class="nx">err</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="ne">Error</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">finally</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setIsLoading</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">    </span><span class="nx">getTodos</span><span class="p">();</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// Fetch only on mount</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">isLoading</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">todos</span><span class="p">...&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">An</span><span class="w"> </span><span class="nx">error</span><span class="w"> </span><span class="nx">occurred</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">error</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Todo</span><span class="w"> </span><span class="nx">List</span><span class="w"> </span><span class="p">(</span><span class="nx">useState</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">useEffect</span><span class="p">)&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">todos</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">todo</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">todo</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">textDecoration</span><span class="o">:</span><span class="w"> </span><span class="kt">todo.completed</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;line-through&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;none&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">todo</span><span class="p">.</span><span class="nx">text</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This component works, but it's fragile and inefficient. Let's demonstrate its primary failure: it has no concept of "stale" data. If the data changes on the server (or in another part of our app), this component remains blissfully unaware.</p>
+<h3 id="failure-demonstration-stale-data">Failure Demonstration: Stale Data</h3>
+<p>Imagine the user opens your app, and then switches to another tab to check their email. While they are away, a new "Todo" is added via a push notification or another device. When they switch back to your app, they expect to see the latest data. Let's see what happens with our current implementation.</p>
+<h3 id="diagnostic-analysis-reading-the-failure">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+The user sees the initial list of 3 todos. We simulate a data change on the "server" (our mock API). When the user refocuses the browser window, the UI does <strong>not</strong> update. It continues to show the old, stale list of 3 todos. The only way to see the new todo is to manually refresh the entire page.</p>
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">API</span><span class="o">:</span><span class="w"> </span><span class="n">Fetched</span><span class="w"> </span><span class="n">Todos</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">id</span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="o">,</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="o">},</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">id</span><span class="o">:</span><span class="w"> </span><span class="mi">2</span><span class="o">,</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="o">},</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">id</span><span class="o">:</span><span class="w"> </span><span class="mi">3</span><span class="o">,</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="o">}</span><span class="w"> </span><span class="o">]</span>
+<span class="c1">// ...user switches tabs, data changes on server...</span>
+<span class="c1">// ...user switches back...</span>
+<span class="c1">// (No new console output, no re-fetch occurs)</span>
+</code></pre></div>
+
+<p><strong>React DevTools Evidence</strong>:
+- Component tree state: <code>TodoApp</code>
+- State: <code>todos</code> array with 3 items.
+- Render count: 1 (on initial load). The component never re-renders when the window is refocused.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: The app feels broken or out of date.</p>
+<ul>
+<li><strong>Expected</strong>: The app should automatically show the latest data when I return to it.</li>
+<li><strong>Actual</strong>: The app shows old data, forcing a manual refresh.</li>
+</ul>
+</li>
+<li>
+<p><strong>What the console reveals</strong>: The <code>fetchTodos</code> function is only called once, at the very beginning. There are no subsequent calls.</p>
+</li>
+<li>
+<p><strong>What DevTools shows</strong>: The component's state remains unchanged after the initial fetch. It has no trigger to re-evaluate its data.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: The <code>useEffect</code> hook has an empty dependency array (<code>[]</code>), so it runs exactly once on component mount and never again.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: The <code>useEffect</code> hook is not designed for managing the lifecycle of server state. It doesn't know about browser focus events, network reconnections, or other heuristics that indicate data might be stale. We would have to build all that logic ourselves.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A hook that understands server state, automatically refetches data when it's likely to be stale, and manages the underlying cache for us.</p>
+</li>
+</ol>
+<h3 id="technique-introduced-usequery">Technique Introduced: <code>useQuery</code></h3>
+<p>This is where React Query shines. Let's refactor our component to use the <code>useQuery</code> hook.</p>
+<p>First, we need to set up the <code>QueryClientProvider</code> at the root of our application. This provides the cache to all child components.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/layout.tsx (or your root component)</span>
+
+<span class="s1">&#39;use client&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Required for providers</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">QueryClient</span><span class="p">,</span><span class="w"> </span><span class="nx">QueryClientProvider</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@tanstack/react-query&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ReactQueryDevtools</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@tanstack/react-query-devtools&#39;</span><span class="p">;</span>
+
+<span class="c1">// Create a client</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">queryClient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">QueryClient</span><span class="p">();</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RootLayout</span><span class="p">({</span><span class="w"> </span><span class="nx">children</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">children</span><span class="o">:</span><span class="w"> </span><span class="kt">React.ReactNode</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">html</span><span class="w"> </span><span class="na">lang</span><span class="o">=</span><span class="s">&quot;en&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">QueryClientProvider</span><span class="w"> </span><span class="na">client</span><span class="o">=</span><span class="p">{</span><span class="nx">queryClient</span><span class="p">}&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">children</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">ReactQueryDevtools</span><span class="w"> </span><span class="na">initialIsOpen</span><span class="o">=</span><span class="p">{</span><span class="kc">false</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">QueryClientProvider</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now we can refactor <code>TodoApp.tsx</code>.</p>
+<h3 id="iteration-1-refactoring-to-usequery">Iteration 1: Refactoring to <code>useQuery</code></h3>
+<p><strong>Before</strong> (Iteration 0):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/TodoApp.tsx (Version 0 - excerpt)</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fetchTodos</span><span class="p">,</span><span class="w"> </span><span class="nx">Todo</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../api/todos&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">TodoApp</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">todos</span><span class="p">,</span><span class="w"> </span><span class="nx">setTodos</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Todo</span><span class="err">[]</span><span class="p">&gt;([]);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">setIsLoading</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="nx">setError</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">Error</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">getTodos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setIsLoading</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetchTodos</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">setTodos</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setError</span><span class="p">(</span><span class="nx">err</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="ne">Error</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">finally</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setIsLoading</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">    </span><span class="nx">getTodos</span><span class="p">();</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="c1">// ... render logic using isLoading, error, todos ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 1):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/TodoApp.tsx (Version 1)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useQuery</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@tanstack/react-query&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fetchTodos</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../api/todos&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">TodoApp</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="kt">todos</span><span class="p">,</span><span class="w"> </span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">isError</span><span class="p">,</span><span class="w"> </span><span class="nx">error</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useQuery</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">queryKey</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s1">&#39;todos&#39;</span><span class="p">],</span>
+<span class="w">    </span><span class="nx">queryFn</span><span class="o">:</span><span class="w"> </span><span class="kt">fetchTodos</span><span class="p">,</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">isLoading</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">todos</span><span class="p">...&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">isError</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">An</span><span class="w"> </span><span class="nx">error</span><span class="w"> </span><span class="nx">occurred</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">error</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Todo</span><span class="w"> </span><span class="nx">List</span><span class="w"> </span><span class="p">(</span><span class="nx">React</span><span class="w"> </span><span class="nx">Query</span><span class="p">)&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">todos</span><span class="o">?</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">todo</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">todo</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">textDecoration</span><span class="o">:</span><span class="w"> </span><span class="kt">todo.completed</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;line-through&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;none&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">todo</span><span class="p">.</span><span class="nx">text</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="analysis-of-the-improvement">Analysis of the Improvement</h3>
+<p>Look at how much code we deleted!
+*   All three <code>useState</code> calls are gone.
+*   The entire <code>useEffect</code> hook is gone.
+*   The complex async function inside <code>useEffect</code> with its <code>try/catch/finally</code> block is gone.</p>
+<p>We replaced all of that imperative logic with a single, declarative hook: <code>useQuery</code>.</p>
+<p><strong>Let's break down <code>useQuery</code>:</strong></p>
+<ul>
+<li><code>queryKey: ['todos']</code>: This is the unique identifier for this piece of data. React Query uses this key to cache the data. It's an array, which allows for more complex keys like <code>['todos', { status: 'completed' }]</code>.</li>
+<li><code>queryFn: fetchTodos</code>: This is the asynchronous function that will be called to fetch the data. It must return a promise.</li>
+</ul>
+<p><code>useQuery</code> returns an object with all the information we need about the state of our data: <code>data</code>, <code>isLoading</code>, <code>isError</code>, and much more.</p>
+<h3 id="verification-solving-the-stale-data-problem">Verification: Solving the Stale Data Problem</h3>
+<p>Let's re-run our failure scenario with the new <code>useQuery</code> implementation.</p>
+<p><strong>Browser Behavior</strong>:
+The user sees the initial list of 3 todos. We simulate a data change on the server. When the user refocuses the browser window, the UI <strong>instantly updates</strong> to show the new todo.</p>
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">API</span><span class="o">:</span><span class="w"> </span><span class="n">Fetched</span><span class="w"> </span><span class="n">Todos</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">id</span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="o">,</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="o">},</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">id</span><span class="o">:</span><span class="w"> </span><span class="mi">2</span><span class="o">,</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="o">},</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">id</span><span class="o">:</span><span class="w"> </span><span class="mi">3</span><span class="o">,</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="o">}</span><span class="w"> </span><span class="o">]</span>
+<span class="c1">// ...user switches tabs, data changes on server...</span>
+<span class="c1">// ...user switches back...</span>
+<span class="n">API</span><span class="o">:</span><span class="w"> </span><span class="n">Fetched</span><span class="w"> </span><span class="n">Todos</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">id</span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="o">,</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="o">},</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">id</span><span class="o">:</span><span class="w"> </span><span class="mi">2</span><span class="o">,</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="o">},</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">id</span><span class="o">:</span><span class="w"> </span><span class="mi">3</span><span class="o">,</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="o">},</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">id</span><span class="o">:</span><span class="w"> </span><span class="mi">4</span><span class="o">,</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="o">}</span><span class="w"> </span><span class="o">]</span>
+</code></pre></div>
+
+<p><strong>React Query DevTools</strong>:
+The DevTools are a superpower. When the window is refocused, you can see the <code>['todos']</code> query transition from <code>fresh</code> -&gt; <code>fetching</code> -&gt; <code>fresh</code> again, and the data explorer updates with the new item.</p>
+<p><strong>Expected vs. Actual Improvement</strong>:
+*   <strong>Expected</strong>: The app should automatically refetch data when the window is refocused.
+*   <strong>Actual</strong>: It works perfectly out of the box. <code>useQuery</code> automatically handles <code>refetchOnWindowFocus</code> (and other triggers like <code>refetchOnReconnect</code>) by default.</p>
+<p><strong>Limitation Preview</strong>:
+Our app can now display server state robustly. But what happens when we want to <em>change</em> that state? How do we add a new todo? This will introduce us to mutations.</p>
+<h2 id="queries-mutations-and-invalidation">Queries, mutations, and invalidation</h2>
+<h2 id="changing-data-with-mutations">Changing Data with Mutations</h2>
+<p>Reading data is only half the story. To build a complete application, we need to create, update, and delete data. In React Query, any function that changes data on the server is called a <strong>mutation</strong>.</p>
+<p>Let's extend our <code>TodoApp</code> to include a form for adding new todos.</p>
+<h3 id="iteration-2-adding-a-todo-the-wrong-way">Iteration 2: Adding a Todo (The Wrong Way)</h3>
+<p>First, let's try to implement this using the tools we know. We'll add a simple form and a <code>handleSubmit</code> function that calls our <code>addTodo</code> API function.</p>
+<p><strong>Current state recap</strong>: Our component correctly fetches and displays a list of todos, and automatically refetches when the window is focused.
+<strong>Current limitation</strong>: We have no way to add a new todo to the list.
+<strong>New scenario introduction</strong>: A user types a new todo into an input field and clicks an "Add" button.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/TodoApp.tsx (Version 2 - Naive Mutation)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useQuery</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@tanstack/react-query&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fetchTodos</span><span class="p">,</span><span class="w"> </span><span class="nx">addTodo</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../api/todos&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">FormEvent</span><span class="p">,</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">TodoApp</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="kt">todos</span><span class="p">,</span><span class="w"> </span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">isError</span><span class="p">,</span><span class="w"> </span><span class="nx">error</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useQuery</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">queryKey</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s1">&#39;todos&#39;</span><span class="p">],</span>
+<span class="w">    </span><span class="nx">queryFn</span><span class="o">:</span><span class="w"> </span><span class="kt">fetchTodos</span><span class="p">,</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">newTodoText</span><span class="p">,</span><span class="w"> </span><span class="nx">setNewTodoText</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="kt">FormEvent</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">newTodoText</span><span class="p">.</span><span class="nx">trim</span><span class="p">())</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Call the API to add the new todo</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="nx">addTodo</span><span class="p">(</span><span class="nx">newTodoText</span><span class="p">);</span>
+
+<span class="w">    </span><span class="nx">setNewTodoText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="c1">// ... (render logic for loading/error states) ...</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Todo</span><span class="w"> </span><span class="nx">List</span><span class="w"> </span><span class="p">(</span><span class="nx">React</span><span class="w"> </span><span class="nx">Query</span><span class="p">)&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">          </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span>
+<span class="w">          </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">newTodoText</span><span class="p">}</span>
+<span class="w">          </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setNewTodoText</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">          </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Add a new todo&quot;</span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p">&gt;</span><span class="nx">Add</span><span class="w"> </span><span class="nx">Todo</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">todos</span><span class="o">?</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">todo</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="cm">/* ... list item ... */</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Let's run this and see what happens.</p>
+<h3 id="failure-demonstration-stale-query-cache">Failure Demonstration: Stale Query Cache</h3>
+<p>When the user types "Deploy the app" and clicks "Add Todo", the input field clears, but the list of todos on the screen does not change. The new todo is missing.</p>
+<h3 id="diagnostic-analysis-reading-the-failure_1">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+The user submits the form. The UI gives feedback that the submission happened (the input clears), but the primary data display (the todo list) does not update. It feels like the action failed, even though it succeeded on the server.</p>
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">API</span><span class="o">:</span><span class="w"> </span><span class="n">Fetched</span><span class="w"> </span><span class="n">Todos</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">id</span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="o">,</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="o">},</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">id</span><span class="o">:</span><span class="w"> </span><span class="mi">2</span><span class="o">,</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="o">},</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">id</span><span class="o">:</span><span class="w"> </span><span class="mi">3</span><span class="o">,</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="o">}</span><span class="w"> </span><span class="o">]</span>
+<span class="c1">// ...user adds a new todo...</span>
+<span class="n">API</span><span class="o">:</span><span class="w"> </span><span class="n">Added</span><span class="w"> </span><span class="n">Todo</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="n">id</span><span class="o">:</span><span class="w"> </span><span class="mi">4</span><span class="o">,</span><span class="w"> </span><span class="n">text</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Deploy the app&#39;</span><span class="o">,</span><span class="w"> </span><span class="n">completed</span><span class="o">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="o">}</span>
+<span class="c1">// (No new &quot;Fetched Todos&quot; log appears)</span>
+</code></pre></div>
+
+<p><strong>Network Tab Analysis</strong>:
+- A <code>POST</code> request (simulated by our <code>addTodo</code> function) is successfully made.
+- However, no subsequent <code>GET</code> request is made to refetch the list of todos.</p>
+<p><strong>React Query DevTools Evidence</strong>:
+- The <code>['todos']</code> query remains <code>fresh</code> and its data array still contains only 3 items. React Query has no idea that the underlying data on the server has changed.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: The app feels broken. They perform an action, but don't see the result.</p>
+<ul>
+<li><strong>Expected</strong>: When I add a todo, it should appear in the list.</li>
+<li><strong>Actual</strong>: The todo is added on the server, but the list on the screen is stale.</li>
+</ul>
+</li>
+<li>
+<p><strong>What the console reveals</strong>: The <code>addTodo</code> API call was successful. The server state has been updated. The problem is purely on the client.</p>
+</li>
+<li>
+<p><strong>What DevTools shows</strong>: The <code>useQuery</code> cache for <code>['todos']</code> is now out of sync with the server's state of truth. Calling an external <code>addTodo</code> function doesn't automatically inform React Query that related data has changed.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: We are mutating server state without telling React Query that its cached data is now invalid.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: We could try to manually refetch, or manually update the local cache, but this gets complicated fast. What if the API call fails? How do we handle loading states for the mutation itself? This leads back to the same boilerplate we escaped from.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A dedicated hook for performing mutations that can be integrated with the query cache, allowing us to invalidate stale data and trigger refetches automatically.</p>
+</li>
+</ol>
+<h3 id="technique-introduced-usemutation-and-query-invalidation">Technique Introduced: <code>useMutation</code> and Query Invalidation</h3>
+<p>React Query provides the <code>useMutation</code> hook for this exact purpose. It wraps our async mutation function and gives us tools to manage its lifecycle. The most powerful tool is <strong>query invalidation</strong>.</p>
+<p>When a mutation succeeds, we can tell React Query: "The data associated with this query key is now stale. Please refetch it the next time it's needed."</p>
+<h3 id="iteration-3-refactoring-to-usemutation">Iteration 3: Refactoring to <code>useMutation</code></h3>
+<p>Let's fix our <code>TodoApp</code> component.</p>
+<p><strong>Before</strong> (Iteration 2):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/TodoApp.tsx (Version 2 - excerpt)</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="kt">FormEvent</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">newTodoText</span><span class="p">.</span><span class="nx">trim</span><span class="p">())</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="nx">addTodo</span><span class="p">(</span><span class="nx">newTodoText</span><span class="p">);</span><span class="w"> </span><span class="c1">// Fire-and-forget API call</span>
+<span class="w">  </span><span class="nx">setNewTodoText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 3):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/TodoApp.tsx (Version 3)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useQuery</span><span class="p">,</span><span class="w"> </span><span class="nx">useMutation</span><span class="p">,</span><span class="w"> </span><span class="nx">useQueryClient</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@tanstack/react-query&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fetchTodos</span><span class="p">,</span><span class="w"> </span><span class="nx">addTodo</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../api/todos&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">FormEvent</span><span class="p">,</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">TodoApp</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">queryClient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useQueryClient</span><span class="p">();</span><span class="w"> </span><span class="c1">// Get the query client instance</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="kt">todos</span><span class="p">,</span><span class="w"> </span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">isError</span><span class="p">,</span><span class="w"> </span><span class="nx">error</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useQuery</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">queryKey</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s1">&#39;todos&#39;</span><span class="p">],</span>
+<span class="w">    </span><span class="nx">queryFn</span><span class="o">:</span><span class="w"> </span><span class="kt">fetchTodos</span><span class="p">,</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">newTodoText</span><span class="p">,</span><span class="w"> </span><span class="nx">setNewTodoText</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">addTodoMutation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMutation</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">mutationFn</span><span class="o">:</span><span class="w"> </span><span class="kt">addTodo</span><span class="p">,</span><span class="w"> </span><span class="c1">// The async function to call</span>
+<span class="w">    </span><span class="nx">onSuccess</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// When the mutation is successful, invalidate the &#39;todos&#39; query</span>
+<span class="w">      </span><span class="nx">queryClient</span><span class="p">.</span><span class="nx">invalidateQueries</span><span class="p">({</span><span class="w"> </span><span class="nx">queryKey</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s1">&#39;todos&#39;</span><span class="p">]</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="kt">FormEvent</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">newTodoText</span><span class="p">.</span><span class="nx">trim</span><span class="p">())</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">addTodoMutation</span><span class="p">.</span><span class="nx">mutate</span><span class="p">(</span><span class="nx">newTodoText</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// Call the mutation</span>
+<span class="w">      </span><span class="nx">onSuccess</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setNewTodoText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span><span class="w"> </span><span class="c1">// Clear input only on success</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">});</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="c1">// ... (render logic) ...</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Todo</span><span class="w"> </span><span class="nx">List</span><span class="w"> </span><span class="p">(</span><span class="nx">React</span><span class="w"> </span><span class="nx">Query</span><span class="p">)&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">          </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span>
+<span class="w">          </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">newTodoText</span><span class="p">}</span>
+<span class="w">          </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setNewTodoText</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">          </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Add a new todo&quot;</span>
+<span class="w">          </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">addTodoMutation</span><span class="p">.</span><span class="nx">isPending</span><span class="p">}</span><span class="w"> </span><span class="err">//</span><span class="w"> </span><span class="na">Disable</span><span class="w"> </span><span class="na">input</span><span class="w"> </span><span class="na">while</span><span class="w"> </span><span class="na">mutating</span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="w"> </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">addTodoMutation</span><span class="p">.</span><span class="nx">isPending</span><span class="p">}&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">addTodoMutation</span><span class="p">.</span><span class="nx">isPending</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;Adding...&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Add Todo&#39;</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">addTodoMutation</span><span class="p">.</span><span class="nx">isError</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">          </span><span class="nx">An</span><span class="w"> </span><span class="nx">error</span><span class="w"> </span><span class="nx">occurred</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">addTodoMutation</span><span class="p">.</span><span class="nx">error</span><span class="p">.</span><span class="nx">message</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">)}</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... list rendering ... */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="analysis-of-the-improvement_1">Analysis of the Improvement</h3>
+<ol>
+<li><strong><code>useQueryClient()</code></strong>: We get access to the client instance that manages the cache.</li>
+<li><strong><code>useMutation({...})</code></strong>: We define our mutation.<ul>
+<li><code>mutationFn: addTodo</code>: We tell it which async function to run.</li>
+<li><code>onSuccess: () =&gt; ...</code>: This is the magic. We define a callback that runs after the mutation succeeds.</li>
+</ul>
+</li>
+<li><strong><code>queryClient.invalidateQueries({ queryKey: ['todos'] })</code></strong>: Inside <code>onSuccess</code>, we tell React Query to mark any query whose key matches <code>['todos']</code> as stale. This doesn't immediately refetch. It simply marks it. The next time a component renders that is using that query, React Query will see it's stale and trigger a background refetch.</li>
+<li><strong><code>addTodoMutation.mutate(newTodoText)</code></strong>: In our event handler, we call the <code>mutate</code> function provided by the hook, passing the variables our <code>addTodo</code> function needs.</li>
+<li><strong>Mutation State</strong>: The <code>useMutation</code> hook also gives us loading (<code>isPending</code>) and error states for the mutation itself, allowing us to disable the form while the request is in flight and show specific error messages.</li>
+</ol>
+<h3 id="verification-automatic-ui-updates">Verification: Automatic UI Updates</h3>
+<p>Let's run the failure scenario again.</p>
+<p><strong>Browser Behavior</strong>:
+The user types "Deploy the app" and clicks "Add Todo". The button changes to "Adding..." and the form is disabled. After a 1-second delay, the button reverts, the input clears, and the new todo appears at the bottom of the list.</p>
+<p><strong>Network Tab Analysis</strong>:
+1.  A <code>POST</code> request (from <code>addTodo</code>) is initiated.
+2.  The <code>POST</code> request completes successfully.
+3.  Immediately after, a <code>GET</code> request (from the invalidated <code>useQuery</code>) is initiated to refetch the todos.
+4.  The <code>GET</code> request completes, and the UI updates with the new data.</p>
+<p>This is the "stale-while-revalidate" pattern, a robust way to keep client and server state in sync.</p>
+<p><strong>Limitation Preview</strong>:
+This works perfectly, but the user experience could be better. The user has to wait for the network roundtrip (POST, then GET) before seeing their new todo. On a slow connection, this could be several seconds. Can we make the UI feel instantaneous? Yes, with optimistic updates.</p>
+<h2 id="optimistic-updates">Optimistic Updates</h2>
+<h2 id="creating-a-snappy-ui-with-optimistic-updates">Creating a Snappy UI with Optimistic Updates</h2>
+<p>Our application is now robust, but it's not as fast as it could be. The user's action (adding a todo) and the UI's reaction (showing the new todo) are separated by two network requests. This delay, while technically correct, can make an application feel sluggish.</p>
+<p><strong>Optimistic Updates</strong> are a powerful UX pattern that flips this on its head: we assume the mutation will succeed and update the UI <em>immediately</em>, before the network request even finishes.</p>
+<h3 id="the-optimistic-update-flow">The Optimistic Update Flow</h3>
+<ol>
+<li><strong>Before Mutating</strong>: The user clicks "Add".</li>
+<li><strong>Update UI Instantly</strong>: We immediately add a temporary version of the new todo to our local query cache. The UI re-renders and the user sees their new todo appear instantly.</li>
+<li><strong>Fire Mutation</strong>: In the background, we send the actual <code>POST</code> request to the server.</li>
+<li><strong>On Success</strong>: The mutation succeeds. We then trigger a real refetch of the todo list to get the "canonical" data from the server (which will include the real ID, timestamps, etc.). The temporary todo is replaced by the real one, usually without the user noticing.</li>
+<li><strong>On Error</strong>: The mutation fails. This is the critical part. We must "roll back" our optimistic change by restoring the query cache to its state before the update. We then show the user an error message.</li>
+</ol>
+<p>This makes the application feel instantaneous, at the cost of some added complexity to handle the rollback case.</p>
+<h3 id="iteration-4-implementing-optimistic-updates">Iteration 4: Implementing Optimistic Updates</h3>
+<p><strong>Current state recap</strong>: Adding a todo correctly invalidates the query and refetches the list, but with a noticeable delay.
+<strong>Current limitation</strong>: The UI feels slow because it waits for the server to confirm the change.
+<strong>New scenario introduction</strong>: We want the new todo to appear in the list the moment the user clicks the "Add Todo" button.</p>
+<p>Let's enhance our <code>useMutation</code> hook to perform an optimistic update.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/TodoApp.tsx (Version 4 - Optimistic Update)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useQuery</span><span class="p">,</span><span class="w"> </span><span class="nx">useMutation</span><span class="p">,</span><span class="w"> </span><span class="nx">useQueryClient</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@tanstack/react-query&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fetchTodos</span><span class="p">,</span><span class="w"> </span><span class="nx">addTodo</span><span class="p">,</span><span class="w"> </span><span class="nx">Todo</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../api/todos&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">FormEvent</span><span class="p">,</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">TodoApp</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">queryClient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useQueryClient</span><span class="p">();</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="kt">todos</span><span class="p">,</span><span class="w"> </span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">isError</span><span class="p">,</span><span class="w"> </span><span class="nx">error</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useQuery</span><span class="p">&lt;</span><span class="nt">Todo</span><span class="err">[]</span><span class="p">&gt;({</span>
+<span class="w">    </span><span class="nx">queryKey</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s1">&#39;todos&#39;</span><span class="p">],</span>
+<span class="w">    </span><span class="nx">queryFn</span><span class="o">:</span><span class="w"> </span><span class="kt">fetchTodos</span><span class="p">,</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">newTodoText</span><span class="p">,</span><span class="w"> </span><span class="nx">setNewTodoText</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">addTodoMutation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMutation</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">mutationFn</span><span class="o">:</span><span class="w"> </span><span class="kt">addTodo</span><span class="p">,</span>
+<span class="w">    </span><span class="c1">// 1. onMutate is called before the mutation function is fired</span>
+<span class="w">    </span><span class="nx">onMutate</span><span class="o">:</span><span class="w"> </span><span class="kt">async</span><span class="w"> </span><span class="p">(</span><span class="nx">newTodoText</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// Cancel any outgoing refetches (so they don&#39;t overwrite our optimistic update)</span>
+<span class="w">      </span><span class="k">await</span><span class="w"> </span><span class="nx">queryClient</span><span class="p">.</span><span class="nx">cancelQueries</span><span class="p">({</span><span class="w"> </span><span class="nx">queryKey</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s1">&#39;todos&#39;</span><span class="p">]</span><span class="w"> </span><span class="p">});</span>
+
+<span class="w">      </span><span class="c1">// Snapshot the previous value</span>
+<span class="w">      </span><span class="kd">const</span><span class="w"> </span><span class="nx">previousTodos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">queryClient</span><span class="p">.</span><span class="nx">getQueryData</span><span class="p">&lt;</span><span class="nt">Todo</span><span class="err">[]</span><span class="p">&gt;([</span><span class="s1">&#39;todos&#39;</span><span class="p">]);</span>
+
+<span class="w">      </span><span class="c1">// Optimistically update to the new value</span>
+<span class="w">      </span><span class="nx">queryClient</span><span class="p">.</span><span class="nx">setQueryData</span><span class="p">&lt;</span><span class="nt">Todo</span><span class="err">[]</span><span class="p">&gt;([</span><span class="s1">&#39;todos&#39;</span><span class="p">],</span><span class="w"> </span><span class="p">(</span><span class="nx">old</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">...(</span><span class="nx">old</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="p">[]),</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">Date.now</span><span class="p">(),</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="kt">newTodoText</span><span class="p">,</span><span class="w"> </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="c1">// Temporary todo</span>
+<span class="w">      </span><span class="p">]);</span>
+
+<span class="w">      </span><span class="c1">// Return a context object with the snapshotted value</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">previousTodos</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="c1">// 2. onError is called if the mutation fails</span>
+<span class="w">    </span><span class="nx">onError</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">,</span><span class="w"> </span><span class="nx">newTodo</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// Rollback to the previous value</span>
+<span class="w">      </span><span class="nx">queryClient</span><span class="p">.</span><span class="nx">setQueryData</span><span class="p">([</span><span class="s1">&#39;todos&#39;</span><span class="p">],</span><span class="w"> </span><span class="nx">context</span><span class="o">?</span><span class="p">.</span><span class="nx">previousTodos</span><span class="p">);</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="c1">// 3. onSettled is always called after the mutation is done (success or error)</span>
+<span class="w">    </span><span class="nx">onSettled</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// Invalidate the query to refetch the real data from the server</span>
+<span class="w">      </span><span class="nx">queryClient</span><span class="p">.</span><span class="nx">invalidateQueries</span><span class="p">({</span><span class="w"> </span><span class="nx">queryKey</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s1">&#39;todos&#39;</span><span class="p">]</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="kt">FormEvent</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">newTodoText</span><span class="p">.</span><span class="nx">trim</span><span class="p">())</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">addTodoMutation</span><span class="p">.</span><span class="nx">mutate</span><span class="p">(</span><span class="nx">newTodoText</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">onSuccess</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setNewTodoText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">    </span><span class="p">});</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="c1">// ... (render logic is the same) ...</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Todo</span><span class="w"> </span><span class="nx">List</span><span class="w"> </span><span class="p">(</span><span class="nx">Optimistic</span><span class="p">)&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... form and list ... */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="analysis-of-the-new-usemutation-logic">Analysis of the New <code>useMutation</code> Logic</h3>
+<p>This is significantly more complex, so let's break it down step-by-step.</p>
+<ul>
+<li>
+<p><strong><code>onMutate</code></strong>: This function runs <em>before</em> <code>mutationFn</code>. It's our chance to manipulate the cache.</p>
+<ul>
+<li><code>queryClient.cancelQueries</code>: This is a crucial first step. It prevents any background refetches from happening while we're performing our optimistic update, which could wipe out our change.</li>
+<li><code>queryClient.getQueryData</code>: We get the current data from the cache so we can restore it later if something goes wrong. This is our "undo" snapshot.</li>
+<li><code>queryClient.setQueryData</code>: This is the core of the optimistic update. We are <strong>synchronously and manually</strong> writing to the cache. We append a temporary todo to the existing list. Note we're using <code>Date.now()</code> for a temporary ID; the server will assign the real one.</li>
+<li><code>return { previousTodos }</code>: We return the snapshot, which will be passed as a <code>context</code> object to <code>onError</code> and <code>onSettled</code>.</li>
+</ul>
+</li>
+<li>
+<p><strong><code>onError</code></strong>: This function runs only if <code>mutationFn</code> throws an error.</p>
+<ul>
+<li><code>queryClient.setQueryData(['todos'], context.previousTodos)</code>: We use the <code>context</code> object from <code>onMutate</code> to roll back the cache to its original state, effectively making the temporary todo disappear.</li>
+</ul>
+</li>
+<li>
+<p><strong><code>onSettled</code></strong>: This function runs after the mutation is complete, regardless of whether it succeeded or failed.</p>
+<ul>
+<li><code>queryClient.invalidateQueries</code>: We <em>always</em> invalidate the query at the end.<ul>
+<li>If it succeeded, this fetches the real data from the server, replacing our temporary todo with the canonical one.</li>
+<li>If it failed, this ensures our UI is still in sync with the server after the rollback.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="verification-instant-ui-and-graceful-failure">Verification: Instant UI and Graceful Failure</h3>
+<p>Let's test both the success and failure cases.</p>
+<p><strong>Success Case</strong>:
+1.  Type "Ship it!" and click "Add Todo".
+2.  <strong>Instantly</strong>, the new todo appears in the list with a temporary ID. The UI feels incredibly fast.
+3.  In the Network tab, the <code>POST</code> request is sent.
+4.  After 1 second, the <code>POST</code> succeeds, and a <code>GET</code> request is triggered by <code>onSettled</code>.
+5.  The <code>GET</code> request completes, and the list re-renders with the final data from the server (the temporary todo is replaced by the real one). The user likely won't even notice this swap.</p>
+<p><strong>Failure Case</strong> (our mock API fails 10% of the time):
+1.  Type "This will fail" and click "Add Todo".
+2.  <strong>Instantly</strong>, the new todo appears in the list.
+3.  In the Network tab, the <code>POST</code> request is sent.
+4.  After 1 second, the <code>POST</code> fails (our mock API throws an error).
+5.  The <code>onError</code> callback is triggered. The <code>['todos']</code> cache is rolled back to its previous state.
+6.  The UI re-renders, and the temporary todo <strong>disappears</strong> from the list. An error message is shown.
+7.  The <code>onSettled</code> callback still runs, triggering a final refetch to ensure consistency.</p>
+<p>This pattern provides the best of both worlds: a lightning-fast UI for the user's "happy path" and a resilient, self-healing state for the "unhappy path".</p>
+<h2 id="replacing-your-redux-boilerplate">Replacing your Redux boilerplate</h2>
+<h2 id="rethinking-global-state">Rethinking Global State</h2>
+<p>For many years, Redux (and similar libraries like Zustand or MobX) has been the default choice for managing "global" state in React applications. A primary reason for reaching for these tools was to cache server data. We wanted to fetch a list of products once and make it available to any component without re-fetching every time the component mounted.</p>
+<p>We would create actions, reducers, selectors, and thunks just to manage the simple lifecycle of fetching, caching, and updating this server data.</p>
+<p>Let's look at the Redux boilerplate for managing just our <code>todos</code> state.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// A rough example of Redux boilerplate for fetching todos</span>
+
+<span class="c1">// todosSlice.ts</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createSlice</span><span class="p">,</span><span class="w"> </span><span class="nx">createAsyncThunk</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@reduxjs/toolkit&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fetchTodos</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">apiFetchTodos</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../api/todos&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">fetchTodos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createAsyncThunk</span><span class="p">(</span><span class="s1">&#39;todos/fetchTodos&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">apiFetchTodos</span><span class="p">();</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">response</span><span class="p">;</span>
+<span class="p">});</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">todosSlice</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createSlice</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;todos&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">initialState</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">items</span><span class="o">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">    </span><span class="nx">status</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;idle&#39;</span><span class="p">,</span><span class="w"> </span><span class="c1">// &#39;idle&#39; | &#39;loading&#39; | &#39;succeeded&#39; | &#39;failed&#39;</span>
+<span class="w">    </span><span class="nx">error</span><span class="o">:</span><span class="w"> </span><span class="kt">null</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nx">reducers</span><span class="o">:</span><span class="w"> </span><span class="p">{},</span>
+<span class="w">  </span><span class="nx">extraReducers</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">builder</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">builder</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">addCase</span><span class="p">(</span><span class="nx">fetchTodos</span><span class="p">.</span><span class="nx">pending</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">state</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">state</span><span class="p">.</span><span class="nx">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;loading&#39;</span><span class="p">;</span>
+<span class="w">      </span><span class="p">})</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">addCase</span><span class="p">(</span><span class="nx">fetchTodos</span><span class="p">.</span><span class="nx">fulfilled</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">action</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">state</span><span class="p">.</span><span class="nx">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;succeeded&#39;</span><span class="p">;</span>
+<span class="w">        </span><span class="nx">state</span><span class="p">.</span><span class="nx">items</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">payload</span><span class="p">;</span>
+<span class="w">      </span><span class="p">})</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">addCase</span><span class="p">(</span><span class="nx">fetchTodos</span><span class="p">.</span><span class="nx">rejected</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">action</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">state</span><span class="p">.</span><span class="nx">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;failed&#39;</span><span class="p">;</span>
+<span class="w">        </span><span class="nx">state</span><span class="p">.</span><span class="nx">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">action</span><span class="p">.</span><span class="nx">error</span><span class="p">.</span><span class="nx">message</span><span class="p">;</span>
+<span class="w">      </span><span class="p">});</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="p">});</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">todosSlice</span><span class="p">.</span><span class="nx">reducer</span><span class="p">;</span>
+
+<span class="c1">// In the component:</span>
+<span class="c1">// const dispatch = useDispatch();</span>
+<span class="c1">// const { items, status, error } = useSelector(state =&gt; state.todos);</span>
+<span class="c1">// useEffect(() =&gt; {</span>
+<span class="c1">//   if (status === &#39;idle&#39;) {</span>
+<span class="c1">//     dispatch(fetchTodos());</span>
+<span class="c1">//   }</span>
+<span class="c1">// }, [status, dispatch]);</span>
+</code></pre></div>
+
+<p>This is a lot of code to solve a problem that <code>useQuery({ queryKey: ['todos'], queryFn: fetchTodos })</code> solves in a single line. And this Redux example <em>still</em> doesn't handle:</p>
+<ul>
+<li>Refetching on window focus.</li>
+<li>Invalidating the data after a mutation.</li>
+<li>Request deduplication.</li>
+<li>Optimistic updates.</li>
+</ul>
+<p>Adding those features would require significantly more boilerplate.</p>
+<h3 id="react-query-as-your-server-state-cache">React Query as Your Server State Cache</h3>
+<p>React Query isn't just a data fetching library; it's a powerful, asynchronous state manager. The <code>QueryClient</code> you provide at the root of your app acts as a global, in-memory cache for all of your server state.</p>
+<ul>
+<li><strong>Instead of a Redux store for server data...</strong> you have the <code>QueryClient</code>.</li>
+<li><strong>Instead of reducers and thunks...</strong> you have <code>queryFn</code> and <code>mutationFn</code>.</li>
+<li><strong>Instead of selectors...</strong> you have <code>useQuery</code> with a specific <code>queryKey</code>.</li>
+<li><strong>Instead of dispatching actions...</strong> you call <code>mutate</code> or <code>invalidateQueries</code>.</li>
+</ul>
+<p>By adopting React Query, you can often delete vast amounts of Redux boilerplate from your application.</p>
+<h3 id="the-new-division-of-labor">The New Division of Labor</h3>
+<p>This doesn't mean Redux or Zustand are obsolete. It means their role becomes clearer and more focused. A modern React application's state can be cleanly divided:</p>
+<table>
+<thead>
+<tr>
+<th>State Type</th>
+<th>Characteristics</th>
+<th>Best Tool</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Server State</strong></td>
+<td>Asynchronous, shared, can be stale, cached</td>
+<td><strong>TanStack (React) Query</strong></td>
+</tr>
+<tr>
+<td><strong>Client State</strong></td>
+<td>Synchronous, owned by client, ephemeral</td>
+<td><strong><code>useState</code>, <code>useReducer</code>, <code>useContext</code></strong></td>
+</tr>
+<tr>
+<td><strong>Global Client State</strong></td>
+<td>Client state shared by many components</td>
+<td><strong>Zustand, Redux, Jotai</strong></td>
+</tr>
+</tbody>
+</table>
+<p>You may find that after moving all your server state management to React Query, the remaining global <em>client</em> state is so simple that you no longer need a heavy library like Redux. Perhaps a simple <code>useContext</code> and <code>useReducer</code> combination is enough. Or maybe a lightweight library like Zustand is a better fit for managing things like theme state, authentication status, or complex form state that spans multiple pages.</p>
+<h3 id="the-journey-from-problem-to-solution">The Journey: From Problem to Solution</h3>
+<p>Let's review the evolution of our <code>TodoApp</code> component.</p>
+<table>
+<thead>
+<tr>
+<th>Iteration</th>
+<th>Failure Mode</th>
+<th>Technique Applied</th>
+<th>Result</th>
+<th>Code Complexity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Data becomes stale, no loading/error states</td>
+<td><code>useState</code> + <code>useEffect</code></td>
+<td>Fragile, inefficient initial state</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Data still stale after mutation</td>
+<td><code>useQuery</code></td>
+<td>Robust data fetching and caching</td>
+<td>Low</td>
+</tr>
+<tr>
+<td>2</td>
+<td>UI lags behind server state after mutation</td>
+<td><code>useMutation</code> + Invalidation</td>
+<td>UI automatically syncs with server</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Perceptible UI lag on slow networks</td>
+<td>Optimistic Updates</td>
+<td>UI feels instantaneous, with safe rollbacks</td>
+<td>High</td>
+</tr>
+</tbody>
+</table>
+<p>We started with a seemingly simple <code>useEffect</code> hook and discovered it was hiding a mountain of complexity. By progressively adopting the features of React Query, we built a component that is not only simpler at the end but also vastly more powerful and resilient.</p>
+<h3 id="final-implementation">Final Implementation</h3>
+<p>Here is the final, production-ready version of our component, a testament to how declarative server state management can be.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/TodoApp.tsx (Final Version)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useQuery</span><span class="p">,</span><span class="w"> </span><span class="nx">useMutation</span><span class="p">,</span><span class="w"> </span><span class="nx">useQueryClient</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@tanstack/react-query&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">fetchTodos</span><span class="p">,</span><span class="w"> </span><span class="nx">addTodo</span><span class="p">,</span><span class="w"> </span><span class="nx">Todo</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../api/todos&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">FormEvent</span><span class="p">,</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">TodoApp</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">queryClient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useQueryClient</span><span class="p">();</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">newTodoText</span><span class="p">,</span><span class="w"> </span><span class="nx">setNewTodoText</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="kt">todos</span><span class="p">,</span><span class="w"> </span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">isError</span><span class="p">,</span><span class="w"> </span><span class="nx">error</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useQuery</span><span class="p">&lt;</span><span class="nt">Todo</span><span class="err">[]</span><span class="p">&gt;({</span>
+<span class="w">    </span><span class="nx">queryKey</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s1">&#39;todos&#39;</span><span class="p">],</span>
+<span class="w">    </span><span class="nx">queryFn</span><span class="o">:</span><span class="w"> </span><span class="kt">fetchTodos</span><span class="p">,</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">addTodoMutation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useMutation</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">mutationFn</span><span class="o">:</span><span class="w"> </span><span class="kt">addTodo</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">onMutate</span><span class="o">:</span><span class="w"> </span><span class="kt">async</span><span class="w"> </span><span class="p">(</span><span class="nx">newTodoText</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">await</span><span class="w"> </span><span class="nx">queryClient</span><span class="p">.</span><span class="nx">cancelQueries</span><span class="p">({</span><span class="w"> </span><span class="nx">queryKey</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s1">&#39;todos&#39;</span><span class="p">]</span><span class="w"> </span><span class="p">});</span>
+<span class="w">      </span><span class="kd">const</span><span class="w"> </span><span class="nx">previousTodos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">queryClient</span><span class="p">.</span><span class="nx">getQueryData</span><span class="p">&lt;</span><span class="nt">Todo</span><span class="err">[]</span><span class="p">&gt;([</span><span class="s1">&#39;todos&#39;</span><span class="p">]);</span>
+<span class="w">      </span><span class="nx">queryClient</span><span class="p">.</span><span class="nx">setQueryData</span><span class="p">&lt;</span><span class="nt">Todo</span><span class="err">[]</span><span class="p">&gt;([</span><span class="s1">&#39;todos&#39;</span><span class="p">],</span><span class="w"> </span><span class="p">(</span><span class="nx">old</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">...(</span><span class="nx">old</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="p">[]),</span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">Date.now</span><span class="p">(),</span><span class="w"> </span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="kt">newTodoText</span><span class="p">,</span><span class="w"> </span><span class="nx">completed</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="p">]);</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">previousTodos</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nx">onError</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">,</span><span class="w"> </span><span class="nx">newTodo</span><span class="p">,</span><span class="w"> </span><span class="nx">context</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">queryClient</span><span class="p">.</span><span class="nx">setQueryData</span><span class="p">([</span><span class="s1">&#39;todos&#39;</span><span class="p">],</span><span class="w"> </span><span class="nx">context</span><span class="o">?</span><span class="p">.</span><span class="nx">previousTodos</span><span class="p">);</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nx">onSettled</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">queryClient</span><span class="p">.</span><span class="nx">invalidateQueries</span><span class="p">({</span><span class="w"> </span><span class="nx">queryKey</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s1">&#39;todos&#39;</span><span class="p">]</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">event</span><span class="o">:</span><span class="w"> </span><span class="kt">FormEvent</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">newTodoText</span><span class="p">.</span><span class="nx">trim</span><span class="p">())</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">addTodoMutation</span><span class="p">.</span><span class="nx">mutate</span><span class="p">(</span><span class="nx">newTodoText</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">onSuccess</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setNewTodoText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">),</span>
+<span class="w">    </span><span class="p">});</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">isLoading</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">todos</span><span class="p">...&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">isError</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">An</span><span class="w"> </span><span class="nx">error</span><span class="w"> </span><span class="nx">occurred</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">error</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Todo</span><span class="w"> </span><span class="nx">List</span><span class="w"> </span><span class="p">(</span><span class="nx">Optimistic</span><span class="p">)&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span>
+<span class="w">          </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text&quot;</span>
+<span class="w">          </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">newTodoText</span><span class="p">}</span>
+<span class="w">          </span><span class="na">onChange</span><span class="o">=</span><span class="p">{(</span><span class="nx">e</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setNewTodoText</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">value</span><span class="p">)}</span>
+<span class="w">          </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Add a new todo&quot;</span>
+<span class="w">          </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">addTodoMutation</span><span class="p">.</span><span class="nx">isPending</span><span class="p">}</span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="w"> </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">addTodoMutation</span><span class="p">.</span><span class="nx">isPending</span><span class="p">}&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">addTodoMutation</span><span class="p">.</span><span class="nx">isPending</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;Adding...&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Add Todo&#39;</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">addTodoMutation</span><span class="p">.</span><span class="nx">isError</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">          </span><span class="nx">Failed</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">add</span><span class="w"> </span><span class="nx">todo</span><span class="p">.</span><span class="w"> </span><span class="nx">Please</span><span class="w"> </span><span class="k">try</span><span class="w"> </span><span class="nx">again</span><span class="p">.</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">)}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">todos</span><span class="o">?</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">todo</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">todo</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">textDecoration</span><span class="o">:</span><span class="w"> </span><span class="kt">todo.completed</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;line-through&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;none&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="nx">todo</span><span class="p">.</span><span class="nx">text</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="lessons-learned">Lessons Learned</h3>
+<ol>
+<li><strong>Separate Your State</strong>: The single most important step is to identify what is client state and what is server state.</li>
+<li><strong>Use the Right Tool for the Job</strong>: Don't manage server state with client state tools. <code>useState</code> is for modals; <code>useQuery</code> is for user data.</li>
+<li><strong>Embrace Declarative Data Fetching</strong>: Describe <em>what</em> data you need with <code>useQuery</code>, not <em>how</em> to get it with <code>useEffect</code>.</li>
+<li><strong>Invalidation over Manual Updates</strong>: Instead of manually pushing new data into your cache after a mutation, prefer to invalidate the relevant queries and let React Query handle the refetching. This is more resilient.</li>
+<li><strong>Use Optimistic Updates for a Premium Feel</strong>: For frequent and important user actions, optimistic updates can transform the user experience from "good" to "great".</li>
+</ol>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:40:59 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

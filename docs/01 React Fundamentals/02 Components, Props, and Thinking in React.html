@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>02 Components, Props, and Thinking in React</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">01 React Fundamentals</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-2-components-props-and-thinking-in-react">Chapter 2: Components, Props, and Thinking in React</h1>
+<h2 id="function-components-the-only-kind-that-matters">Function components: the only kind that matters</h2>
+<h2 id="the-building-block-of-react-the-component">The Building Block of React: The Component</h2>
+<p>Everything in a React application is a component. A button is a component. A form is a component. An entire page is a component. A component is a self-contained, reusable piece of UI. The core idea of React is to break down a complex user interface into a tree of these small, manageable components.</p>
+<p>In modern React, a component is simply a JavaScript function.</p>
+<p>That's it. It's a function that accepts some data as an argument and returns a description of what the UI should look like. This "description" is written in a syntax called JSX (JavaScript XML), which looks very much like HTML.</p>
+<p>Let's look at the simplest possible React component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Welcome.tsx</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">Welcome</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Hello</span><span class="p">,</span><span class="w"> </span><span class="nx">world</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">Welcome</span><span class="p">;</span>
+</code></pre></div>
+
+<p>This <code>Welcome</code> function is a valid React component. It takes no arguments and returns an <code>h1</code> element. The browser doesn't understand JSX directly; your build tool (like the one included in Next.js) transforms this HTML-like syntax into regular JavaScript that creates the corresponding DOM elements.</p>
+<h3 id="a-quick-note-on-history-class-components">A Quick Note on History: Class Components</h3>
+<p>If you look at older React tutorials or codebases, you might see components written as JavaScript classes:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Old way: Class Component (for historical context only)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kd">class</span><span class="w"> </span><span class="nx">Welcome</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">Component</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">render</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Hello</span><span class="p">,</span><span class="w"> </span><span class="nx">world</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>For many years, this was the standard way to write components, especially those that needed to manage state or lifecycle events. However, with the introduction of <strong>Hooks</strong> in React 16.8 (which we'll cover in detail in Chapter 3), function components became capable of everything class components could do, but with a much simpler and more direct syntax.</p>
+<p>In this book, and in modern professional React development, <strong>we will exclusively use function components</strong>. They are simpler to write, easier to read, and the official recommendation from the React team for all new development. Understanding that class components exist is useful for historical context, but you do not need to learn how to write them.</p>
+<h2 id="your-first-useful-component">Your first useful component</h2>
+<h2 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h2>
+<p>To learn how to "think in React," we need a concrete example to work with. Abstract concepts are hard to grasp, so we'll build a real UI element and improve it step-by-step throughout this chapter.</p>
+<p>Our anchor example will be a <strong><code>UserProfileCard</code></strong>. It's a common UI pattern that's simple enough to understand but complex enough to reveal the core principles of component design.</p>
+<p>Let's start with the most direct, naive implementation. We'll create a single component and hardcode all the information directly into it.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+└── app/
+    └── page.tsx
+└── components/
+    └── UserProfileCard.tsx  ← We will create this file
+</code></pre></div>
+
+<p>Here is our first version, our reference implementation. It works, but as we'll soon see, it's deeply flawed.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">userName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Ada Lovelace&quot;</span><span class="p">;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">userHandle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;@ada&quot;</span><span class="p">;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">bio</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;First computer programmer. Enchantress of Numbers.&quot;</span><span class="p">;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">avatarUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;https://i.imgur.com/Q9qg4MC.jpeg&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// A placeholder image</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1px solid #ccc&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">borderRadius</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;8px&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;16px&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">maxWidth</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;300px&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">fontFamily</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;sans-serif&#39;</span>
+<span class="w">    </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">img</span><span class="w"> </span>
+<span class="w">        </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">avatarUrl</span><span class="p">}</span><span class="w"> </span>
+<span class="w">        </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="sb">`</span><span class="si">${</span><span class="nx">userName</span><span class="si">}</span><span class="sb">&#39;s avatar`</span><span class="p">}</span>
+<span class="w">        </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;100px&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;100px&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">borderRadius</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;50%&#39;</span><span class="w"> </span><span class="p">}}</span><span class="w"> </span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">margin</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;10px 0 5px&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">userName</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#666&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">margin</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;0 0 10px&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">userHandle</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">bio</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>To see this on the screen, we'll import it into our main page file.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/components/UserProfileCard&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;flex&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">justifyContent</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">paddingTop</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;40px&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">UserProfileCard</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="iteration-0-the-monolithic-component">Iteration 0: The Monolithic Component</h3>
+<p>When you run this, you'll see a nicely formatted user profile card for Ada Lovelace. It works perfectly.</p>
+<p><strong>Browser Behavior</strong>:
+A single user profile card for Ada Lovelace is displayed on the page.</p>
+<p>So, what's the problem? The problem isn't a bug the user can see; it's a structural problem that affects us, the developers.</p>
+<p><strong>Current Limitation</strong>: This component is completely rigid.
+1.  <strong>It's not reusable</strong>: It will <em>only</em> ever display information for Ada Lovelace. What if we want to show a card for Grace Hopper? Or Alan Turing?
+2.  <strong>It's not configurable</strong>: The data is hardcoded inside the component. To change the user, you have to edit the component's source code.
+3.  <strong>It's not composable</strong>: It's one giant block of JSX. We can't reuse just the avatar part or just the user info part in another place in our application.</p>
+<p>This monolithic approach is a dead end. In the next section, we'll address the first and most critical flaw: its lack of reusability.</p>
+<h2 id="props-passing-data-down">Props: passing data down</h2>
+<h2 id="iteration-1-making-the-component-reusable-with-props">Iteration 1: Making the Component Reusable with Props</h2>
+<p>Our <code>UserProfileCard</code> works, but it's a one-trick pony. Let's introduce a new scenario that immediately breaks our current approach.</p>
+<p><strong>New Scenario</strong>: The product manager asks us to display a list of three different users on the homepage.</p>
+<p>With our current <code>UserProfileCard.tsx</code>, our only option is to copy and paste the entire component's code three times, changing the hardcoded values in each copy. This is a recipe for disaster. A small change to the card's layout would require editing it in three separate places.</p>
+<p>This is a <strong>maintainability failure</strong>. We need a way to separate the component's structure (the JSX) from the data it displays.</p>
+<h3 id="diagnostic-analysis-reading-the-failure">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+The user sees exactly what we coded: one card for Ada Lovelace. The problem isn't what the user sees, but the pain we experience as developers trying to meet the new requirement.</p>
+<p><strong>Code Smell Evidence</strong>:
+- <strong>Hardcoded Values</strong>: <code>const userName = "Ada Lovelace";</code> couples the data directly to the presentation.
+- <strong>Low Cohesion</strong>: The component is responsible for both its structure <em>and</em> its specific data.
+- <strong>No Reusability</strong>: The component cannot be used in any context other than displaying Ada Lovelace.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the developer experiences</strong>: To show three users, I have to create <code>UserProfileCardAda.tsx</code>, <code>UserProfileCardGrace.tsx</code>, and <code>UserProfileCardAlan.tsx</code>. This is tedious and error-prone.</p>
+</li>
+<li>
+<p><strong>What the code reveals</strong>: The component's logic is not portable. The data is "stuck" inside.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: The component is self-contained in the wrong way. It fetches or defines its own data, making it impossible to configure from the outside.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: It doesn't scale. For 100 users, we would need 100 component files. This is fundamentally unworkable.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A mechanism to pass data <em>into</em> a component from its parent, just like passing arguments to a function.</p>
+</li>
+</ol>
+<h3 id="technique-introduced-props">Technique Introduced: Props</h3>
+<p>In React, this mechanism is called <strong>props</strong> (short for "properties"). Props are to components what arguments are to functions. They are the primary way to pass data from a parent component down to a child component.</p>
+<p>Props are passed as attributes in JSX, just like HTML attributes. The child component receives them as a single object, which is the first argument to its function.</p>
+<p>To make this robust, we'll use TypeScript to define the "shape" of our props object. This creates a contract: anyone using <code>UserProfileCard</code> <em>must</em> provide these specific props with the correct data types.</p>
+<h3 id="solution-implementation">Solution Implementation</h3>
+<p>Let's refactor <code>UserProfileCard</code> to accept its data via props.</p>
+<p><strong>Before</strong> (Iteration 0): Hardcoded data inside the component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx (Iteration 0)</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">userName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Ada Lovelace&quot;</span><span class="p">;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">userHandle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;@ada&quot;</span><span class="p">;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">bio</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;First computer programmer. Enchantress of Numbers.&quot;</span><span class="p">;</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">avatarUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;https://i.imgur.com/Q9qg4MC.jpeg&quot;</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="na">...</span><span class="w"> </span><span class="na">styles</span><span class="w"> </span><span class="na">...</span><span class="w"> </span><span class="err">*</span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">img</span><span class="w"> </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">avatarUrl</span><span class="p">}</span><span class="w"> </span><span class="err">/*</span><span class="w"> </span><span class="na">...</span><span class="w"> </span><span class="err">*/</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">userName</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">userHandle</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">bio</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 1): Data is received via props.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfileCard.tsx (Iteration 1)</span>
+
+<span class="c1">// 1. Define the shape of the props object with a TypeScript interface</span>
+<span class="kd">interface</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">userName</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">userHandle</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">avatarUrl</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 2. The component function now accepts a &#39;props&#39; object</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">(</span><span class="nx">props</span><span class="o">:</span><span class="w"> </span><span class="kt">UserProfileCardProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// 3. Destructure the props object for easier access</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userName</span><span class="p">,</span><span class="w"> </span><span class="nx">userHandle</span><span class="p">,</span><span class="w"> </span><span class="nx">bio</span><span class="p">,</span><span class="w"> </span><span class="nx">avatarUrl</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">props</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1px solid #ccc&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">borderRadius</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;8px&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;16px&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">maxWidth</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;300px&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">fontFamily</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;sans-serif&#39;</span>
+<span class="w">    </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">img</span><span class="w"> </span>
+<span class="w">        </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">avatarUrl</span><span class="p">}</span><span class="w"> </span>
+<span class="w">        </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="sb">`</span><span class="si">${</span><span class="nx">userName</span><span class="si">}</span><span class="sb">&#39;s avatar`</span><span class="p">}</span>
+<span class="w">        </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;100px&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;100px&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">borderRadius</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;50%&#39;</span><span class="w"> </span><span class="p">}}</span><span class="w"> </span>
+<span class="w">      </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">margin</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;10px 0 5px&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">userName</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#666&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">margin</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;0 0 10px&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">userHandle</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">bio</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Our component is now a pure, reusable template. It describes how to render a user profile, but it has no knowledge of <em>which</em> user it's rendering. That responsibility now belongs to the parent component.</p>
+<h3 id="verification">Verification</h3>
+<p>Let's update our homepage to render three different user profiles using our new, flexible component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/components/UserProfileCard&#39;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">users</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">userName</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Ada Lovelace&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">userHandle</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;@ada&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;First computer programmer. Enchantress of Numbers.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">avatarUrl</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://i.imgur.com/Q9qg4MC.jpeg&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">userName</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Grace Hopper&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">userHandle</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;@grace&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Pioneering computer scientist and US Navy rear admiral.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">avatarUrl</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://i.imgur.com/jA8hHMpm.jpg&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">userName</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Alan Turing&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">userHandle</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;@alan&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Father of theoretical computer science and artificial intelligence.&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">avatarUrl</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://i.imgur.com/4oTq0K8.jpg&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">];</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;flex&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">gap</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;20px&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">justifyContent</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">paddingTop</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;40px&#39;</span><span class="w"> </span>
+<span class="w">    </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">users</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">user</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">UserProfileCard</span>
+<span class="w">          </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">userHandle</span><span class="p">}</span><span class="w"> </span><span class="err">//</span><span class="w"> </span><span class="err">&#39;</span><span class="na">key</span><span class="err">&#39;</span><span class="w"> </span><span class="na">is</span><span class="w"> </span><span class="na">a</span><span class="w"> </span><span class="na">special</span><span class="w"> </span><span class="na">prop</span><span class="w"> </span><span class="na">for</span><span class="w"> </span><span class="na">lists</span><span class="err">,</span><span class="w"> </span><span class="na">covered</span><span class="w"> </span><span class="na">later</span>
+<span class="w">          </span><span class="na">userName</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">userName</span><span class="p">}</span>
+<span class="w">          </span><span class="na">userHandle</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">userHandle</span><span class="p">}</span>
+<span class="w">          </span><span class="na">bio</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">bio</span><span class="p">}</span>
+<span class="w">          </span><span class="na">avatarUrl</span><span class="o">=</span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">}</span>
+<span class="w">        </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">))}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Expected vs. Actual Improvement</strong>:
+- <strong>Expected</strong>: We should be able to render multiple, different user cards without duplicating component code.
+- <strong>Actual</strong>: The browser now displays three distinct user profile cards, side-by-side. We achieved this by reusing a single component definition, which is a huge win for maintainability.</p>
+<p><strong>Limitation Preview</strong>: Our component is reusable, but it's still monolithic. The layout is rigid. What if we want to add a "Verified" badge for one user, or extra action buttons for another? Adding more and more props to handle every variation will quickly become messy. This leads us to the next core principle of React: composition.</p>
+<h3 id="common-failure-modes-and-their-signatures">Common Failure Modes and Their Signatures</h3>
+<h4 id="symptom-property-username-is-missing-in-type-but-required-in-type-userprofilecardprops">Symptom: "Property 'userName' is missing in type '{}' but required in type 'UserProfileCardProps'."</h4>
+<p><strong>Terminal Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/app/page.tsx:35:9<span class="w"> </span>-<span class="w"> </span>error<span class="w"> </span>TS2741:
+Property<span class="w"> </span><span class="s1">&#39;userName&#39;</span><span class="w"> </span>is<span class="w"> </span>missing<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span><span class="s1">&#39;{}&#39;</span><span class="w"> </span>but<span class="w"> </span>required<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span><span class="s1">&#39;UserProfileCardProps&#39;</span>.
+
+<span class="m">35</span><span class="w">         </span>&lt;UserProfileCard<span class="w"> </span>/&gt;
+<span class="w">           </span>~~~~~~~~~~~~~~~~~~~
+</code></pre></div>
+
+<p><strong>Root cause</strong>: You are trying to render the component without passing the required props. Our TypeScript interface <code>UserProfileCardProps</code> created a contract, and we violated it.
+<strong>Solution</strong>: Ensure you pass all props defined as required in the component's prop types.</p>
+<h4 id="symptom-the-component-displays-a-value-as-undefined-or-an-image-is-broken">Symptom: The component displays a value as <code>undefined</code> or an image is broken.</h4>
+<p><strong>Browser behavior</strong>: The card renders, but the <code>h2</code> for the name is blank, or the <code>img</code> tag has no <code>src</code>.</p>
+<p><strong>React DevTools Clues</strong>:
+- Select the <code>UserProfileCard</code> component in the Components tab.
+- Look at the <code>props</code> panel on the right.
+- You might see <code>userName: undefined</code> or notice a typo like <code>userNmae: "Ada Lovelace"</code>.</p>
+<p><strong>Root cause</strong>: You likely made a typo in the prop name when rendering the component (e.g., <code>userName</code> vs. <code>userNmae</code>). React doesn't know you meant <code>userName</code>, so the prop is never received by the child component.
+<strong>Solution</strong>: Check for typos in your prop names where you call the component. This is where TypeScript helps immensely, as it would have caught the typo before you even ran the code.</p>
+<h2 id="composition-over-inheritance">Composition over inheritance</h2>
+<h2 id="iteration-2-making-the-component-composable">Iteration 2: Making the Component Composable</h2>
+<p>Our <code>UserProfileCard</code> is now reusable thanks to props. But it's still a rigid block. Let's introduce a new requirement that highlights this inflexibility.</p>
+<p><strong>New Scenario</strong>: The design team wants two new variations of the user card:
+1.  A "Premium" user card that has a golden border and a "Premium Member" badge inside.
+2.  An "Admin" user card that includes "Edit" and "Delete" buttons at the bottom.</p>
+<p>The naive approach is to add more props to our <code>UserProfileCard</code>: <code>isPremium: boolean</code>, <code>isAdmin: boolean</code>.</p>
+<p>Let's see what that looks like.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// AVOID THIS PATTERN: UserProfileCard with boolean props for layout changes</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">UserProfileCardProps</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... existing props</span>
+<span class="w">  </span><span class="nx">isPremium?</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">isAdmin?</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfileCard</span><span class="p">(</span><span class="nx">props</span><span class="o">:</span><span class="w"> </span><span class="kt">UserProfileCardProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userName</span><span class="p">,</span><span class="w"> </span><span class="nx">userHandle</span><span class="p">,</span><span class="w"> </span><span class="nx">bio</span><span class="p">,</span><span class="w"> </span><span class="nx">avatarUrl</span><span class="p">,</span><span class="w"> </span><span class="nx">isPremium</span><span class="p">,</span><span class="w"> </span><span class="nx">isAdmin</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">props</span><span class="p">;</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">cardStyle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="kt">isPremium</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;2px solid gold&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1px solid #ccc&#39;</span><span class="p">,</span><span class="w"> </span><span class="c1">// Conditional style</span>
+<span class="w">    </span><span class="c1">// ... other styles</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{</span><span class="nx">cardStyle</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... avatar, name, bio ... */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">isPremium</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;gold&#39;</span><span class="p">}}&gt;</span><span class="nx">Premium</span><span class="w"> </span><span class="nx">Member</span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span><span class="w"> </span><span class="p">{</span><span class="cm">/* Conditional UI */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">isAdmin</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">button</span><span class="p">&gt;</span><span class="nx">Edit</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">button</span><span class="p">&gt;</span><span class="nx">Delete</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">)}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This works, but it's a path to chaos. What happens when we need a <code>isDeactivated</code> state? Or a <code>hasNewMessage</code> indicator? The component becomes a tangled mess of conditional logic. This is a <strong>complexity failure</strong>.</p>
+<h3 id="diagnostic-analysis-reading-the-failure_1">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>: The UI works as requested. We can create premium and admin cards. The failure is in the code's architecture.</p>
+<p><strong>Code Smell Evidence</strong>:
+- <strong>High Cyclomatic Complexity</strong>: The number of possible paths through the component's render logic is growing.
+- <strong>Violates Single Responsibility Principle</strong>: The component is now responsible for its own layout AND the layout of premium badges AND the layout of admin buttons.
+- <strong>Fragile</strong>: Adding a new variation requires modifying and re-testing the core <code>UserProfileCard</code>, risking regressions for all other variations.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the developer experiences</strong>: The component is becoming hard to read and reason about. I have to mentally track all the boolean props to understand what the final output will be.</p>
+</li>
+<li>
+<p><strong>What the code reveals</strong>: The component is not "open for extension but closed for modification." To extend its functionality, we have to modify its internal logic.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: The component is trying to own and control every possible piece of UI that could ever appear inside it. This is thinking in terms of <strong>inheritance</strong> (a PremiumCard <em>is a</em> UserProfileCard with modifications) rather than <strong>composition</strong>.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: It's not scalable. Each new UI variation adds another layer of conditional logic, leading to an exponential increase in complexity.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A way for the parent component to decide what extra UI, if any, gets rendered inside the card, without the card needing to know anything about it.</p>
+</li>
+</ol>
+<h3 id="technique-introduced-composition-and-the-children-prop">Technique Introduced: Composition and the <code>children</code> Prop</h3>
+<p>The React philosophy is <strong>composition over inheritance</strong>. Instead of creating a single, monolithic component that handles all variations, we should create smaller, focused components and assemble them like Lego bricks.</p>
+<p>The key to this is a special prop called <code>children</code>. Whatever JSX you put <em>between</em> a component's opening and closing tags is passed to that component as the <code>children</code> prop.</p>
+<p>Let's create a generic <code>Card</code> component that knows nothing about users. It only knows how to draw a box.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Card.tsx (New file)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">CardProps</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">children</span><span class="o">:</span><span class="w"> </span><span class="kt">React.ReactNode</span><span class="p">;</span><span class="w"> </span><span class="c1">// React.ReactNode can be any valid JSX</span>
+<span class="w">  </span><span class="nx">borderColor?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Card</span><span class="p">({</span><span class="w"> </span><span class="nx">children</span><span class="p">,</span><span class="w"> </span><span class="nx">borderColor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;#ccc&#39;</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">CardProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span>
+<span class="w">      </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="sb">`1px solid </span><span class="si">${</span><span class="nx">borderColor</span><span class="si">}</span><span class="sb">`</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">borderRadius</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;8px&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;16px&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">maxWidth</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;300px&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">fontFamily</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;sans-serif&#39;</span>
+<span class="w">    </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">children</span><span class="p">}</span><span class="w"> </span><span class="p">{</span><span class="cm">/* This is where the magic happens */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This <code>Card</code> component is beautifully simple and infinitely reusable. It takes any content (<code>children</code>) and wraps it in a styled <code>div</code>.</p>
+<h3 id="solution-implementation_1">Solution Implementation</h3>
+<p>Now, let's break our original <code>UserProfileCard</code> into smaller pieces and reassemble them using our new <code>Card</code> component.</p>
+<p><strong>Step 1: Create smaller, focused components.</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/Avatar.tsx (New file)</span>
+<span class="kd">interface</span><span class="w"> </span><span class="nx">AvatarProps</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">src</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">alt</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Avatar</span><span class="p">({</span><span class="w"> </span><span class="nx">src</span><span class="p">,</span><span class="w"> </span><span class="nx">alt</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">AvatarProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">img</span><span class="w"> </span>
+<span class="w">      </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">src</span><span class="p">}</span><span class="w"> </span>
+<span class="w">      </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="nx">alt</span><span class="p">}</span>
+<span class="w">      </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;100px&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;100px&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">borderRadius</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;50%&#39;</span><span class="w"> </span><span class="p">}}</span><span class="w"> </span>
+<span class="w">    </span><span class="p">/&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// src/components/UserInfo.tsx (New file)</span>
+<span class="kd">interface</span><span class="w"> </span><span class="nx">UserInfoProps</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">handle</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserInfo</span><span class="p">({</span><span class="w"> </span><span class="nx">name</span><span class="p">,</span><span class="w"> </span><span class="nx">handle</span><span class="p">,</span><span class="w"> </span><span class="nx">bio</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">UserInfoProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">margin</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;10px 0 5px&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#666&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">margin</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;0 0 10px&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">handle</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">bio</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Notice these components are purely presentational. They take data and return UI. They have no wrappers or outer divs.</p>
+<p><strong>Step 2: Re-compose the <code>UserProfileCard</code> from these pieces.</strong></p>
+<p>Our old <code>UserProfileCard.tsx</code> file is no longer needed. The "user profile card" is not a single component anymore; it's a <em>pattern of composition</em> that we create in our page file.</p>
+<h3 id="verification_1">Verification</h3>
+<p>Let's update <code>page.tsx</code> to build the standard, premium, and admin cards by composing our new, small components.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx (Final Version)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">Card</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/components/Card&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Avatar</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/components/Avatar&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">UserInfo</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@/components/UserInfo&#39;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">ada</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">userName</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Ada Lovelace&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">userHandle</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;@ada&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;First computer programmer. Enchantress of Numbers.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">avatarUrl</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://i.imgur.com/Q9qg4MC.jpeg&quot;</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">grace</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">userName</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Grace Hopper&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">userHandle</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;@grace&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">bio</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Pioneering computer scientist and US Navy rear admiral.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">avatarUrl</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://i.imgur.com/jA8hHMpm.jpg&quot;</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">HomePage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;flex&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">gap</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;20px&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">justifyContent</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">alignItems</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;flex-start&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;40px&#39;</span><span class="w"> </span>
+<span class="w">    </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Standard User Card */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Card</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Avatar</span><span class="w"> </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">ada</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">}</span><span class="w"> </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="nx">ada</span><span class="p">.</span><span class="nx">userName</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">UserInfo</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="p">{</span><span class="nx">ada</span><span class="p">.</span><span class="nx">userName</span><span class="p">}</span><span class="w"> </span><span class="na">handle</span><span class="o">=</span><span class="p">{</span><span class="nx">ada</span><span class="p">.</span><span class="nx">userHandle</span><span class="p">}</span><span class="w"> </span><span class="na">bio</span><span class="o">=</span><span class="p">{</span><span class="nx">ada</span><span class="p">.</span><span class="nx">bio</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">Card</span><span class="p">&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Premium User Card */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Card</span><span class="w"> </span><span class="na">borderColor</span><span class="o">=</span><span class="s">&quot;gold&quot;</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Avatar</span><span class="w"> </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">grace</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">}</span><span class="w"> </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="nx">grace</span><span class="p">.</span><span class="nx">userName</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">UserInfo</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="p">{</span><span class="nx">grace</span><span class="p">.</span><span class="nx">userName</span><span class="p">}</span><span class="w"> </span><span class="na">handle</span><span class="o">=</span><span class="p">{</span><span class="nx">grace</span><span class="p">.</span><span class="nx">userHandle</span><span class="p">}</span><span class="w"> </span><span class="na">bio</span><span class="o">=</span><span class="p">{</span><span class="nx">grace</span><span class="p">.</span><span class="nx">bio</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;gold&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">fontWeight</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;bold&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">marginTop</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;10px&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">          </span><span class="nx">Premium</span><span class="w"> </span><span class="nx">Member</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">Card</span><span class="p">&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Admin User Card (using Ada&#39;s data for example) */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Card</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Avatar</span><span class="w"> </span><span class="na">src</span><span class="o">=</span><span class="p">{</span><span class="nx">ada</span><span class="p">.</span><span class="nx">avatarUrl</span><span class="p">}</span><span class="w"> </span><span class="na">alt</span><span class="o">=</span><span class="p">{</span><span class="nx">ada</span><span class="p">.</span><span class="nx">userName</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">UserInfo</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="p">{</span><span class="nx">ada</span><span class="p">.</span><span class="nx">userName</span><span class="p">}</span><span class="w"> </span><span class="na">handle</span><span class="o">=</span><span class="p">{</span><span class="nx">ada</span><span class="p">.</span><span class="nx">userHandle</span><span class="p">}</span><span class="w"> </span><span class="na">bio</span><span class="o">=</span><span class="p">{</span><span class="nx">ada</span><span class="p">.</span><span class="nx">bio</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">marginTop</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;15px&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;flex&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">gap</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;10px&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">button</span><span class="p">&gt;</span><span class="nx">Edit</span><span class="w"> </span><span class="nx">Profile</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">button</span><span class="p">&gt;</span><span class="nx">Delete</span><span class="w"> </span><span class="nx">User</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">Card</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Expected vs. Actual Improvement</strong>:
+- <strong>Expected</strong>: We should be able to create different card layouts without modifying any of the core components (<code>Card</code>, <code>Avatar</code>, <code>UserInfo</code>).
+- <strong>Actual</strong>: We did exactly that. The parent component (<code>HomePage</code>) now has full control over the layout. The <code>Card</code> component doesn't know or care that it contains admin buttons or premium badges. This is the power of composition. Our code is now more flexible, reusable, and easier to maintain.</p>
+<h3 id="debugging-workflow-when-your-component-fails">Debugging Workflow: When Your Component Fails</h3>
+<p><strong>Step 1: Observe the user experience</strong>
+You create a new card, but the admin buttons you added don't appear.</p>
+<p><strong>Step 2: Check the console</strong>
+There are no errors. This is a logic issue, not a crash.</p>
+<p><strong>Step 3: Inspect with React DevTools</strong>
+- Open the Components tab in your browser's DevTools.
+- Find and click on your <code>&lt;Card&gt;</code> component in the component tree.
+- Look at the <code>props</code> panel on the right. You will see a <code>children</code> prop.
+- You can expand <code>children</code>. If it's an array, you can inspect each child. You should see your <code>Avatar</code>, <code>UserInfo</code>, and the <code>div</code> with your buttons. If they are there, the problem is not with the parent passing them down.
+- Now, look at the source code for <code>Card.tsx</code>. Is <code>{children}</code> actually being rendered? A common mistake is to define a component that accepts children but forget to render them.</p>
+<p>This systematic inspection allows you to trace the flow of your UI from parent to child and pinpoint exactly where the breakdown occurs.</p>
+<h2 id="synthesis-the-complete-journey">Synthesis: The Complete Journey</h2>
+<h2 id="the-journey-from-problem-to-solution">The Journey: From Problem to Solution</h2>
+<p>We have transformed our code from a rigid, unmaintainable block into a flexible, reusable system of components. This journey reflects the core of "thinking in React."</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Iteration</th>
+<th style="text-align: left;">Failure Mode</th>
+<th style="text-align: left;">Technique Applied</th>
+<th style="text-align: left;">Result</th>
+<th style="text-align: left;">Code Quality Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;"><strong>Rigidity &amp; Lack of Reusability</strong>: Hardcoded data.</td>
+<td style="text-align: left;">None (Initial State)</td>
+<td style="text-align: left;">A single, non-reusable card for one user.</td>
+<td style="text-align: left;">Brittle, high maintenance, not scalable.</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;"><strong>Maintainability Failure</strong>: Copy-pasting code to show new users.</td>
+<td style="text-align: left;"><strong>Props</strong> &amp; TypeScript Interfaces</td>
+<td style="text-align: left;">A single, reusable <code>UserProfileCard</code> component configurable with data.</td>
+<td style="text-align: left;">Reusable, maintainable, type-safe.</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;"><strong>Complexity Failure</strong>: Adding boolean props and conditional logic for UI variations.</td>
+<td style="text-align: left;"><strong>Composition</strong> (<code>children</code> prop) &amp; Component Splitting</td>
+<td style="text-align: left;">Small, single-purpose components (<code>Card</code>, <code>Avatar</code>, <code>UserInfo</code>) composed by the parent.</td>
+<td style="text-align: left;">Flexible, scalable, follows Single Responsibility Principle.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="final-implementation">Final Implementation</h3>
+<p>Our final project structure reflects this compositional approach:</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+└── app/
+    └── page.tsx              ← Composition happens here
+└── components/
+    ├── Avatar.tsx            ← Reusable UI piece
+    ├── Card.tsx              ← Reusable container
+    └── UserInfo.tsx          ← Reusable UI piece
+</code></pre></div>
+
+<p>The final code in <code>page.tsx</code> is declarative. It reads like a description of the UI we want to build, assembling our custom "Lego bricks" to achieve the desired result.</p>
+<h3 id="decision-framework-props-vs-children">Decision Framework: Props vs. Children</h3>
+<p>When building a component, you'll often face a choice: should this be controlled by a prop, or should I use <code>children</code>?</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Scenario</th>
+<th style="text-align: left;">Choose</th>
+<th style="text-align: left;">Why?</th>
+<th style="text-align: left;">Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Passing simple data (strings, numbers, booleans)</td>
+<td style="text-align: left;"><strong>Props</strong></td>
+<td style="text-align: left;">Props are explicit and create a clear API for your component. They are easy to type-check.</td>
+<td style="text-align: left;"><code>&lt;Avatar src="..." alt="..." /&gt;</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Passing a data object</td>
+<td style="text-align: left;"><strong>Props</strong></td>
+<td style="text-align: left;">The component needs the data to render its internal structure.</td>
+<td style="text-align: left;"><code>&lt;UserInfo user={userData} /&gt;</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Customizing a component's visual variant</td>
+<td style="text-align: left;"><strong>Props</strong></td>
+<td style="text-align: left;">For a small, fixed set of variations, props are simpler.</td>
+<td style="text-align: left;"><code>&lt;Button variant="primary" /&gt;</code> vs. <code>&lt;Button variant="secondary" /&gt;</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Passing arbitrary or unknown content</td>
+<td style="text-align: left;"><strong><code>children</code></strong></td>
+<td style="text-align: left;">The component is a container and shouldn't care what's inside it.</td>
+<td style="text-align: left;"><code>&lt;Card&gt;...any content here...&lt;/Card&gt;</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Creating different layouts with the same "chrome"</td>
+<td style="text-align: left;"><strong><code>children</code></strong></td>
+<td style="text-align: left;">Provides maximum flexibility to the parent component to control the layout.</td>
+<td style="text-align: left;">Our Admin Card vs. Premium Card example.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Wrapping other components</td>
+<td style="text-align: left;"><strong><code>children</code></strong></td>
+<td style="text-align: left;">The core pattern for Higher-Order Components and providers (which we'll see later).</td>
+<td style="text-align: left;"><code>&lt;AuthProvider&gt;{/* The rest of the app */}&lt;/AuthProvider&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rule of Thumb</strong>: Use props for <em>what</em> a component is (its data, its identity). Use <code>children</code> for <em>what's inside</em> it (its contents, its layout).</p>
+<h3 id="lessons-learned">Lessons Learned</h3>
+<ol>
+<li><strong>Start by Building, then Decompose</strong>: It's often easiest to build a static, monolithic version of your UI first, as we did in Iteration 0. Once it looks right, break it down into a hierarchy of reusable components.</li>
+<li><strong>Unidirectional Data Flow</strong>: Notice that data always flows down: from the parent (<code>HomePage</code>) to the children (<code>Card</code>, <code>Avatar</code>). A child component never modifies the props it receives. This is a fundamental principle in React that makes applications easier to reason about.</li>
+<li><strong>Composition is King</strong>: Favoring composition over prop-based conditional logic leads to smaller, more predictable, and more reusable components. Your future self (and your teammates) will thank you for it.</li>
+</ol>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:40:58 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

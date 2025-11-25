@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>06 Forms and Validation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">01 React Fundamentals</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-6-forms-and-validation">Chapter 6: Forms and Validation</h1>
+<h2 id="handling-form-state">Handling form state</h2>
+<h2 id="the-pain-of-raw-react-forms">The Pain of Raw React Forms</h2>
+<p>Forms are the heart of user interaction on the web, but in React, they can be deceptively complex. A simple form requires managing state for each input, handling user changes, validating data, managing submission state, and displaying errors. Doing this manually with React's built-in hooks like <code>useState</code> is a rite of passage, but it quickly reveals the underlying challenges.</p>
+<p>To understand why dedicated form libraries are essential, we must first walk the difficult path of building a form "the hard way." This experience will illuminate the specific problems that modern libraries are designed to solve.</p>
+<h3 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h3>
+<p>Our anchor example for this chapter will be a <code>RegistrationForm</code>. It's a classic, realistic use case that involves multiple input types, complex validation rules, and asynchronous submission.</p>
+<p>Let's build the first, most naive version of this form using only the <code>useState</code> hook. We'll manage the entire form's data in a single state object.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="nx">src</span><span class="o">/</span>
+<span class="err">└──</span><span class="w"> </span><span class="nx">components</span><span class="o">/</span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="nx">RegistrationForm</span><span class="p">.</span><span class="nx">tsx</span><span class="w">  </span><span class="err">←</span><span class="w"> </span><span class="nx">Our</span><span class="w"> </span><span class="nx">reference</span><span class="w"> </span><span class="nx">implementation</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/RegistrationForm.tsx</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RegistrationForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">formData</span><span class="p">,</span><span class="w"> </span><span class="nx">setFormData</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">fullName</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">password</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">confirmPassword</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">acceptedTerms</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="p">,</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="kt">React.ChangeEvent</span><span class="p">&lt;</span><span class="nt">HTMLInputElement</span><span class="p">&gt;)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="p">,</span><span class="w"> </span><span class="kr">type</span><span class="p">,</span><span class="w"> </span><span class="nx">checked</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">setFormData</span><span class="p">(</span><span class="nx">prev</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({</span>
+<span class="w">      </span><span class="p">...</span><span class="nx">prev</span><span class="p">,</span>
+<span class="w">      </span><span class="p">[</span><span class="nx">name</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;checkbox&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">checked</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="kt">value</span><span class="p">,</span>
+<span class="w">    </span><span class="p">}));</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="kt">React.FormEvent</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">e</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="c1">// Basic validation</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">formData</span><span class="p">.</span><span class="nx">password</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="nx">formData</span><span class="p">.</span><span class="nx">confirmPassword</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">alert</span><span class="p">(</span><span class="s2">&quot;Passwords do not match!&quot;</span><span class="p">);</span>
+<span class="w">      </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">formData</span><span class="p">.</span><span class="nx">acceptedTerms</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">alert</span><span class="p">(</span><span class="s2">&quot;You must accept the terms and conditions!&quot;</span><span class="p">);</span>
+<span class="w">      </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Form Submitted:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">formData</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;Registration successful!&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;flex&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">flexDirection</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;column&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">gap</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;10px&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">maxWidth</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;400px&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Register</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;fullName&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">formData</span><span class="p">.</span><span class="nx">fullName</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Full Name&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;email&quot;</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;email&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">formData</span><span class="p">.</span><span class="nx">email</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Email&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;password&quot;</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;password&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">formData</span><span class="p">.</span><span class="nx">password</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Password&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;confirmPassword&quot;</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;password&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">formData</span><span class="p">.</span><span class="nx">confirmPassword</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Confirm Password&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;acceptedTerms&quot;</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;checkbox&quot;</span><span class="w"> </span><span class="na">checked</span><span class="o">=</span><span class="p">{</span><span class="nx">formData</span><span class="p">.</span><span class="nx">acceptedTerms</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="nx">I</span><span class="w"> </span><span class="nx">accept</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">terms</span><span class="w"> </span><span class="nx">and</span><span class="w"> </span><span class="nx">conditions</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p">&gt;</span><span class="nx">Register</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This component works. It captures user input and performs a simple validation on submit. But it hides a significant performance problem.</p>
+<h3 id="iteration-1-the-unseen-cost-of-controlled-components">Iteration 1: The Unseen Cost of Controlled Components</h3>
+<p>Our current implementation uses a pattern called <strong>controlled components</strong>. This means React state is the "single source of truth" for the input values. The <code>value</code> of each input is tied directly to our <code>formData</code> state object, and every keystroke calls <code>setFormData</code>, triggering a re-render of the entire component.</p>
+<p><strong>New Scenario Introduction</strong>: What happens when a user types their full name, "Leonardo da Vinci," into the form?</p>
+<p><strong>Failure Demonstration</strong>: Let's add a log to our component to see how many times it re-renders.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/RegistrationForm.tsx (with logging)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useRef</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RegistrationForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">renderCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+<span class="w">  </span><span class="nx">renderCount</span><span class="p">.</span><span class="nx">current</span><span class="o">++</span><span class="p">;</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">formData</span><span class="p">,</span><span class="w"> </span><span class="nx">setFormData</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">fullName</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">password</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">confirmPassword</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">acceptedTerms</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="p">,</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="c1">// ... (handleChange and handleSubmit are the same)</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="kt">React.ChangeEvent</span><span class="p">&lt;</span><span class="nt">HTMLInputElement</span><span class="p">&gt;)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="p">,</span><span class="w"> </span><span class="kr">type</span><span class="p">,</span><span class="w"> </span><span class="nx">checked</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">e</span><span class="p">.</span><span class="nx">target</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">setFormData</span><span class="p">(</span><span class="nx">prev</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({</span>
+<span class="w">      </span><span class="p">...</span><span class="nx">prev</span><span class="p">,</span>
+<span class="w">      </span><span class="p">[</span><span class="nx">name</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;checkbox&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">checked</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="kt">value</span><span class="p">,</span>
+<span class="w">    </span><span class="p">}));</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="kt">React.FormEvent</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">e</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">formData</span><span class="p">.</span><span class="nx">password</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="nx">formData</span><span class="p">.</span><span class="nx">confirmPassword</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">alert</span><span class="p">(</span><span class="s2">&quot;Passwords do not match!&quot;</span><span class="p">);</span>
+<span class="w">      </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">formData</span><span class="p">.</span><span class="nx">acceptedTerms</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">alert</span><span class="p">(</span><span class="s2">&quot;You must accept the terms and conditions!&quot;</span><span class="p">);</span>
+<span class="w">      </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Form Submitted:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">formData</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;Registration successful!&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;flex&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">flexDirection</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;column&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">gap</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;10px&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">maxWidth</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;400px&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Register</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Renders</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">renderCount</span><span class="p">.</span><span class="nx">current</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;fullName&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">formData</span><span class="p">.</span><span class="nx">fullName</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Full Name&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;email&quot;</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;email&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">formData</span><span class="p">.</span><span class="nx">email</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Email&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;password&quot;</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;password&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">formData</span><span class="p">.</span><span class="nx">password</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Password&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;confirmPassword&quot;</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;password&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">formData</span><span class="p">.</span><span class="nx">confirmPassword</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Confirm Password&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;acceptedTerms&quot;</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;checkbox&quot;</span><span class="w"> </span><span class="na">checked</span><span class="o">=</span><span class="p">{</span><span class="nx">formData</span><span class="p">.</span><span class="nx">acceptedTerms</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="nx">I</span><span class="w"> </span><span class="nx">accept</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">terms</span><span class="w"> </span><span class="nx">and</span><span class="w"> </span><span class="nx">conditions</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p">&gt;</span><span class="nx">Register</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, run the application and type "Leonardo da Vinci" (18 characters) into the "Full Name" field.</p>
+<h3 id="diagnostic-analysis-reading-the-failure">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+The form appears to work correctly. The input field updates as you type. However, the "Renders" count rapidly increases with each keystroke.</p>
+<p><strong>Browser Console Output</strong>:
+No errors are logged. The form functions as expected from a user's perspective.</p>
+<p><strong>React DevTools Evidence</strong>:
+- <strong>Profiler</strong>: Recording a session while typing "Leonardo da Vinci" shows 19 renders (1 initial + 18 for each character). Each render is fast, but in a complex application with many components, this can lead to significant performance degradation.
+- <strong>Components Tab</strong>: The <code>formData</code> state object updates on every single keystroke.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: A functional form.</p>
+<ul>
+<li>Expected: The input field should update.</li>
+<li>Actual: The input field updates.</li>
+</ul>
+</li>
+<li>
+<p><strong>What the console reveals</strong>: Nothing. This is a performance issue, not a runtime error.</p>
+</li>
+<li>
+<p><strong>What DevTools shows</strong>: The entire <code>RegistrationForm</code> component re-renders every time a single character is typed into any input field.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: The controlled component pattern, by its nature, ties input changes to React state updates, which forces re-renders.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: To be a controlled component, we <em>must</em> call <code>setState</code> in <code>onChange</code>. There is no way around the re-renders with this pattern. For a small form, it's acceptable. For a large form inside a complex app, it's a performance bottleneck.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A way to manage form inputs without triggering a re-render of the entire component on every keystroke. We need to let the DOM handle the input state and only sync with React when necessary (e.g., on submission). This is the concept of <strong>uncontrolled components</strong>.</p>
+</li>
+</ol>
+<p>This is just the first crack in the foundation. As we add more complex validation and error handling, the manual <code>useState</code> approach will become exponentially more difficult to manage.</p>
+<h2 id="react-hook-form-stop-reinventing-the-wheel">React Hook Form: stop reinventing the wheel</h2>
+<h2 id="uncontrolled-components-for-peak-performance">Uncontrolled Components for Peak Performance</h2>
+<p>Our <code>useState</code>-based form suffers from excessive re-renders. The solution is to adopt an <strong>uncontrolled components</strong> strategy, where the DOM is the source of truth for input values during typing, and React only reads the values when it needs them.</p>
+<p>Implementing this manually is possible but involves extensive use of <code>useRef</code> for each input, which is verbose and error-prone. This is precisely the problem that <code>react-hook-form</code> was built to solve. It provides a powerful set of hooks to manage forms using uncontrolled inputs by default, giving us maximum performance with a minimal API.</p>
+<h3 id="iteration-2-refactoring-to-react-hook-form">Iteration 2: Refactoring to React Hook Form</h3>
+<p>Let's refactor our <code>RegistrationForm</code> to use <code>react-hook-form</code>.</p>
+<p><strong>Step 1: Installation</strong></p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>react-hook-form
+</code></pre></div>
+
+<p><strong>Step 2: Refactoring the Component</strong></p>
+<p>We'll replace our <code>useState</code> and manual event handlers with the <code>useForm</code> hook.</p>
+<p><strong>Before</strong> (Manual <code>useState</code>):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/RegistrationForm.tsx (Version 1 - relevant parts)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useRef</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RegistrationForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">renderCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+<span class="w">  </span><span class="nx">renderCount</span><span class="p">.</span><span class="nx">current</span><span class="o">++</span><span class="p">;</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">formData</span><span class="p">,</span><span class="w"> </span><span class="nx">setFormData</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">fullName</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="c1">// ... other fields</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleChange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="kt">React.ChangeEvent</span><span class="p">&lt;</span><span class="nt">HTMLInputElement</span><span class="p">&gt;)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// ... manual state update logic</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="kt">React.FormEvent</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">e</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+<span class="w">    </span><span class="c1">// ... manual submission logic</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Renders</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">renderCount</span><span class="p">.</span><span class="nx">current</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;fullName&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="p">{</span><span class="nx">formData</span><span class="p">.</span><span class="nx">fullName</span><span class="p">}</span><span class="w"> </span><span class="na">onChange</span><span class="o">=</span><span class="p">{</span><span class="nx">handleChange</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... other inputs */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Using <code>react-hook-form</code>):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/RegistrationForm.tsx (Version 2)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useRef</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useForm</span><span class="p">,</span><span class="w"> </span><span class="nx">SubmitHandler</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-hook-form&#39;</span><span class="p">;</span>
+
+<span class="c1">// Define the shape of our form data</span>
+<span class="kr">type</span><span class="w"> </span><span class="nx">FormValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">fullName</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">password</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">confirmPassword</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">acceptedTerms</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RegistrationForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">renderCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+<span class="w">  </span><span class="nx">renderCount</span><span class="p">.</span><span class="nx">current</span><span class="o">++</span><span class="p">;</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">register</span><span class="p">,</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="p">,</span><span class="w"> </span><span class="nx">formState</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">errors</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useForm</span><span class="p">&lt;</span><span class="nt">FormValues</span><span class="p">&gt;();</span>
+
+<span class="w">  </span><span class="c1">// The &#39;data&#39; argument is typed and validated</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">onSubmit</span><span class="o">:</span><span class="w"> </span><span class="kt">SubmitHandler</span><span class="p">&lt;</span><span class="nt">FormValues</span><span class="p">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">data</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Form Submitted:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;Registration successful!&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="c1">// handleSubmit will validate inputs before calling our onSubmit</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">(</span><span class="nx">onSubmit</span><span class="p">)}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;flex&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">flexDirection</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;column&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">gap</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;10px&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">maxWidth</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;400px&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Register</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Renders</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">renderCount</span><span class="p">.</span><span class="nx">current</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* Use the &#39;register&#39; function to link inputs to the form state */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">fullName</span><span class="err">&#39;,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">required</span><span class="err">:</span><span class="w"> </span><span class="err">&#39;</span><span class="na">Full</span><span class="w"> </span><span class="na">name</span><span class="w"> </span><span class="na">is</span><span class="w"> </span><span class="na">required</span><span class="err">&#39;</span><span class="w"> </span><span class="p">}</span><span class="err">)</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Full Name&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">fullName</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">fullName</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">email</span><span class="err">&#39;,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">required</span><span class="err">:</span><span class="w"> </span><span class="err">&#39;</span><span class="na">Email</span><span class="w"> </span><span class="na">is</span><span class="w"> </span><span class="na">required</span><span class="err">&#39;</span><span class="w"> </span><span class="p">}</span><span class="err">)</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Email&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">email</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">email</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;password&quot;</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">password</span><span class="err">&#39;,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">required</span><span class="err">:</span><span class="w"> </span><span class="err">&#39;</span><span class="na">Password</span><span class="w"> </span><span class="na">is</span><span class="w"> </span><span class="na">required</span><span class="err">&#39;</span><span class="w"> </span><span class="p">}</span><span class="err">)</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Password&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">password</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">password</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;password&quot;</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">confirmPassword</span><span class="err">&#39;,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">required</span><span class="err">:</span><span class="w"> </span><span class="err">&#39;</span><span class="na">Please</span><span class="w"> </span><span class="na">confirm</span><span class="w"> </span><span class="na">your</span><span class="w"> </span><span class="na">password</span><span class="err">&#39;</span><span class="w"> </span><span class="p">}</span><span class="err">)</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Confirm Password&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">confirmPassword</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">confirmPassword</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;checkbox&quot;</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">acceptedTerms</span><span class="err">&#39;,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">required</span><span class="err">:</span><span class="w"> </span><span class="err">&#39;</span><span class="na">You</span><span class="w"> </span><span class="na">must</span><span class="w"> </span><span class="na">accept</span><span class="w"> </span><span class="na">the</span><span class="w"> </span><span class="na">terms</span><span class="err">&#39;</span><span class="w"> </span><span class="p">}</span><span class="err">)</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="nx">I</span><span class="w"> </span><span class="nx">accept</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">terms</span><span class="w"> </span><span class="nx">and</span><span class="w"> </span><span class="nx">conditions</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">acceptedTerms</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">acceptedTerms</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p">&gt;</span><span class="nx">Register</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification-performance-restored">Verification: Performance Restored</h3>
+<p>Now, run the application again and type "Leonardo da Vinci" into the "Full Name" field.</p>
+<p><strong>Expected vs. Actual Improvement</strong>:</p>
+<ul>
+<li><strong>Expected</strong>: The component should not re-render on every keystroke. The render count should remain low.</li>
+<li><strong>Actual</strong>: The "Renders" count stays at <code>1</code> (or <code>2</code> with Strict Mode). The component does not re-render as you type. The input field updates smoothly because the DOM is handling its state. React Hook Form only triggers a re-render when necessary, for example, when a validation error appears or disappears.</li>
+</ul>
+<p><strong>What did <code>react-hook-form</code> do for us?</strong></p>
+<ol>
+<li><strong>Performance</strong>: It eliminated the re-render-on-keystroke problem by using uncontrolled inputs.</li>
+<li><strong>State Management</strong>: It removed the need for <code>useState</code> and the manual <code>handleChange</code> function. The <code>useForm</code> hook handles all form state internally.</li>
+<li><strong>Validation</strong>: It provided a simple way to declare validation rules directly on the <code>register</code> call and gives us a convenient <code>errors</code> object to display messages.</li>
+<li><strong>Submission</strong>: Its <code>handleSubmit</code> wrapper function prevents the default form submission, performs validation, and then passes the clean, typed data to our <code>onSubmit</code> function.</li>
+</ol>
+<h3 id="limitation-preview">Limitation Preview</h3>
+<p>Our form is now fast and the code is much cleaner. However, our validation logic is still defined as inline objects within the JSX. For more complex rules, like checking if "Confirm Password" matches "Password," this can get messy. Furthermore, this validation logic is coupled to our component. What if we need to validate the same data shape on the server? We'd have to duplicate the logic.</p>
+<p>We need a way to define our data's "schema"—its shape and rules—in a single, reusable, and portable location.</p>
+<h2 id="zod-runtime-validation-that-doesnt-suck">Zod: runtime validation that doesn't suck</h2>
+<h2 id="declarative-validation-with-a-single-source-of-truth">Declarative Validation with a Single Source of Truth</h2>
+<p>Our form is performant, but the validation logic is scattered and not easily reusable.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Inline validation is hard to read and maintain</span>
+<span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">password</span><span class="err">&#39;,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span>
+<span class="w">  </span><span class="na">required</span><span class="err">:</span><span class="w"> </span><span class="err">&#39;</span><span class="na">Password</span><span class="w"> </span><span class="na">is</span><span class="w"> </span><span class="na">required</span><span class="err">&#39;,</span><span class="w"> </span>
+<span class="w">  </span><span class="na">minLength</span><span class="err">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">value</span><span class="err">:</span><span class="w"> </span><span class="na">8</span><span class="err">,</span><span class="w"> </span><span class="na">message</span><span class="err">:</span><span class="w"> </span><span class="err">&#39;</span><span class="na">Password</span><span class="w"> </span><span class="na">must</span><span class="w"> </span><span class="na">be</span><span class="w"> </span><span class="na">at</span><span class="w"> </span><span class="na">least</span><span class="w"> </span><span class="na">8</span><span class="w"> </span><span class="na">characters</span><span class="err">&#39;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span>
+<span class="p">}</span><span class="err">)</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+</code></pre></div>
+
+<p>A more robust approach is to define a <strong>schema</strong>: a declarative blueprint for our data's structure and validation rules. <strong>Zod</strong> is a TypeScript-first schema declaration and validation library that has become the industry standard. It allows us to define a schema once and reuse it anywhere—in our form, on our server, or in API routes.</p>
+<p>By combining Zod with React Hook Form, we create a powerful, type-safe, and maintainable validation system.</p>
+<h3 id="iteration-3-integrating-zod-for-schema-based-validation">Iteration 3: Integrating Zod for Schema-Based Validation</h3>
+<p><strong>Step 1: Installation</strong>
+We need Zod and the official resolver that connects it to React Hook Form.</p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>zod<span class="w"> </span>@hookform/resolvers
+</code></pre></div>
+
+<p><strong>Step 2: Define the Schema</strong></p>
+<p>It's best practice to define schemas in a separate file so they can be imported wherever needed.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+├── components/
+│   └── RegistrationForm.tsx
+└── lib/
+    └── schemas.ts          ← Our new schema file
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/lib/schemas.ts</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">z</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;zod&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">registrationSchema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">z</span><span class="p">.</span><span class="nx">object</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">fullName</span><span class="o">:</span><span class="w"> </span><span class="kt">z.string</span><span class="p">().</span><span class="nx">min</span><span class="p">(</span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Full name is required&#39;</span><span class="p">),</span>
+<span class="w">  </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="kt">z.string</span><span class="p">().</span><span class="nx">email</span><span class="p">(</span><span class="s1">&#39;Invalid email address&#39;</span><span class="p">),</span>
+<span class="w">  </span><span class="nx">password</span><span class="o">:</span><span class="w"> </span><span class="kt">z.string</span><span class="p">().</span><span class="nx">min</span><span class="p">(</span><span class="mf">8</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Password must be at least 8 characters&#39;</span><span class="p">),</span>
+<span class="w">  </span><span class="nx">confirmPassword</span><span class="o">:</span><span class="w"> </span><span class="kt">z.string</span><span class="p">().</span><span class="nx">min</span><span class="p">(</span><span class="mf">1</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Please confirm your password&#39;</span><span class="p">),</span>
+<span class="w">  </span><span class="nx">acceptedTerms</span><span class="o">:</span><span class="w"> </span><span class="kt">z.boolean</span><span class="p">().</span><span class="nx">refine</span><span class="p">(</span><span class="nx">val</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">val</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;You must accept the terms and conditions&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">}),</span>
+<span class="p">})</span>
+<span class="c1">// Use .refine for complex validation that depends on multiple fields</span>
+<span class="p">.</span><span class="nx">refine</span><span class="p">(</span><span class="nx">data</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">data</span><span class="p">.</span><span class="nx">password</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">data</span><span class="p">.</span><span class="nx">confirmPassword</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Passwords don&#39;t match&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">path</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s1">&#39;confirmPassword&#39;</span><span class="p">],</span><span class="w"> </span><span class="c1">// Set the error on the confirmPassword field</span>
+<span class="p">});</span>
+
+<span class="c1">// We can infer the TypeScript type from the schema</span>
+<span class="k">export</span><span class="w"> </span><span class="kr">type</span><span class="w"> </span><span class="nx">RegistrationFormData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">z</span><span class="p">.</span><span class="nx">infer</span><span class="o">&lt;</span><span class="ow">typeof</span><span class="w"> </span><span class="nx">registrationSchema</span><span class="o">&gt;</span><span class="p">;</span>
+</code></pre></div>
+
+<p>This schema is now our single source of truth. It clearly defines the shape of our data, the validation rules, and the error messages. It even handles the complex "passwords must match" logic cleanly with <code>.refine()</code>. Crucially, we can also infer a TypeScript type directly from the schema, eliminating the need to maintain a separate <code>type</code> definition.</p>
+<p><strong>Step 3: Connect the Schema to the Form</strong></p>
+<p>Now, we'll update <code>RegistrationForm.tsx</code> to use this schema via the <code>zodResolver</code>.</p>
+<p><strong>Before</strong> (Inline validation):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/RegistrationForm.tsx (Version 2 - relevant parts)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useForm</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-hook-form&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">FormValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... manual type definition ... */</span><span class="w"> </span><span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RegistrationForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">register</span><span class="p">,</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="p">,</span><span class="w"> </span><span class="nx">formState</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">errors</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useForm</span><span class="p">&lt;</span><span class="nt">FormValues</span><span class="p">&gt;();</span>
+
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">fullName</span><span class="err">&#39;,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">required</span><span class="err">:</span><span class="w"> </span><span class="err">&#39;</span><span class="na">Full</span><span class="w"> </span><span class="na">name</span><span class="w"> </span><span class="na">is</span><span class="w"> </span><span class="na">required</span><span class="err">&#39;</span><span class="w"> </span><span class="p">}</span><span class="err">)</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Using Zod schema):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/RegistrationForm.tsx (Version 3)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useRef</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useForm</span><span class="p">,</span><span class="w"> </span><span class="nx">SubmitHandler</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-hook-form&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">zodResolver</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@hookform/resolvers/zod&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">registrationSchema</span><span class="p">,</span><span class="w"> </span><span class="nx">RegistrationFormData</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../lib/schemas&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Import schema and type</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RegistrationForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">renderCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+<span class="w">  </span><span class="nx">renderCount</span><span class="p">.</span><span class="nx">current</span><span class="o">++</span><span class="p">;</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">register</span><span class="p">,</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="p">,</span><span class="w"> </span><span class="nx">formState</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">errors</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useForm</span><span class="p">&lt;</span><span class="nt">RegistrationFormData</span><span class="p">&gt;({</span>
+<span class="w">    </span><span class="nx">resolver</span><span class="o">:</span><span class="w"> </span><span class="kt">zodResolver</span><span class="p">(</span><span class="nx">registrationSchema</span><span class="p">),</span><span class="w"> </span><span class="c1">// Connect Zod to React Hook Form</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">onSubmit</span><span class="o">:</span><span class="w"> </span><span class="kt">SubmitHandler</span><span class="p">&lt;</span><span class="nt">RegistrationFormData</span><span class="p">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">data</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Form Submitted:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;Registration successful!&#39;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">(</span><span class="nx">onSubmit</span><span class="p">)}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;flex&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">flexDirection</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;column&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">gap</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;10px&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">maxWidth</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;400px&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Register</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Renders</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">renderCount</span><span class="p">.</span><span class="nx">current</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* The &#39;register&#39; calls are now clean, validation logic is in the schema */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">fullName</span><span class="err">&#39;)</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Full Name&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">fullName</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">fullName</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">email</span><span class="err">&#39;)</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Email&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">email</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">email</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;password&quot;</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">password</span><span class="err">&#39;)</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Password&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">password</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">password</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;password&quot;</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">confirmPassword</span><span class="err">&#39;)</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Confirm Password&quot;</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">confirmPassword</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">confirmPassword</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;checkbox&quot;</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">acceptedTerms</span><span class="err">&#39;)</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="nx">I</span><span class="w"> </span><span class="nx">accept</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">terms</span><span class="w"> </span><span class="nx">and</span><span class="w"> </span><span class="nx">conditions</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">acceptedTerms</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">acceptedTerms</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p">&gt;</span><span class="nx">Register</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification-clean-maintainable-and-type-safe">Verification: Clean, Maintainable, and Type-Safe</h3>
+<p>Our component is now dramatically simpler. All validation logic lives in <code>src/lib/schemas.ts</code>.</p>
+<ul>
+<li><strong>Maintainability</strong>: To change a validation rule (e.g., increase password minimum length to 10), you only edit the schema file. The component doesn't need to be touched.</li>
+<li><strong>Reusability</strong>: The <code>registrationSchema</code> can be imported into a Next.js API route to validate incoming data on the server, ensuring consistent validation across your entire application.</li>
+<li><strong>Type Safety</strong>: The <code>RegistrationFormData</code> type is automatically generated from the schema. If you add a new field to the schema, TypeScript will immediately tell you if you've forgotten to handle it in your <code>onSubmit</code> function or elsewhere.</li>
+</ul>
+<h3 id="limitation-preview_1">Limitation Preview</h3>
+<p>We have a beautiful, performant, and maintainable form with declarative, type-safe validation. It's almost perfect. But forms don't exist in a vacuum. They need to communicate with a server, handle network latency, and report back API-level errors to the user. Our current <code>onSubmit</code> function is synchronous and has no concept of loading states or server-side failures.</p>
+<h2 id="building-a-production-ready-form-in-20-minutes">Building a production-ready form in 20 minutes</h2>
+<h2 id="from-ui-to-application-handling-asynchronicity-and-server-errors">From UI to Application: Handling Asynchronicity and Server Errors</h2>
+<p>A production-ready form must gracefully handle the entire submission lifecycle:
+1.  User clicks "Submit."
+2.  The form is disabled to prevent duplicate submissions.
+3.  A loading indicator appears.
+4.  A request is sent to the server.
+5.  On success, a confirmation message is shown.
+6.  On failure (e.g., network error or server validation error), an error message is shown to the user, and the form is re-enabled.</p>
+<p>React Hook Form provides all the necessary tools to manage this state elegantly.</p>
+<h3 id="iteration-4-the-final-production-ready-form">Iteration 4: The Final, Production-Ready Form</h3>
+<p>Let's add asynchronous submission logic, loading states, and server error handling to our <code>RegistrationForm</code>.</p>
+<p>We'll simulate an API endpoint that can either succeed or fail.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// A mock API function to simulate a network request</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">mockApiRegister</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="kt">RegistrationFormData</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="p">{</span><span class="w"> </span><span class="nx">success</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="nx">errors</span><span class="o">?:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">field</span><span class="o">:</span><span class="w"> </span><span class="kt">keyof</span><span class="w"> </span><span class="nx">RegistrationFormData</span><span class="p">;</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">}[]</span><span class="w"> </span><span class="p">}</span><span class="o">&gt;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">((</span><span class="nx">resolve</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setTimeout</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// Simulate a server-side validation error</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">email</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;test@test.com&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">resolve</span><span class="p">({</span>
+<span class="w">          </span><span class="nx">success</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Validation failed&#39;</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">errors</span><span class="o">:</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="nx">field</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;email&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;This email is already taken.&#39;</span><span class="w"> </span><span class="p">}],</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">resolve</span><span class="p">({</span><span class="w"> </span><span class="nx">success</span><span class="o">:</span><span class="w"> </span><span class="kt">true</span><span class="p">,</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;User registered successfully!&#39;</span><span class="w"> </span><span class="p">});</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="mf">1500</span><span class="p">);</span><span class="w"> </span><span class="c1">// Simulate 1.5 second network delay</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>Now, let's integrate this into our component. We'll use the <code>isSubmitting</code> state from <code>formState</code> and the <code>setError</code> function from <code>useForm</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/RegistrationForm.tsx (Version 4 - Final)</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useRef</span><span class="p">,</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useForm</span><span class="p">,</span><span class="w"> </span><span class="nx">SubmitHandler</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react-hook-form&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">zodResolver</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@hookform/resolvers/zod&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">registrationSchema</span><span class="p">,</span><span class="w"> </span><span class="nx">RegistrationFormData</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../lib/schemas&#39;</span><span class="p">;</span>
+
+<span class="c1">// (mockApiRegister function would be here or imported)</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">mockApiRegister</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nx">data</span><span class="o">:</span><span class="w"> </span><span class="kt">RegistrationFormData</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="p">{</span><span class="w"> </span><span class="nx">success</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="nx">errors</span><span class="o">?:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">field</span><span class="o">:</span><span class="w"> </span><span class="kt">keyof</span><span class="w"> </span><span class="nx">RegistrationFormData</span><span class="p">;</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">}[]</span><span class="w"> </span><span class="p">}</span><span class="o">&gt;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">((</span><span class="nx">resolve</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setTimeout</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">email</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;test@test.com&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">resolve</span><span class="p">({</span>
+<span class="w">          </span><span class="nx">success</span><span class="o">:</span><span class="w"> </span><span class="kt">false</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Validation failed&#39;</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">errors</span><span class="o">:</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="nx">field</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;email&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;This email is already taken.&#39;</span><span class="w"> </span><span class="p">}],</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">resolve</span><span class="p">({</span><span class="w"> </span><span class="nx">success</span><span class="o">:</span><span class="w"> </span><span class="kt">true</span><span class="p">,</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;User registered successfully!&#39;</span><span class="w"> </span><span class="p">});</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="mf">1500</span><span class="p">);</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RegistrationForm</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">renderCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useRef</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+<span class="w">  </span><span class="nx">renderCount</span><span class="p">.</span><span class="nx">current</span><span class="o">++</span><span class="p">;</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">serverMessage</span><span class="p">,</span><span class="w"> </span><span class="nx">setServerMessage</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="o">&lt;</span><span class="p">{</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;success&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;error&#39;</span><span class="p">;</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="o">&gt;</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">register</span><span class="p">,</span><span class="w"> </span><span class="nx">handleSubmit</span><span class="p">,</span><span class="w"> </span><span class="nx">setError</span><span class="p">,</span><span class="w"> </span><span class="nx">formState</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">errors</span><span class="p">,</span><span class="w"> </span><span class="nx">isSubmitting</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useForm</span><span class="p">&lt;</span><span class="nt">RegistrationFormData</span><span class="p">&gt;({</span>
+<span class="w">    </span><span class="nx">resolver</span><span class="o">:</span><span class="w"> </span><span class="kt">zodResolver</span><span class="p">(</span><span class="nx">registrationSchema</span><span class="p">),</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">onSubmit</span><span class="o">:</span><span class="w"> </span><span class="kt">SubmitHandler</span><span class="p">&lt;</span><span class="nt">RegistrationFormData</span><span class="p">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">data</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setServerMessage</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">mockApiRegister</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">response</span><span class="p">.</span><span class="nx">success</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setServerMessage</span><span class="p">({</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;error&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="kt">response.message</span><span class="w"> </span><span class="p">});</span>
+<span class="w">        </span><span class="c1">// Set server-side errors on specific fields</span>
+<span class="w">        </span><span class="nx">response</span><span class="p">.</span><span class="nx">errors</span><span class="o">?</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="nx">err</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nx">setError</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nx">field</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;server&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="kt">err.message</span><span class="w"> </span><span class="p">});</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setServerMessage</span><span class="p">({</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;success&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="kt">response.message</span><span class="w"> </span><span class="p">});</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">setServerMessage</span><span class="p">({</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;error&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;An unexpected error occurred. Please try again.&#39;</span><span class="w"> </span><span class="p">});</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">form</span><span class="w"> </span><span class="na">onSubmit</span><span class="o">=</span><span class="p">{</span><span class="nx">handleSubmit</span><span class="p">(</span><span class="nx">onSubmit</span><span class="p">)}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">display</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;flex&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">flexDirection</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;column&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">gap</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;10px&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">maxWidth</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;400px&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Register</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Renders</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">renderCount</span><span class="p">.</span><span class="nx">current</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">fullName</span><span class="err">&#39;)</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Full Name&quot;</span><span class="w"> </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">isSubmitting</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">fullName</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">fullName</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">email</span><span class="err">&#39;)</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Email&quot;</span><span class="w"> </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">isSubmitting</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">email</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">email</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;password&quot;</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">password</span><span class="err">&#39;)</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Password&quot;</span><span class="w"> </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">isSubmitting</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">password</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">password</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;password&quot;</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">confirmPassword</span><span class="err">&#39;)</span><span class="p">}</span><span class="w"> </span><span class="na">placeholder</span><span class="o">=</span><span class="s">&quot;Confirm Password&quot;</span><span class="w"> </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">isSubmitting</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">confirmPassword</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">confirmPassword</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;checkbox&quot;</span><span class="w"> </span><span class="p">{</span><span class="na">...register</span><span class="err">(&#39;</span><span class="na">acceptedTerms</span><span class="err">&#39;)</span><span class="p">}</span><span class="w"> </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">isSubmitting</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">        </span><span class="nx">I</span><span class="w"> </span><span class="nx">accept</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">terms</span><span class="w"> </span><span class="nx">and</span><span class="w"> </span><span class="nx">conditions</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">label</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">acceptedTerms</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">errors</span><span class="p">.</span><span class="nx">acceptedTerms</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;}</span>
+
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="w"> </span><span class="na">disabled</span><span class="o">=</span><span class="p">{</span><span class="nx">isSubmitting</span><span class="p">}&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">isSubmitting</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;Registering...&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Register&#39;</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="nx">serverMessage</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="kt">serverMessage.type</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;error&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;green&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">serverMessage</span><span class="p">.</span><span class="nx">message</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">)}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification-a-robust-user-experience">Verification: A Robust User Experience</h3>
+<p>Try submitting the form now:
+1.  <strong>With valid data (e.g., <code>user@example.com</code>)</strong>: The button changes to "Registering...", all fields are disabled for 1.5 seconds, and then a green success message appears.
+2.  <strong>With the specific email <code>test@test.com</code></strong>: The form submits, but after 1.5 seconds, a red error message appears under the email field saying "This email is already taken," and a general error message appears at the bottom. The form is re-enabled for the user to correct their input.</p>
+<p>This final version provides a complete and professional user experience.</p>
+<h3 id="common-failure-modes-and-their-signatures">Common Failure Modes and Their Signatures</h3>
+<h4 id="symptom-form-reloads-the-page-on-submission">Symptom: Form reloads the page on submission.</h4>
+<p><strong>Browser behavior</strong>: The entire page flashes and reloads. Form data is lost.
+<strong>Console pattern</strong>: No errors, but console logs disappear on reload.
+<strong>Network Tab</strong>: A document request is made for the current page URL.
+<strong>Root cause</strong>: You are not using React Hook Form's <code>handleSubmit</code> wrapper on your <code>&lt;form&gt;</code>'s <code>onSubmit</code> event, or you have a button with <code>type="submit"</code> outside the RHF-controlled form. The browser is performing its default HTML form submission behavior.
+<strong>Solution</strong>: Ensure your form tag looks like <code>&lt;form onSubmit={handleSubmit(yourSubmitFunction)}&gt;</code>.</p>
+<h4 id="symptom-a-validation-error-doesnt-appear-for-a-specific-field">Symptom: A validation error doesn't appear for a specific field.</h4>
+<p><strong>Browser behavior</strong>: The user can submit the form with invalid data, or an error message never shows up for one field.
+<strong>Console pattern</strong>: No errors.
+<strong>DevTools clues</strong>: In the React DevTools, inspect the <code>useForm</code> hook's state. You'll see the <code>errors</code> object does not contain an entry for the problematic field.
+<strong>Root cause</strong>: Most commonly, the <code>name</code> you passed to the <code>register('fieldName')</code> function does not exactly match the property name in your Zod schema or <code>FormValues</code> type.
+<strong>Solution</strong>: Double-check for typos. <code>register('fullName')</code> must correspond to a <code>fullName</code> property in your schema.</p>
+<h4 id="symptom-server-side-error-is-not-displayed-in-the-form">Symptom: Server-side error is not displayed in the form.</h4>
+<p><strong>Browser behavior</strong>: The form submission fails, a generic error message might appear, but the specific field (e.g., email) is not highlighted with the server's error message.
+<strong>Console pattern</strong>: You might see a 4xx or 5xx error in the network response, and your <code>console.log</code> inside the <code>onSubmit</code> function shows the error response from the server.
+<strong>DevTools clues</strong>: The <code>errors</code> object in the <code>useForm</code> state does not contain the server error.
+<strong>Root cause</strong>: You are not calling the <code>setError</code> function inside the <code>catch</code> block or failure condition of your submission handler.
+<strong>Solution</strong>: After receiving an error from your API, parse the response and use <code>setError('fieldName', { type: 'server', message: 'Your error message' })</code> to programmatically add the error to the form state.</p>
+<h3 id="debugging-workflow-when-your-form-fails">Debugging Workflow: When Your Form Fails</h3>
+<p><strong>Step 1: Observe the user experience</strong>
+Is the form reloading? Is it getting stuck in a loading state? Is an error message incorrect?</p>
+<p><strong>Step 2: Check the console</strong>
+Look for any React warnings or runtime errors. Also, <code>console.log</code> the <code>data</code> inside your <code>onSubmit</code> handler to see what React Hook Form is actually giving you.</p>
+<p><strong>Step 3: Inspect with React DevTools</strong>
+This is your most powerful tool.
+-   Select the component that calls <code>useForm</code>.
+-   In the "Hooks" panel, find the <code>useForm</code> state.
+-   Expand <code>formState</code>. You can inspect <code>errors</code>, <code>isSubmitting</code>, <code>isValid</code>, and <code>dirtyFields</code> in real-time. This tells you exactly what the library thinks is happening. If the <code>errors</code> object is empty, the problem is not your validation rules; it's likely in your submission logic.</p>
+<p><strong>Step 4: Analyze network activity</strong>
+-   Open the Network tab in your browser's DevTools.
+-   Submit the form.
+-   Find the request to your API. Check the status code (e.g., 200, 400, 500).
+-   Inspect the "Payload" or "Request" tab to see if the browser sent the correct data.
+-   Inspect the "Response" tab to see exactly what your server sent back. The structure of this response must match what your <code>onSubmit</code> function expects to handle.</p>
+<h3 id="the-journey-from-problem-to-solution">The Journey: From Problem to Solution</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Iteration</th>
+<th style="text-align: left;">Failure Mode</th>
+<th style="text-align: left;">Technique Applied</th>
+<th style="text-align: left;">Result</th>
+<th style="text-align: left;">Performance Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">Excessive re-renders on every keystroke.</td>
+<td style="text-align: left;">Raw <code>useState</code></td>
+<td style="text-align: left;">Functional but slow and hard to maintain.</td>
+<td style="text-align: left;">Re-renders on every input change.</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Cumbersome state and validation logic.</td>
+<td style="text-align: left;"><code>react-hook-form</code></td>
+<td style="text-align: left;">Performant (uncontrolled), simplified state, but inline validation.</td>
+<td style="text-align: left;">No re-renders on input change.</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Scattered, non-reusable validation rules.</td>
+<td style="text-align: left;"><code>zod</code> + <code>zodResolver</code></td>
+<td style="text-align: left;">Declarative, type-safe, reusable schema. Clean component.</td>
+<td style="text-align: left;">No change (still highly performant).</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">No handling of async state or server errors.</td>
+<td style="text-align: left;"><code>isSubmitting</code>, <code>setError</code></td>
+<td style="text-align: left;">Production-ready form with loading states and server validation.</td>
+<td style="text-align: left;">Re-renders only when submission state changes.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="final-implementation">Final Implementation</h3>
+<p>The combination of React Hook Form and Zod provides a robust, performant, and developer-friendly pattern for building forms in modern React applications. By starting with the "raw" approach, we've seen exactly which problems these libraries solve and why they are indispensable tools in a professional developer's toolkit.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:40:58 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

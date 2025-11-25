@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>16 App Router Fundamentals</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">05 Next.js — Server-Side React</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-16-app-router-fundamentals">Chapter 16: App Router Fundamentals</h1>
+<h2 id="file-based-routing">File-based routing</h2>
+<h2 id="the-app-router-a-new-mental-model">The App Router: A New Mental Model</h2>
+<p>Welcome to the Next.js App Router. This is a fundamental shift from the traditional <code>pages</code> directory and introduces powerful new capabilities built on top of React Server Components. The core idea is simple but profound: <strong>the file system is your API for routing and UI structure.</strong></p>
+<p>Instead of managing a complex routing configuration file, you create folders and files within the <code>app</code> directory, and Next.js automatically maps them to URL paths. This convention-over-configuration approach simplifies routing and co-locates all files related to a specific route—pages, layouts, loading states, and error UIs—in one place.</p>
+<h3 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h3>
+<p>Throughout this chapter, we will build a simple <strong>Project Dashboard</strong> application. This will serve as our anchor example to explore the App Router's features.</p>
+<p>Our goal is to build an application with the following routes:
+1.  <code>/</code>: The main dashboard, showing a list of projects.
+2.  <code>/projects/[id]</code>: A detailed view for a specific project.
+3.  <code>/settings</code>: A settings page.</p>
+<p>Let's start by creating the basic file structure. When you create a new Next.js project with <code>create-next-app</code>, you'll get an <code>app</code> directory. We'll build inside it.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>app/
+├── favicon.ico
+├── globals.css
+├── layout.tsx         # Root Layout (more on this later)
+└── page.tsx           # The homepage at &#39;/&#39;
+</code></pre></div>
+
+<h3 id="the-pagetsx-convention">The <code>page.tsx</code> Convention</h3>
+<p>The most fundamental file in the App Router is <code>page.tsx</code>. Any folder containing a <code>page.tsx</code> file becomes a publicly accessible route. The content of <code>page.tsx</code> is the UI that will be rendered for that route segment.</p>
+<p>Let's define our homepage.</p>
+<p><strong>File: <code>app/page.tsx</code></strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">Link</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/link&#39;</span><span class="p">;</span>
+
+<span class="c1">// Mock data for our projects</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">projects</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;ares-1&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Ares I Rocket&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;orion-5&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Orion V Capsule&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;gateway-3&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Lunar Gateway&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="p">];</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">DashboardPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">fontFamily</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;sans-serif&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">fontSize</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">marginBottom</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1rem&#39;</span><span class="w"> </span><span class="p">}}&gt;</span><span class="nx">Project</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">ul</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">listStyle</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;none&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="kt">0</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="nx">projects</span><span class="p">.</span><span class="nx">map</span><span class="p">((</span><span class="nx">project</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">li</span><span class="w"> </span><span class="na">key</span><span class="o">=</span><span class="p">{</span><span class="nx">project</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">marginBottom</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;0.5rem&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span>
+<span class="w">              </span><span class="na">href</span><span class="o">=</span><span class="p">{</span><span class="sb">`/projects/</span><span class="si">${</span><span class="nx">project</span><span class="p">.</span><span class="nx">id</span><span class="si">}</span><span class="sb">`</span><span class="p">}</span>
+<span class="w">              </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;blue&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">textDecoration</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;underline&#39;</span><span class="w"> </span><span class="p">}}</span>
+<span class="w">            </span><span class="p">&gt;</span>
+<span class="w">              </span><span class="p">{</span><span class="nx">project</span><span class="p">.</span><span class="nx">name</span><span class="p">}</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">li</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">))}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">ul</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>When you run your development server (<code>npm run dev</code>) and navigate to <code>http://localhost:3000</code>, you will see this component rendered. The file <code>app/page.tsx</code> maps directly to the <code>/</code> URL path.</p>
+<h3 id="static-vs-dynamic-routes">Static vs. Dynamic Routes</h3>
+<p>What we've just created is a <strong>static route</strong>. The path <code>/</code> is fixed. But what about the project detail pages, like <code>/projects/ares-1</code>? The project ID is dynamic.</p>
+<p>To create dynamic routes, you use folders with square brackets <code>[]</code>. This tells Next.js that this part of the URL is a variable placeholder.</p>
+<p>Let's create the dynamic route for our projects.</p>
+<ol>
+<li>Create a new folder named <code>projects</code> inside <code>app</code>.</li>
+<li>Inside <code>projects</code>, create another folder named <code>[projectId]</code>. The name inside the brackets, <code>projectId</code>, will be the name of the parameter we receive in our component.</li>
+<li>Inside <code>[projectId]</code>, create a <code>page.tsx</code> file.</li>
+</ol>
+<p><strong>New Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">app</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">projects</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="o">[</span><span class="n">projectId</span><span class="o">]/</span>
+<span class="err">│</span><span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="n">page</span><span class="p">.</span><span class="n">tsx</span><span class="w">   </span><span class="err">#</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="k">dynamic</span><span class="w"> </span><span class="n">project</span><span class="w"> </span><span class="n">page</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">layout</span><span class="p">.</span><span class="n">tsx</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">page</span><span class="p">.</span><span class="n">tsx</span>
+</code></pre></div>
+
+<p>Now, let's write the code for this dynamic page. Next.js will pass the dynamic segments of the URL as a <code>params</code> object to our page component.</p>
+<p><strong>File: <code>app/projects/[projectId]/page.tsx</code></strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// This component receives params because it&#39;s in a dynamic route folder.</span>
+<span class="kr">type</span><span class="w"> </span><span class="nx">ProjectPageProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">params</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">projectId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="p">};</span>
+
+<span class="c1">// We&#39;ll add some mock data fetching logic.</span>
+<span class="c1">// In a real app, this would be an API call.</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getProjectDetails</span><span class="p">(</span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Fetching data for project: </span><span class="si">${</span><span class="nx">id</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// Simulate network delay</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">resolve</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">resolve</span><span class="p">,</span><span class="w"> </span><span class="mf">1000</span><span class="p">));</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">allProjects</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">[</span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s1">&#39;ares-1&#39;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Ares I Rocket&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A crew-launch vehicle for the Constellation program.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="s1">&#39;orion-5&#39;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Orion V Capsule&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A reusable crewed spacecraft used in the Artemis program.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="s1">&#39;gateway-3&#39;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Lunar Gateway&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A planned small space station in lunar orbit.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">allProjects</span><span class="p">[</span><span class="nx">id</span><span class="p">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProjectPage</span><span class="p">({</span><span class="w"> </span><span class="nx">params</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">ProjectPageProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">getProjectDetails</span><span class="p">(</span><span class="nx">params</span><span class="p">.</span><span class="nx">projectId</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">project</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Project</span><span class="w"> </span><span class="nx">not</span><span class="w"> </span><span class="nx">found</span><span class="p">.&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">fontFamily</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;sans-serif&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">fontSize</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">project</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">fontFamily</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;sans-serif&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">project</span><span class="p">.</span><span class="nx">description</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, if you click on the "Ares I Rocket" link from the dashboard, your browser will navigate to <code>/projects/ares-1</code>. Next.js will match this URL to the <code>app/projects/[projectId]/page.tsx</code> file and render the <code>ProjectPage</code> component, passing <code>{ projectId: 'ares-1' }</code> as the <code>params</code> prop.</p>
+<p>This file-based system is the foundation of the App Router. It's intuitive, co-located, and powerful. You've now seen how to create both static (<code>/</code>) and dynamic (<code>/projects/[projectId]</code>) routes.</p>
+<h2 id="server-components-vs-client-components">Server Components vs. Client Components</h2>
+<h2 id="the-two-flavors-of-react-server-and-client">The Two Flavors of React: Server and Client</h2>
+<p>The most significant architectural concept introduced with the App Router is the distinction between <strong>Server Components</strong> and <strong>Client Components</strong>. Understanding this is crucial for building modern, performant Next.js applications.</p>
+<p>By default, <strong>all components inside the <code>app</code> directory are Server Components.</strong></p>
+<p><strong>Server Components:</strong>
+*   Run <strong>only</strong> on the server.
+*   Their code is never sent to the browser, reducing your JavaScript bundle size.
+*   Can directly access server-side resources (like databases, file systems, APIs) without an extra API call.
+*   Can be <code>async/await</code> to fetch data.
+*   Cannot use hooks like <code>useState</code> or <code>useEffect</code> because they are not interactive and don't run in the browser.</p>
+<p><strong>Client Components:</strong>
+*   Are pre-rendered on the server (for the initial page load) and then "hydrated" to run in the browser.
+*   Their code is sent to the browser, adding to the JavaScript bundle.
+*   Are what you need for interactivity: <code>onClick</code> handlers, state management (<code>useState</code>, <code>useReducer</code>), and lifecycle effects (<code>useEffect</code>).
+*   You opt-in to making a component a Client Component by adding the <code>"use client";</code> directive at the very top of the file.</p>
+<p>The mental model is this: build your UI with Server Components by default for performance, and sprinkle in "islands" of interactivity with Client Components where needed.</p>
+<h3 id="iteration-1-the-inevitable-failure">Iteration 1: The Inevitable Failure</h3>
+<p>Our <code>ProjectPage</code> is currently a Server Component. It fetches data directly using <code>async/await</code>, which is great. But what happens when we try to add interactivity?</p>
+<p>Let's add a simple "Like" button to our project page. A user should be able to click it and see a count increase.</p>
+<p><strong>The "Wrong" Way: Adding state to a Server Component</strong></p>
+<p>Let's try to add <code>useState</code> directly to our <code>ProjectPage</code>.</p>
+<p><strong>File: <code>app/projects/[projectId]/page.tsx</code> (Attempt 1)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// This will fail!</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">ProjectPageProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">params</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">projectId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="p">};</span>
+
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getProjectDetails</span><span class="p">(</span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... (same as before)</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">resolve</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">resolve</span><span class="p">,</span><span class="w"> </span><span class="mf">1000</span><span class="p">));</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">allProjects</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">[</span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s1">&#39;ares-1&#39;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Ares I Rocket&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A crew-launch vehicle for the Constellation program.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="s1">&#39;orion-5&#39;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Orion V Capsule&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A reusable crewed spacecraft used in the Artemis program.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="s1">&#39;gateway-3&#39;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Lunar Gateway&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A planned small space station in lunar orbit.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">allProjects</span><span class="p">[</span><span class="nx">id</span><span class="p">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProjectPage</span><span class="p">({</span><span class="w"> </span><span class="nx">params</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">ProjectPageProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">likes</span><span class="p">,</span><span class="w"> </span><span class="nx">setLikes</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span><span class="w"> </span><span class="c1">// &lt;-- PROBLEM</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">getProjectDetails</span><span class="p">(</span><span class="nx">params</span><span class="p">.</span><span class="nx">projectId</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">project</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Project</span><span class="w"> </span><span class="nx">not</span><span class="w"> </span><span class="nx">found</span><span class="p">.&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">fontFamily</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;sans-serif&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">fontSize</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">project</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">fontFamily</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;sans-serif&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">project</span><span class="p">.</span><span class="nx">description</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setLikes</span><span class="p">(</span><span class="nx">likes</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span>
+<span class="w">        </span><span class="err">❤️</span><span class="w"> </span><span class="p">{</span><span class="nx">likes</span><span class="p">}</span><span class="w"> </span><span class="nx">Likes</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>When you save this file, your Next.js development server will immediately throw an error.</p>
+<h3 id="diagnostic-analysis-reading-the-failure">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+You will see a Next.js error overlay instead of your page.</p>
+<p><strong>Terminal Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code>./app/projects/<span class="o">[</span>projectId<span class="o">]</span>/page.tsx
+ReactServerComponentsError:
+
+You<span class="s1">&#39;re importing a component that needs useState. It only works in a Client Component but none of its parents are marked with &quot;use client&quot;, so they&#39;</span>re<span class="w"> </span>Server<span class="w"> </span>Components<span class="w"> </span>by<span class="w"> </span>default.
+
+<span class="w">   </span>,-<span class="o">[</span>/Users/you/dev/project-dashboard/app/projects/<span class="o">[</span>projectId<span class="o">]</span>/page.tsx:23:1<span class="o">]</span>
+<span class="m">23</span><span class="w"> </span><span class="p">|</span><span class="w">   </span>const<span class="w"> </span><span class="o">[</span>likes,<span class="w"> </span>setLikes<span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>useState<span class="o">(</span><span class="m">0</span><span class="o">)</span><span class="p">;</span><span class="w"> </span>//<span class="w"> </span>&lt;--<span class="w"> </span>PROBLEM
+<span class="w">   </span>:<span class="w">         </span>^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<span class="m">24</span><span class="w"> </span><span class="p">|</span><span class="w">   </span>const<span class="w"> </span><span class="nv">project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>await<span class="w"> </span>getProjectDetails<span class="o">(</span>params.projectId<span class="o">)</span><span class="p">;</span>
+<span class="m">25</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>
+<span class="w">   </span><span class="sb">`</span>----
+
+Maybe<span class="w"> </span>one<span class="w"> </span>of<span class="w"> </span>these<span class="w"> </span>should<span class="w"> </span>be<span class="w"> </span>marked<span class="w"> </span>as<span class="w"> </span>a<span class="w"> </span>client<span class="w"> </span>entry<span class="w"> </span>with<span class="w"> </span><span class="s2">&quot;use client&quot;</span>:
+<span class="w">  </span>./app/projects/<span class="o">[</span>projectId<span class="o">]</span>/page.tsx
+</code></pre></div>
+
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li><strong>What the user experiences</strong>: The application crashes and shows an error page.</li>
+<li><strong>What the console reveals</strong>: The error message is incredibly clear. It identifies the exact line of code (<code>const [likes, setLikes] = useState(0);</code>) and explains the problem: <code>useState</code> only works in a Client Component.</li>
+<li><strong>Root cause identified</strong>: We are trying to use a client-side hook (<code>useState</code>) inside a Server Component.</li>
+<li><strong>Why the current approach can't solve this</strong>: Server Components are fundamentally non-interactive. They run once on the server to generate HTML and have no mechanism to re-render in the browser based on user events.</li>
+<li><strong>What we need</strong>: We need to isolate the interactive part of our UI (the button) into its own Client Component, leaving the data-fetching part as a Server Component.</li>
+</ol>
+<h3 id="the-solution-creating-an-island-of-interactivity">The Solution: Creating an "Island of Interactivity"</h3>
+<p>The correct pattern is to keep <code>ProjectPage</code> as a Server Component to handle the data fetching, and create a new, separate <code>LikeButton</code> component that is explicitly marked as a Client Component.</p>
+<p>First, let's create the new component.</p>
+<p><strong>File: <code>app/projects/[projectId]/LikeButton.tsx</code></strong></p>
+<div class="codehilite"><pre><span></span><code><span class="s2">&quot;use client&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// &lt;-- This is the magic directive!</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">LikeButton</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">likes</span><span class="p">,</span><span class="w"> </span><span class="nx">setLikes</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span>
+<span class="w">      </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setLikes</span><span class="p">(</span><span class="nx">likes</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}</span>
+<span class="w">      </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">marginTop</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1rem&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;8px 16px&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">cursor</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;pointer&#39;</span><span class="w"> </span><span class="p">}}</span>
+<span class="w">    </span><span class="p">&gt;</span>
+<span class="w">      </span><span class="err">❤️</span><span class="w"> </span><span class="p">{</span><span class="nx">likes</span><span class="p">}</span><span class="w"> </span><span class="nx">Likes</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, we revert our <code>ProjectPage</code> to be a pure Server Component again and import our new <code>LikeButton</code>.</p>
+<p><strong>File: <code>app/projects/[projectId]/page.tsx</code> (Corrected)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">LikeButton</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./LikeButton&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// &lt;-- Import the Client Component</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">ProjectPageProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">params</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">projectId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="p">};</span>
+
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getProjectDetails</span><span class="p">(</span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ... (same as before)</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">resolve</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">resolve</span><span class="p">,</span><span class="w"> </span><span class="mf">1000</span><span class="p">));</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">allProjects</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">[</span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">]</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s1">&#39;ares-1&#39;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Ares I Rocket&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A crew-launch vehicle for the Constellation program.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="s1">&#39;orion-5&#39;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Orion V Capsule&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A reusable crewed spacecraft used in the Artemis program.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="s1">&#39;gateway-3&#39;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Lunar Gateway&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">description</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;A planned small space station in lunar orbit.&#39;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">allProjects</span><span class="p">[</span><span class="nx">id</span><span class="p">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// This is a Server Component again!</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProjectPage</span><span class="p">({</span><span class="w"> </span><span class="nx">params</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">ProjectPageProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">getProjectDetails</span><span class="p">(</span><span class="nx">params</span><span class="p">.</span><span class="nx">projectId</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">project</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Project</span><span class="w"> </span><span class="nx">not</span><span class="w"> </span><span class="nx">found</span><span class="p">.&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">fontFamily</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;sans-serif&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">fontSize</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">project</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">fontFamily</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;sans-serif&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">project</span><span class="p">.</span><span class="nx">description</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+
+<span class="w">      </span><span class="p">{</span><span class="cm">/* We can seamlessly use a Client Component inside a Server Component */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">LikeButton</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification">Verification</h3>
+<p>Now, when you navigate to a project page:
+1.  The <code>ProjectPage</code> component runs on the server.
+2.  It fetches the data for the specific project.
+3.  It renders the static HTML for the title and description.
+4.  It includes a placeholder for the <code>LikeButton</code> component.
+5.  The server sends the initial HTML to the browser.
+6.  The browser then downloads the JavaScript for <code>LikeButton.tsx</code>.
+7.  React "hydrates" the <code>LikeButton</code>, making it interactive.</p>
+<p>When you click the button, only the <code>LikeButton</code> component re-renders in your browser. The parent <code>ProjectPage</code> is unaffected. This is the power of the App Router's architecture: you get the performance benefits of server rendering with the surgical interactivity of client-side React.</p>
+<h2 id="layouts-and-templates">Layouts and templates</h2>
+<h2 id="shared-ui-layouts-and-templates">Shared UI: Layouts and Templates</h2>
+<p>Our application is functional, but it lacks a consistent structure. The dashboard and project pages are completely separate. In any real application, you'll want a shared header, navigation, or footer across multiple pages. This is the job of the <code>layout.tsx</code> file.</p>
+<h3 id="the-problem-repetitive-ui">The Problem: Repetitive UI</h3>
+<p>The naive way to create a shared header would be to create a <code>&lt;Header /&gt;</code> component and manually import it into every single <code>page.tsx</code> file.</p>
+<p><strong>The "Wrong" Way (for demonstration):</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// app/page.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Header</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../components/Header&#39;</span><span class="p">;</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">DashboardPage</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Header</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">Project</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// app/projects/[projectId]/page.tsx</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Header</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;../../../components/Header&#39;</span><span class="p">;</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProjectPage</span><span class="p">({</span><span class="w"> </span><span class="nx">params</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">Header</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">project</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="cm">/* ... */</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>This approach has two major flaws:
+1.  <strong>Repetition:</strong> You have to remember to add <code>&lt;Header /&gt;</code> to every new page.
+2.  <strong>Performance:</strong> When you navigate between the dashboard and a project page, the <code>&lt;Header /&gt;</code> component will be unmounted and remounted. This means any state within the header (like a search query or a user dropdown) would be lost, and the entire component re-renders unnecessarily.</p>
+<h3 id="the-solution-the-layouttsx-convention">The Solution: The <code>layout.tsx</code> Convention</h3>
+<p>Next.js solves this with another special file: <code>layout.tsx</code>. A layout is a UI component that wraps child layouts or pages. When you navigate between pages that share the same layout, the layout component itself <strong>does not re-render</strong>. Its state is preserved.</p>
+<h4 id="the-root-layout">The Root Layout</h4>
+<p>Every Next.js App Router project must have a root layout, located at <code>app/layout.tsx</code>. This layout wraps your entire application. It's where you should define the <code>&lt;html&gt;</code> and <code>&lt;body&gt;</code> tags.</p>
+<p>Let's create a proper root layout with a shared header.</p>
+<p><strong>File: <code>app/layout.tsx</code></strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">Link</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/link&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="s1">&#39;./globals.css&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Assuming you have some basic styles</span>
+
+<span class="c1">// The RootLayout receives a `children` prop, which will be the page component.</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RootLayout</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">children</span><span class="p">,</span>
+<span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">children</span><span class="o">:</span><span class="w"> </span><span class="kt">React.ReactNode</span><span class="p">;</span>
+<span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">html</span><span class="w"> </span><span class="na">lang</span><span class="o">=</span><span class="s">&quot;en&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">header</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span>
+<span class="w">          </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1rem&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">          </span><span class="nx">borderBottom</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1px solid #ccc&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">          </span><span class="nx">marginBottom</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span><span class="w"> </span>
+<span class="w">        </span><span class="p">}}&gt;</span>
+<span class="w">          </span><span class="p">&lt;</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">href</span><span class="o">=</span><span class="s">&quot;/&quot;</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">marginRight</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1rem&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">fontWeight</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;bold&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">              </span><span class="nx">Dashboard</span>
+<span class="w">            </span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span>
+<span class="w">            </span><span class="p">{</span><span class="cm">/* We can add more links here later */</span><span class="p">}</span>
+<span class="w">          </span><span class="p">&lt;/</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">header</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;0 1rem&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">          </span><span class="p">{</span><span class="nx">children</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>With this file in place, you can now remove the manual <code>&lt;Header /&gt;</code> imports from your page files. The <code>children</code> prop will be automatically populated by Next.js with the active page component. Now, both the dashboard (<code>/</code>) and the project pages (<code>/projects/...</code>) will be rendered inside this layout, giving them a consistent header.</p>
+<p>When you navigate between these pages, you'll notice in the browser that only the content inside <code>&lt;main&gt;</code> changes. The header remains static, which is exactly what we want.</p>
+<h3 id="nested-layouts">Nested Layouts</h3>
+<p>Layouts can also be nested to create more specific shared UI for certain sections of your app. For example, perhaps all pages under <code>/projects</code> should have a special sub-navigation bar.</p>
+<p>We can achieve this by adding a <code>layout.tsx</code> file inside the <code>app/projects/</code> directory.</p>
+<p><strong>New Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">app</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">projects</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="o">[</span><span class="n">projectId</span><span class="o">]/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">LikeButton</span><span class="p">.</span><span class="n">tsx</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">page</span><span class="p">.</span><span class="n">tsx</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">layout</span><span class="p">.</span><span class="n">tsx</span><span class="w">       </span><span class="err">#</span><span class="w"> </span><span class="o">&lt;</span><span class="c1">-- Nested layout for the /projects route</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">layout</span><span class="p">.</span><span class="n">tsx</span><span class="w">           </span><span class="err">#</span><span class="w"> </span><span class="o">&lt;</span><span class="c1">-- Root layout</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">page</span><span class="p">.</span><span class="n">tsx</span>
+</code></pre></div>
+
+<p>This new layout will wrap all pages within the <code>projects</code> segment, including <code>projects/[projectId]</code>.</p>
+<p><strong>File: <code>app/projects/layout.tsx</code></strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">Link</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/link&#39;</span><span class="p">;</span>
+
+<span class="c1">// This layout will be nested inside the RootLayout</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProjectsLayout</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">children</span><span class="p">,</span>
+<span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">children</span><span class="o">:</span><span class="w"> </span><span class="kt">React.ReactNode</span><span class="p">;</span>
+<span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">nav</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;0.5rem&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">background</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#f0f0f0&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">marginBottom</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1rem&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">borderRadius</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;4px&#39;</span>
+<span class="w">      </span><span class="p">}}&gt;</span>
+<span class="w">        </span><span class="p">{</span><span class="cm">/* This is a conceptual link, we don&#39;t have this page yet */</span><span class="p">}</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">Link</span><span class="w"> </span><span class="na">href</span><span class="o">=</span><span class="s">&quot;/projects/new&quot;</span><span class="p">&gt;</span><span class="nx">New</span><span class="w"> </span><span class="nx">Project</span><span class="p">&lt;/</span><span class="nt">Link</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">nav</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">{</span><span class="nx">children</span><span class="p">}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, when you visit a project page like <code>/projects/ares-1</code>, the component tree will look like this:</p>
+<ol>
+<li><code>RootLayout</code> (from <code>app/layout.tsx</code>)</li>
+<li><code>ProjectsLayout</code> (from <code>app/projects/layout.tsx</code>)</li>
+<li><code>ProjectPage</code> (from <code>app/projects/[projectId]/page.tsx</code>)</li>
+</ol>
+<p>The <code>children</code> of <code>RootLayout</code> will be <code>ProjectsLayout</code>, and the <code>children</code> of <code>ProjectsLayout</code> will be <code>ProjectPage</code>. This powerful nesting allows you to build complex, hierarchical UI structures that map directly to your URL paths.</p>
+<h3 id="a-note-on-templatetsx">A Note on <code>template.tsx</code></h3>
+<p>There is another, less common special file called <code>template.tsx</code>. It's similar to a layout in that it wraps a page, but with one key difference: <strong>a new instance of the <code>template</code> component is mounted on every navigation.</strong></p>
+<p>This means state is <em>not</em> preserved. This can be useful for features that rely on <code>useEffect</code> to run on every page navigation (e.g., for analytics tracking) or for implementing enter/exit animations with CSS. In most cases, <code>layout.tsx</code> is what you want, but it's good to know <code>template.tsx</code> exists for these specific use cases.</p>
+<h2 id="loading-and-error-states">Loading and error states</h2>
+<h2 id="handling-ui-states-loading-and-errors">Handling UI States: Loading and Errors</h2>
+<p>Our application works, but the user experience is still rough around the edges. What happens when data fetching is slow? Or what if it fails entirely? The App Router provides elegant, file-based conventions for handling these states using React Suspense and Error Boundaries under the hood.</p>
+<h3 id="the-problem-slow-data-fetching">The Problem: Slow Data Fetching</h3>
+<p>In our <code>ProjectPage</code>, we simulated a 1-second network delay.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// app/projects/[projectId]/page.tsx</span>
+<span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">resolve</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">resolve</span><span class="p">,</span><span class="w"> </span><span class="mf">1000</span><span class="p">));</span>
+</code></pre></div>
+
+<p>When you navigate from the dashboard to a project page, the browser hangs for a full second before the new page appears. The UI feels unresponsive. This is a poor user experience, especially on slow connections.</p>
+<h3 id="the-solution-instant-loading-ui-with-loadingtsx">The Solution: Instant Loading UI with <code>loading.tsx</code></h3>
+<p>Next.js has a magical solution for this: the <code>loading.tsx</code> file. By creating a file named <code>loading.tsx</code> alongside a <code>page.tsx</code>, you tell Next.js to automatically show this component as a fallback while the data for the page is being fetched.</p>
+<p>Let's add one for our project pages.</p>
+<p><strong>File: <code>app/projects/[projectId]/loading.tsx</code></strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProjectLoading</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// You can add any UI inside Loading, including a Skeleton.</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;300px&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">background</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#eee&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">borderRadius</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;4px&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">marginBottom</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1rem&#39;</span>
+<span class="w">      </span><span class="p">}}&gt;&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1rem&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;500px&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">background</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#eee&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">borderRadius</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;4px&#39;</span><span class="w"> </span>
+<span class="w">      </span><span class="p">}}&gt;&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>That's it. You don't need to import this file anywhere. By its very existence, Next.js will now do the following:
+1.  When a user navigates to <code>/projects/ares-1</code>, Next.js will <strong>immediately</strong> render the <code>ProjectLoading</code> component.
+2.  The shared layouts (<code>RootLayout</code> and <code>ProjectsLayout</code>) will also render instantly.
+3.  In the background, Next.js will start fetching the data in <code>ProjectPage</code>.
+4.  Once the data fetching is complete, it will swap out <code>ProjectLoading</code> with the fully rendered <code>ProjectPage</code>.</p>
+<p>This is achieved using React Suspense. Next.js automatically wraps your <code>page.tsx</code> in a <code>&lt;Suspense&gt;</code> boundary, using your <code>loading.tsx</code> as the <code>fallback</code>. This enables <strong>Streaming Server Rendering</strong>, where the static parts of the page are sent to the browser first, followed by the dynamic content as it becomes ready.</p>
+<h3 id="the-problem-data-fetching-fails">The Problem: Data Fetching Fails</h3>
+<p>What happens if we try to visit a project that doesn't exist, like <code>/projects/invalid-id</code>? Our <code>getProjectDetails</code> function will return <code>null</code>, and our component currently handles this gracefully.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// app/projects/[projectId]/page.tsx</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">project</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Project</span><span class="w"> </span><span class="nx">not</span><span class="w"> </span><span class="nx">found</span><span class="p">.&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>But what if the data source itself throws an error? Let's simulate this.</p>
+<p><strong>File: <code>app/projects/[projectId]/page.tsx</code> (Simulating an error)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// ...</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">getProjectDetails</span><span class="p">(</span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Fetching data for project: </span><span class="si">${</span><span class="nx">id</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">resolve</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">resolve</span><span class="p">,</span><span class="w"> </span><span class="mf">1000</span><span class="p">));</span>
+
+<span class="w">  </span><span class="c1">// NEW: Simulate a failure for a specific ID</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">id</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;orion-5&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="s2">&quot;Failed to fetch data for Orion V Capsule. The API is down!&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">allProjects</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* ... */</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">allProjects</span><span class="p">[</span><span class="nx">id</span><span class="p">]</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="c1">// ...</span>
+</code></pre></div>
+
+<h3 id="diagnostic-analysis-reading-the-failure_1">Diagnostic Analysis: Reading the Failure</h3>
+<p>Now, if you navigate to <code>/projects/orion-5</code>:</p>
+<p><strong>Browser Behavior</strong>:
+In development, you'll see the Next.js error overlay with the message "Error: Failed to fetch data...". In production, this would crash and show a generic 500 error page, taking your whole application down for that user.</p>
+<p><strong>Terminal Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code>-<span class="w"> </span>error<span class="w"> </span>./app/projects/<span class="o">[</span>projectId<span class="o">]</span>/page.tsx<span class="w"> </span><span class="o">(</span><span class="m">30</span>:10<span class="o">)</span><span class="w"> </span>@<span class="w"> </span>getProjectDetails
+-<span class="w"> </span>error<span class="w"> </span>Error:<span class="w"> </span>Failed<span class="w"> </span>to<span class="w"> </span>fetch<span class="w"> </span>data<span class="w"> </span><span class="k">for</span><span class="w"> </span>Orion<span class="w"> </span>V<span class="w"> </span>Capsule.<span class="w"> </span>The<span class="w"> </span>API<span class="w"> </span>is<span class="w"> </span>down!
+<span class="w">    </span>at<span class="w"> </span>getProjectDetails<span class="w"> </span><span class="o">(</span>./app/projects/<span class="o">[</span>projectId<span class="o">]</span>/page.tsx:20:11<span class="o">)</span>
+<span class="w">    </span>...
+</code></pre></div>
+
+<p>This is not ideal. A failure in one part of the UI shouldn't break the entire page. The header and navigation should still be visible and interactive.</p>
+<h3 id="the-solution-graceful-error-handling-with-errortsx">The Solution: Graceful Error Handling with <code>error.tsx</code></h3>
+<p>Similar to <code>loading.tsx</code>, Next.js provides an <code>error.tsx</code> convention to handle runtime errors. This file defines a UI boundary for any errors that occur in a route segment and its children.</p>
+<p><strong>Important:</strong> An <code>error.tsx</code> component <strong>must be a Client Component</strong> (<code>"use client"</code>). This is because it's designed to be interactive, often including a "Try again" button to re-attempt the render.</p>
+<p>Let's create one for our project route.</p>
+<p><strong>File: <code>app/projects/[projectId]/error.tsx</code></strong></p>
+<div class="codehilite"><pre><span></span><code><span class="s2">&quot;use client&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Error components must be Client Components</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">ErrorProps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">error</span><span class="o">:</span><span class="w"> </span><span class="kt">Error</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">reset</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span><span class="w"> </span><span class="c1">// A function to re-render the segment</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProjectError</span><span class="p">({</span><span class="w"> </span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="nx">reset</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">ErrorProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Log the error to an error reporting service</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">error</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1px solid red&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">borderRadius</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;8px&#39;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">      </span><span class="nx">background</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#fff5f5&#39;</span><span class="w"> </span>
+<span class="w">    </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Something</span><span class="w"> </span><span class="nx">went</span><span class="w"> </span><span class="nx">wrong</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;{</span><span class="nx">error</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span>
+<span class="w">        </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span>
+<span class="w">          </span><span class="c1">// Attempt to recover by trying to re-render the segment</span>
+<span class="w">          </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">reset</span><span class="p">()</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">marginTop</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1rem&#39;</span><span class="w"> </span><span class="p">}}</span>
+<span class="w">      </span><span class="p">&gt;</span>
+<span class="w">        </span><span class="nx">Try</span><span class="w"> </span><span class="nx">again</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Under the hood, Next.js wraps your <code>page.tsx</code> in a React Error Boundary and uses your <code>error.tsx</code> file as the fallback UI.</p>
+<p>Now, when you navigate to <code>/projects/orion-5</code>:
+1.  The <code>getProjectDetails</code> function throws an error.
+2.  Next.js catches this error.
+3.  It renders the <code>ProjectError</code> component in place of the <code>ProjectPage</code> component.
+4.  Crucially, the <code>RootLayout</code> and <code>ProjectsLayout</code> are <strong>unaffected</strong> and remain visible and interactive.</p>
+<p>The error is contained. The user sees a helpful message and has an action they can take (<code>reset()</code>) to try and recover, all without losing the context of the rest of the application.</p>
+<h3 id="the-journey-from-problem-to-solution">The Journey: From Problem to Solution</h3>
+<p>Let's synthesize what we've built. We started with simple files and progressively added special, conventional files to handle more complex UI requirements.</p>
+<table>
+<thead>
+<tr>
+<th>Iteration</th>
+<th>Problem</th>
+<th>File Convention Applied</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>How to create pages?</td>
+<td><code>page.tsx</code></td>
+<td>Basic static and dynamic routes are working.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>How to add interactivity?</td>
+<td><code>"use client";</code></td>
+<td>Interactive logic isolated in Client Components, pages remain fast.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>How to create shared UI?</td>
+<td><code>layout.tsx</code></td>
+<td>Consistent UI across pages without re-rendering on navigation.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>UI hangs during data loading.</td>
+<td><code>loading.tsx</code></td>
+<td>Instant loading state (skeleton UI) shown while data fetches.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>An error crashes the entire page.</td>
+<td><code>error.tsx</code></td>
+<td>Errors are isolated, showing a fallback UI without breaking layouts.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="final-implementation">Final Implementation</h3>
+<p>Here is the final file structure of our robust Project Dashboard segment:</p>
+<p><strong>Final Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">app</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">projects</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="o">[</span><span class="n">projectId</span><span class="o">]/</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">error</span><span class="p">.</span><span class="n">tsx</span><span class="w">        </span><span class="err">#</span><span class="w"> </span><span class="n">Handles</span><span class="w"> </span><span class="n">runtime</span><span class="w"> </span><span class="n">errors</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">LikeButton</span><span class="p">.</span><span class="n">tsx</span><span class="w">   </span><span class="err">#</span><span class="w"> </span><span class="n">Client</span><span class="w"> </span><span class="n">Component</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">interactivity</span>
+<span class="err">│</span><span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">loading</span><span class="p">.</span><span class="n">tsx</span><span class="w">      </span><span class="err">#</span><span class="w"> </span><span class="n">Loading</span><span class="w"> </span><span class="n">UI</span><span class="w"> </span><span class="p">(</span><span class="n">Suspense</span><span class="w"> </span><span class="n">fallback</span><span class="p">)</span>
+<span class="err">│</span><span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="n">page</span><span class="p">.</span><span class="n">tsx</span><span class="w">         </span><span class="err">#</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="n">component</span><span class="w"> </span><span class="p">(</span><span class="n">Server</span><span class="w"> </span><span class="n">Component</span><span class="p">)</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">layout</span><span class="p">.</span><span class="n">tsx</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">page</span><span class="p">.</span><span class="n">tsx</span>
+</code></pre></div>
+
+<p>This structure is a perfect example of the App Router's philosophy: co-locating all files related to a route, using file conventions to define UI for different states, and defaulting to server-first for performance while allowing surgical client-side interactivity.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:41:00 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

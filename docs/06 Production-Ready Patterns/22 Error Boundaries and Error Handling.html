@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>22 Error Boundaries and Error Handling</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">06 Production-Ready Patterns</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-22-error-boundaries-and-error-handling">Chapter 22: Error Boundaries and Error Handling</h1>
+<h2 id="error-boundaries-in-react">Error Boundaries in React</h2>
+<h2 id="the-fragility-of-a-react-app">The Fragility of a React App</h2>
+<p>In a complex React application, components are nested within other components, forming a tree-like structure. This composition is powerful, but it introduces a critical vulnerability: an unhandled error in a single, low-level component can crash the entire application.</p>
+<p>Imagine a dashboard with a sidebar, a header, and a main content area. If the component responsible for rendering a user's avatar in the header throws an error, the entire dashboard—sidebar, header, and all—can unmount, leaving the user with a blank white screen. This is a catastrophic failure from a user experience perspective.</p>
+<p>React's solution to this problem is the <strong>Error Boundary</strong>: a special component that can catch JavaScript errors anywhere in its child component tree, log those errors, and display a fallback UI instead of the component tree that crashed.</p>
+<h3 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h3>
+<p>Our anchor example will be a <code>UserWidget</code> that fetches and displays user data. We'll place it inside a <code>Dashboard</code> page that has other, stable UI elements. We will intentionally introduce a bug to demonstrate how it can take down the entire page.</p>
+<p><strong>The Scenario</strong>: Our API sometimes returns <code>null</code> for the <code>user</code> object if the user is not found. Our <code>UserWidget</code> component does not account for this and tries to access <code>user.name</code>, which will throw a <code>TypeError</code>.</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code>src/
+└── app/
+    └── dashboard/
+        ├── components/
+        │   └── UserWidget.tsx  &lt;-- Our faulty component
+        └── page.tsx            &lt;-- The main dashboard page
+</code></pre></div>
+
+<p>Here is the initial, fragile implementation.</p>
+<p><strong>The Faulty Component</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/dashboard/components/UserWidget.tsx</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// This function simulates fetching data from an API.</span>
+<span class="c1">// We&#39;ll make it fail 50% of the time to test our error handling.</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">fetchUser</span><span class="p">(</span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Fetching user data...&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">((</span><span class="nx">resolve</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">setTimeout</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.5</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">resolve</span><span class="p">({</span>
+<span class="w">          </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">userId</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Jane Doe&#39;</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;jane.doe@example.com&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// Simulate a &quot;user not found&quot; scenario</span>
+<span class="w">        </span><span class="nx">resolve</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="mf">1000</span><span class="p">);</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserWidget</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">setIsLoading</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">fetchUser</span><span class="p">(</span><span class="s1">&#39;123&#39;</span><span class="p">).</span><span class="nx">then</span><span class="p">(</span><span class="nx">data</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">setIsLoading</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="w">    </span><span class="p">});</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">isLoading</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;widget&quot;</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="nx">data</span><span class="p">...&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="c1">// THE BUG: We assume `user` is always an object, but it can be `null`.</span>
+<span class="w">  </span><span class="c1">// This will throw &quot;TypeError: Cannot read properties of null (reading &#39;name&#39;)&quot;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;widget&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h3</span><span class="p">&gt;</span><span class="nx">User</span><span class="w"> </span><span class="nx">Profile</span><span class="p">&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Name</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Email</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>The Dashboard Page</strong>:</p>
+<h2 id="error-handling-in-nextjs">Error Handling in Next.js</h2>
+<h2 id="the-nextjs-way-errortsx">The Next.js Way: <code>error.tsx</code></h2>
+<p>While React's built-in Error Boundaries are powerful, the Next.js App Router provides a more integrated, file-based convention for handling errors within route segments: the <code>error.tsx</code> file.</p>
+<p>An <code>error.tsx</code> file automatically creates a React Error Boundary that wraps a route segment and its nested children. It allows you to show granular, route-specific error UI and even provides a function to attempt recovery.</p>
+<h3 id="iteration-2-handling-route-segment-errors-with-errortsx">Iteration 2: Handling Route Segment Errors with <code>error.tsx</code></h3>
+<p>Let's refactor our dashboard to use the Next.js convention instead of our custom <code>ErrorBoundary</code> component.</p>
+<p><strong>The Problem</strong>: Our manual <code>ErrorBoundary</code> works, but it's verbose. We have to create the component, import it, and manually wrap the part of the UI we want to protect. Next.js can automate this for us at the route level.</p>
+<p><strong>The Technique</strong>: Create a file named <code>error.tsx</code> inside the <code>app/dashboard</code> directory. This file will define a client component that Next.js will automatically render in place of <code>page.tsx</code> if an error occurs during rendering on the server or client.</p>
+<p><strong>Step 1: Create the <code>error.tsx</code> file.</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/dashboard/error.tsx</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Error components must be Client Components</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">DashboardError</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">error</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">reset</span><span class="p">,</span>
+<span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">error</span><span class="o">:</span><span class="w"> </span><span class="kt">Error</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">digest?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="nx">reset</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// You can log the error to an error reporting service here</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">error</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Something</span><span class="w"> </span><span class="nx">went</span><span class="w"> </span><span class="nx">wrong</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">dashboard</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">error</span><span class="p">.</span><span class="nx">message</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span>
+<span class="w">        </span><span class="na">onClick</span><span class="o">=</span><span class="p">{</span>
+<span class="w">          </span><span class="c1">// Attempt to recover by trying to re-render the segment</span>
+<span class="w">          </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">reset</span><span class="p">()</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">&gt;</span>
+<span class="w">        </span><span class="nx">Try</span><span class="w"> </span><span class="nx">again</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Key Features of <code>error.tsx</code></strong>:
+-   It <strong>must</strong> be a Client Component (<code>"use client"</code>).
+-   It receives two props:
+    1.  <code>error</code>: A JavaScript <code>Error</code> object.
+    2.  <code>reset</code>: A function that, when called, will attempt to re-render the contents of the Error Boundary. If successful, the fallback error component is replaced with the result of the re-render.</p>
+<p><strong>Step 2: Remove the manual <code>ErrorBoundary</code> from <code>page.tsx</code>.</strong></p>
+<p>Now that Next.js is handling this for us, we can simplify our page component.</p>
+<p><strong>Before</strong>:</p>
+<h2 id="logging-and-monitoring-sentry">Logging and Monitoring (Sentry)</h2>
+<h2 id="from-reactive-to-proactive-production-error-monitoring">From Reactive to Proactive: Production Error Monitoring</h2>
+<p>Displaying a friendly error message is good for the user, but it's a purely reactive measure. To build robust applications, we need to be proactive. We need to know when errors occur, how often, on what browsers, and what sequence of events led to the failure. This is where third-party error monitoring services like Sentry, LogRocket, or Datadog come in.</p>
+<p>We'll use Sentry to demonstrate how to integrate a monitoring service into our Next.js application.</p>
+<h3 id="iteration-3-integrating-sentry-for-proactive-error-reporting">Iteration 3: Integrating Sentry for Proactive Error Reporting</h3>
+<p><strong>The Problem</strong>: We are blind to production errors. We rely on users to report bugs, which is unreliable and provides incomplete information.</p>
+<p><strong>The Technique</strong>: We will install and configure the Sentry Next.js SDK. It will automatically capture unhandled exceptions from our application (both client-side and server-side) and send detailed reports to the Sentry dashboard.</p>
+<p><strong>Step 1: Install Sentry SDK.</strong></p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>--save<span class="w"> </span>@sentry/nextjs
+</code></pre></div>
+
+<p><strong>Step 2: Run the Sentry Wizard.</strong>
+The wizard will create and modify the necessary configuration files for you.</p>
+<div class="codehilite"><pre><span></span><code>npx<span class="w"> </span>@sentry/wizard@latest<span class="w"> </span>-i<span class="w"> </span>nextjs
+</code></pre></div>
+
+<p>This command will:
+1.  Log you into your Sentry account.
+2.  Create <code>sentry.client.config.ts</code>, <code>sentry.server.config.ts</code>, and <code>sentry.edge.config.ts</code> files.
+3.  Create a <code>.sentryclirc</code> file with your auth token.
+4.  Update your <code>next.config.mjs</code> to automatically upload source maps during the build process. Source maps are crucial for seeing readable stack traces in Sentry.</p>
+<p><strong>Step 3: Update <code>error.tsx</code> to report errors to Sentry.</strong>
+While Sentry automatically captures unhandled exceptions, it's good practice to explicitly capture errors handled by our boundaries to ensure all context is preserved.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/dashboard/error.tsx (Updated with Sentry)</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">Sentry</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@sentry/nextjs&quot;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">DashboardError</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">error</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">reset</span><span class="p">,</span>
+<span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">error</span><span class="o">:</span><span class="w"> </span><span class="kt">Error</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">digest?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="nx">reset</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Report the error to Sentry</span>
+<span class="w">    </span><span class="nx">Sentry</span><span class="p">.</span><span class="nx">captureException</span><span class="p">(</span><span class="nx">error</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span><span class="nx">Something</span><span class="w"> </span><span class="nx">went</span><span class="w"> </span><span class="nx">wrong</span><span class="o">!</span><span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Our</span><span class="w"> </span><span class="nx">team</span><span class="w"> </span><span class="nx">has</span><span class="w"> </span><span class="nx">been</span><span class="w"> </span><span class="nx">notified</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">issue</span><span class="p">.</span><span class="w"> </span><span class="nx">Please</span><span class="w"> </span><span class="k">try</span><span class="w"> </span><span class="nx">again</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">reset</span><span class="p">()}&gt;</span>
+<span class="w">        </span><span class="nx">Try</span><span class="w"> </span><span class="nx">again</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification">Verification</h3>
+<p>Now, trigger the error in <code>UserWidget</code> one more time in a production-like environment (<code>npm run build</code> then <code>npm start</code>).</p>
+<p><strong>Browser Behavior</strong>:
+The user experience is the same as before—they see the friendly error component.</p>
+<p><strong>Sentry Dashboard</strong>:
+A new issue appears in your Sentry project dashboard. Clicking on it reveals a wealth of information:
+-   <strong>Error Message &amp; Stack Trace</strong>: <code>TypeError: Cannot read properties of null (reading 'name')</code> with a clean, de-minified stack trace pointing to <code>UserWidget.tsx</code>.
+-   <strong>Breadcrumbs</strong>: A timeline of events that occurred before the error (e.g., user clicks, network requests). Our <code>console.log("Fetching user data...")</code> would appear here.
+-   <strong>Context</strong>: Browser version, OS, device type, URL.
+-   <strong>Tags</strong>: You can add custom tags like <code>userId</code> or <code>release version</code> to help filter and diagnose issues.</p>
+<p><strong>Expected vs. Actual Improvement</strong>:
+- <strong>Expected</strong>: A way to know when errors happen in production.
+- <strong>Actual</strong>: We now have a complete, automated system for capturing, aggregating, and analyzing production errors. We can fix bugs before most users even notice them. This moves us from a reactive debugging posture to a proactive one.</p>
+<p><strong>Limitation Preview</strong>: Our error UI is functional, but it could be much more helpful to the user. A generic "Something went wrong" message can be frustrating. How can we design an error state that is both reassuring and actionable?</p>
+<h2 id="user-friendly-error-states">User-friendly error states</h2>
+<h2 id="designing-for-failure-better-error-experiences">Designing for Failure: Better Error Experiences</h2>
+<p>The final piece of the puzzle is the user-facing error UI itself. A well-designed error page can turn a moment of frustration into one of reassurance. It should acknowledge the problem, set expectations, and provide clear paths forward.</p>
+<h3 id="iteration-4-creating-a-user-centric-error-component">Iteration 4: Creating a User-Centric Error Component</h3>
+<p><strong>The Problem</strong>: Our current error message is generic and not very helpful. It doesn't give the user any control or useful information.</p>
+<p><strong>The Technique</strong>: We will redesign our <code>error.tsx</code> component based on best practices for user-friendly error states.</p>
+<p><strong>Principles of Good Error UI</strong>:
+1.  <strong>Be Human and Apologetic</strong>: Use plain language. Acknowledge the failure and apologize for the inconvenience.
+2.  <strong>Explain What Happened (Briefly)</strong>: Don't show a stack trace, but give a simple, high-level reason if possible (e.g., "We couldn't load your profile data.").
+3.  <strong>Provide Actionable Escapes</strong>: Give the user clear things to do next. "Try again" is good. "Go to Homepage" is better. "Contact Support" is best for critical failures.
+4.  <strong>Offer a Reference ID</strong>: If the user needs to contact support, giving them a unique ID for the error event makes the support process infinitely smoother. Sentry provides this out of the box.</p>
+<p><strong>Step 1: Refactor <code>error.tsx</code> to be more user-friendly.</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/dashboard/error.tsx (Final, User-Friendly Version)</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useEffect</span><span class="p">,</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">Sentry</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@sentry/nextjs&quot;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">Link</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/link&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">DashboardError</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">error</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">reset</span><span class="p">,</span>
+<span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">error</span><span class="o">:</span><span class="w"> </span><span class="kt">Error</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">digest?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">};</span>
+<span class="w">  </span><span class="nx">reset</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">eventId</span><span class="p">,</span><span class="w"> </span><span class="nx">setEventId</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">string</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">Sentry</span><span class="p">.</span><span class="nx">captureException</span><span class="p">(</span><span class="nx">error</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">setEventId</span><span class="p">(</span><span class="nx">id</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span>
+<span class="w">      </span><span class="nx">fontFamily</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;sans-serif&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">textAlign</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;4rem 2rem&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1px solid #e0e0e0&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">borderRadius</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;8px&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">backgroundColor</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#fafafa&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">margin</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span>
+<span class="w">    </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">fontSize</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#c0392b&#39;</span><span class="w"> </span><span class="p">}}&gt;</span><span class="nx">Oops</span><span class="o">!</span><span class="w"> </span><span class="nx">Something</span><span class="w"> </span><span class="nx">went</span><span class="w"> </span><span class="nx">wrong</span><span class="p">.&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;#555&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">fontSize</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1.1rem&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">        </span><span class="nx">We</span><span class="s1">&#39;re sorry, but we encountered an unexpected error while trying to load this section.</span>
+<span class="s1">        Our technical team has already been notified.</span>
+<span class="s1">      &lt;/p&gt;</span>
+
+<span class="s1">      &lt;div style={{ display: &#39;</span><span class="nx">flex</span><span class="s1">&#39;, justifyContent: &#39;</span><span class="nx">center</span><span class="s1">&#39;, gap: &#39;</span><span class="mf">1</span><span class="nx">rem</span><span class="s1">&#39;, marginTop: &#39;</span><span class="mf">2</span><span class="nx">rem</span><span class="s1">&#39; }}&gt;</span>
+<span class="s1">        &lt;button</span>
+<span class="s1">          onClick={() =&gt; reset()}</span>
+<span class="s1">          style={{</span>
+<span class="s1">            padding: &#39;</span><span class="mf">0.75</span><span class="nx">rem</span><span class="w"> </span><span class="mf">1.5</span><span class="nx">rem</span><span class="s1">&#39;,</span>
+<span class="s1">            fontSize: &#39;</span><span class="mf">1</span><span class="nx">rem</span><span class="s1">&#39;,</span>
+<span class="s1">            cursor: &#39;</span><span class="nx">pointer</span><span class="s1">&#39;,</span>
+<span class="s1">            backgroundColor: &#39;</span><span class="err">#</span><span class="mf">3498</span><span class="nx">db</span><span class="s1">&#39;,</span>
+<span class="s1">            color: &#39;</span><span class="nx">white</span><span class="s1">&#39;,</span>
+<span class="s1">            border: &#39;</span><span class="nx">none</span><span class="s1">&#39;,</span>
+<span class="s1">            borderRadius: &#39;</span><span class="mf">4</span><span class="nx">px</span><span class="s1">&#39;</span>
+<span class="s1">          }}</span>
+<span class="s1">        &gt;</span>
+<span class="s1">          Try Again</span>
+<span class="s1">        &lt;/button&gt;</span>
+<span class="s1">        &lt;Link href=&quot;/&quot; style={{</span>
+<span class="s1">            display: &#39;</span><span class="nx">inline</span><span class="o">-</span><span class="nx">block</span><span class="s1">&#39;,</span>
+<span class="s1">            padding: &#39;</span><span class="mf">0.75</span><span class="nx">rem</span><span class="w"> </span><span class="mf">1.5</span><span class="nx">rem</span><span class="s1">&#39;,</span>
+<span class="s1">            fontSize: &#39;</span><span class="mf">1</span><span class="nx">rem</span><span class="s1">&#39;,</span>
+<span class="s1">            backgroundColor: &#39;</span><span class="n">#bdc3c7</span><span class="s1">&#39;,</span>
+<span class="s1">            color: &#39;</span><span class="err">#</span><span class="mf">2</span><span class="nx">c3e50</span><span class="s1">&#39;,</span>
+<span class="s1">            textDecoration: &#39;</span><span class="nx">none</span><span class="s1">&#39;,</span>
+<span class="s1">            borderRadius: &#39;</span><span class="mf">4</span><span class="nx">px</span><span class="s1">&#39;</span>
+<span class="s1">          }}&gt;</span>
+<span class="s1">          Go to Homepage</span>
+<span class="s1">        &lt;/Link&gt;</span>
+<span class="s1">      &lt;/div&gt;</span>
+
+<span class="s1">      {eventId &amp;&amp; (</span>
+<span class="s1">        &lt;p style={{ marginTop: &#39;</span><span class="mf">2</span><span class="nx">rem</span><span class="s1">&#39;, color: &#39;</span><span class="err">#</span><span class="mf">7</span><span class="nx">f8c8d</span><span class="s1">&#39;, fontSize: &#39;</span><span class="mf">0.9</span><span class="nx">rem</span><span class="err">&#39;</span><span class="w"> </span><span class="p">}}</span><span class="o">&gt;</span>
+<span class="w">          </span><span class="nx">If</span><span class="w"> </span><span class="nx">the</span><span class="w"> </span><span class="nx">problem</span><span class="w"> </span><span class="nx">persists</span><span class="p">,</span><span class="w"> </span><span class="nx">please</span><span class="w"> </span><span class="nx">contact</span><span class="w"> </span><span class="nx">support</span><span class="w"> </span><span class="nx">and</span><span class="w"> </span><span class="nx">provide</span><span class="w"> </span><span class="k">this</span><span class="w"> </span><span class="nx">error</span><span class="w"> </span><span class="nx">ID</span><span class="o">:</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">strong</span><span class="p">&gt;{</span><span class="nx">eventId</span><span class="p">}&lt;/</span><span class="nt">strong</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">)}</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification_1">Verification</h3>
+<p>Triggering the error now presents a much more polished and helpful UI.</p>
+<p><strong>Browser Behavior</strong>:
+The user sees a friendly, well-designed message. They understand that the team is aware of the problem. They have two clear options: attempt to recover or navigate away to safety (the homepage). If they need to escalate, they have a specific error ID to give to a support agent, who can look it up directly in Sentry.</p>
+<p>This final version transforms the error from a dead end into a managed incident.</p>
+<h3 id="common-failure-modes-and-their-signatures">Common Failure Modes and Their Signatures</h3>
+<h4 id="symptom-blank-white-screen-in-production">Symptom: Blank white screen in production.</h4>
+<p><strong>Browser behavior</strong>: The entire page is blank. No content is rendered.
+<strong>Console pattern</strong>: An error like <code>TypeError: ... is not a function</code> or <code>Cannot read properties of undefined</code>.
+<strong>DevTools clues</strong>: The <code>&lt;body&gt;</code> tag is empty.
+<strong>Root cause</strong>: An uncaught rendering error occurred, and no Error Boundary (<code>error.tsx</code> or <code>ErrorBoundary</code>) was in place to catch it.
+<strong>Solution</strong>: Add an <code>error.tsx</code> file to the route segment where the error is occurring.</p>
+<h4 id="symptom-error-boundary-does-not-catch-an-error-from-an-event-handler">Symptom: Error boundary does not catch an error from an event handler.</h4>
+<p><strong>Browser behavior</strong>: The UI is responsive, but clicking a button does nothing or causes a crash that isn't caught by the boundary.
+<strong>Console pattern</strong>: An error message appears in the console, but the fallback UI does not render.
+<strong>DevTools clues</strong>: The component tree remains intact.
+<strong>Root cause</strong>: Error Boundaries only catch errors during rendering, in lifecycle methods, and in constructors. They do not catch errors inside event handlers.
+<strong>Solution</strong>: Use a standard <code>try...catch</code> block inside the event handler function.</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">handleClick</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Potentially failing logic</span>
+<span class="w">    </span><span class="nx">doSomethingThatMightThrow</span><span class="p">();</span>
+<span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s2">&quot;Failed in handleClick&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">error</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// Update state to show an error message to the user</span>
+<span class="w">    </span><span class="nx">setErrorState</span><span class="p">(</span><span class="s2">&quot;Something went wrong with that action.&quot;</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="the-journey-from-problem-to-solution">The Journey: From Problem to Solution</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Iteration</th>
+<th style="text-align: left;">Failure Mode</th>
+<th style="text-align: left;">Technique Applied</th>
+<th style="text-align: left;">Result</th>
+<th style="text-align: left;">Developer Experience</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">Entire app crashes on a <code>TypeError</code>.</td>
+<td style="text-align: left;">None</td>
+<td style="text-align: left;">Blank screen; catastrophic failure.</td>
+<td style="text-align: left;">Debugging via console logs.</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">App crashes, but we want to contain it.</td>
+<td style="text-align: left;">React <code>ErrorBoundary</code></td>
+<td style="text-align: left;">Only the faulty component is replaced; rest of the app is stable.</td>
+<td style="text-align: left;">Manual wrapping, class component boilerplate.</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Manual boundary is not Next.js idiomatic.</td>
+<td style="text-align: left;">Next.js <code>error.tsx</code></td>
+<td style="text-align: left;">Route segment is replaced with error UI; includes <code>reset</code> function.</td>
+<td style="text-align: left;">File-based convention, cleaner page code.</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">We are blind to production errors.</td>
+<td style="text-align: left;">Sentry Integration</td>
+<td style="text-align: left;">Errors are automatically logged to a central dashboard.</td>
+<td style="text-align: left;">Proactive monitoring, rich context for debugging.</td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">Error UI is generic and unhelpful.</td>
+<td style="text-align: left;">User-Centric UI Design</td>
+<td style="text-align: left;">User gets clear info, actionable steps, and a support reference ID.</td>
+<td style="text-align: left;">Confident that users have a good "off-ramp".</td>
+</tr>
+</tbody>
+</table>
+<h3 id="final-decision-framework-which-error-handling-tool-when">Final Decision Framework: Which Error Handling Tool When?</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Recommended Tool</th>
+<th>Why?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Error during component render</strong></td>
+<td>Next.js <code>error.tsx</code></td>
+<td>The idiomatic, file-based convention for the App Router. Handles SSR and client errors.</td>
+</tr>
+<tr>
+<td><strong>Error in an event handler (e.g., <code>onClick</code>)</strong></td>
+<td><code>try...catch</code> block</td>
+<td>Error Boundaries do not catch errors in event handlers. This is the standard JS way.</td>
+</tr>
+<tr>
+<td><strong>Error in a <code>useEffect</code> or async code</strong></td>
+<td><code>try...catch</code> or <code>.catch()</code></td>
+<td>Asynchronous errors happen outside the render cycle and must be handled imperatively.</td>
+</tr>
+<tr>
+<td><strong>Error in the root layout</strong></td>
+<td>Next.js <code>global-error.tsx</code></td>
+<td>A safety net for the entire application when the root itself fails.</td>
+</tr>
+<tr>
+<td><strong>Fine-grained control within a page</strong></td>
+<td>React <code>ErrorBoundary</code></td>
+<td>Use when you want to wrap a <em>specific component</em> inside a page, not the whole page/segment.</td>
+</tr>
+<tr>
+<td><strong>Production monitoring</strong></td>
+<td>Sentry (or similar)</td>
+<td>Essential for visibility into what's actually happening with your users. Complements all others.</td>
+</tr>
+</tbody>
+</table>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:41:01 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

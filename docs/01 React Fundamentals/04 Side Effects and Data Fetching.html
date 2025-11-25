@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>04 Side Effects and Data Fetching</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">01 React Fundamentals</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-4-side-effects-and-data-fetching">Chapter 4: Side Effects and Data Fetching</h1>
+<h2 id="useeffect-the-escape-hatch">useEffect: the escape hatch</h2>
+<h2 id="the-purity-of-components">The Purity of Components</h2>
+<p>In React, a component is ideally a <strong>pure function</strong>. Given the same props and state, it should always produce the same JSX. Its only job is to describe the UI. This principle makes components predictable, testable, and easy to reason about.</p>
+<p>However, applications are not pure. They need to interact with the "outside world"—fetching data from an API, setting up subscriptions, or directly manipulating the DOM. These interactions are called <strong>side effects</strong> because they are things that happen "on the side" of the rendering process.</p>
+<p>Attempting to perform a side effect directly inside a component's body breaks the rule of purity and leads to chaos. Let's see why.</p>
+<h3 id="phase-1-establish-the-reference-implementation">Phase 1: Establish the Reference Implementation</h3>
+<p>Our anchor example for this chapter will be a <code>UserDashboard</code> component. Its job is simple: fetch data for a specific user from an API and display their name and email.</p>
+<p>We'll start with a project structure like this:</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">src</span><span class="o">/</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">app</span><span class="o">/</span>
+<span class="w">    </span><span class="err">├──</span><span class="w"> </span><span class="n">api</span><span class="o">/</span>
+<span class="w">    </span><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="k">user</span><span class="o">/</span>
+<span class="w">    </span><span class="err">│</span><span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="o">[</span><span class="n">userId</span><span class="o">]/</span>
+<span class="w">    </span><span class="err">│</span><span class="w">           </span><span class="err">└──</span><span class="w"> </span><span class="n">route</span><span class="p">.</span><span class="n">ts</span><span class="w">  </span><span class="p">(</span><span class="n">A</span><span class="w"> </span><span class="n">mock</span><span class="w"> </span><span class="n">API</span><span class="w"> </span><span class="n">endpoint</span><span class="p">)</span>
+<span class="w">    </span><span class="err">├──</span><span class="w"> </span><span class="n">components</span><span class="o">/</span>
+<span class="w">    </span><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">UserDashboard</span><span class="p">.</span><span class="n">tsx</span><span class="w"> </span><span class="err">←</span><span class="w"> </span><span class="n">Our</span><span class="w"> </span><span class="n">reference</span><span class="w"> </span><span class="n">implementation</span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="n">page</span><span class="p">.</span><span class="n">tsx</span><span class="w">              </span><span class="p">(</span><span class="k">To</span><span class="w"> </span><span class="n">render</span><span class="w"> </span><span class="n">our</span><span class="w"> </span><span class="n">component</span><span class="p">)</span>
+</code></pre></div>
+
+<p>First, let's create a mock API endpoint in Next.js. This will simulate fetching user data.</p>
+<p><strong>Mock API Endpoint</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/api/user/[userId]/route.ts</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">NextResponse</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;next/server&#39;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">users</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Alice&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;alice@example.com&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">posts</span><span class="o">:</span><span class="w"> </span><span class="kt">3</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;Bob&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;bob@example.com&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">posts</span><span class="o">:</span><span class="w"> </span><span class="kt">7</span><span class="w"> </span><span class="p">},</span>
+<span class="p">];</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">GET</span><span class="p">(</span>
+<span class="w">  </span><span class="nx">request</span><span class="o">:</span><span class="w"> </span><span class="kt">Request</span><span class="p">,</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">params</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">params</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Simulate network delay</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">res</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span><span class="w"> </span><span class="mf">1500</span><span class="p">));</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">users</span><span class="p">.</span><span class="nx">find</span><span class="p">(</span><span class="nx">u</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">u</span><span class="p">.</span><span class="nx">id</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">params</span><span class="p">.</span><span class="nx">userId</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">NextResponse</span><span class="p">(</span><span class="s1">&#39;User not found&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">status</span><span class="o">:</span><span class="w"> </span><span class="kt">404</span><span class="w"> </span><span class="p">});</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">NextResponse</span><span class="p">.</span><span class="nx">json</span><span class="p">(</span><span class="nx">user</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, let's create the parent page that will use our dashboard component.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">UserDashboard</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/UserDashboard&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Home</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">,</span><span class="w"> </span><span class="nx">setUserId</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">User</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">marginBottom</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1rem&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setUserId</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">)}&gt;</span><span class="nx">Load</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="mf">1</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setUserId</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">)}&gt;</span><span class="nx">Load</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="mf">2</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">UserDashboard</span><span class="w"> </span><span class="na">userId</span><span class="o">=</span><span class="p">{</span><span class="nx">userId</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="iteration-0-the-catastrophic-failure">Iteration 0: The Catastrophic Failure</h3>
+<p>Here is our first, fatally flawed attempt at the <code>UserDashboard</code>. A beginner might think, "I need data, so I'll just fetch it right here."</p>
+<p><strong>The Anchor Example (Problematic Version)</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserDashboard.tsx (Version 0 - DO NOT USE)</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// This component receives a userId as a prop</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserDashboard</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Rendering dashboard for user: </span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// DANGER: Side effect directly in the render body</span>
+<span class="w">  </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/user/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">res</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
+<span class="w">    </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">data</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// This state update will trigger a re-render</span>
+<span class="w">      </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">    </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="nx">data</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Email</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Let's run this code and observe the disaster.</p>
+<h3 id="diagnostic-analysis-reading-the-failure">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+The browser tab becomes unresponsive or freezes completely. The "Loading user data..." text might flash briefly, but the page quickly becomes unusable. The fan on your computer might spin up.</p>
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">Rendering</span><span class="w"> </span><span class="nv">dashboard</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">user</span>:<span class="w"> </span><span class="mi">1</span>
+<span class="nv">Rendering</span><span class="w"> </span><span class="nv">dashboard</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">user</span>:<span class="w"> </span><span class="mi">1</span>
+<span class="nv">Rendering</span><span class="w"> </span><span class="nv">dashboard</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">user</span>:<span class="w"> </span><span class="mi">1</span>
+<span class="nv">Rendering</span><span class="w"> </span><span class="nv">dashboard</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">user</span>:<span class="w"> </span><span class="mi">1</span>
+<span class="nv">Rendering</span><span class="w"> </span><span class="nv">dashboard</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">user</span>:<span class="w"> </span><span class="mi">1</span>
+...<span class="w"> </span><span class="ss">(</span><span class="nv">this</span><span class="w"> </span><span class="nv">message</span><span class="w"> </span><span class="nv">repeats</span><span class="w"> </span><span class="nv">thousands</span><span class="w"> </span><span class="nv">of</span><span class="w"> </span><span class="nv">times</span><span class="w"> </span><span class="nv">per</span><span class="w"> </span><span class="nv">second</span><span class="ss">)</span><span class="w"> </span>...
+
+<span class="nv">Warning</span>:<span class="w"> </span><span class="nv">Maximum</span><span class="w"> </span><span class="nv">update</span><span class="w"> </span><span class="nv">depth</span><span class="w"> </span><span class="nv">exceeded</span>.<span class="w"> </span><span class="nv">This</span><span class="w"> </span><span class="nv">can</span><span class="w"> </span><span class="nv">happen</span><span class="w"> </span><span class="nv">when</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">component</span><span class="w"> </span><span class="nv">calls</span><span class="w"> </span><span class="nv">setState</span><span class="w"> </span><span class="nv">inside</span><span class="w"> </span><span class="nv">useEffect</span>,<span class="w"> </span><span class="nv">but</span><span class="w"> </span><span class="nv">useEffect</span><span class="w"> </span><span class="nv">either</span><span class="w"> </span><span class="nv">has</span><span class="w"> </span><span class="nv">no</span><span class="w"> </span><span class="nv">dependency</span><span class="w"> </span><span class="nv">array</span>,<span class="w"> </span><span class="nv">or</span><span class="w"> </span><span class="nv">one</span><span class="w"> </span><span class="nv">that</span><span class="w"> </span><span class="nv">changes</span><span class="w"> </span><span class="nv">on</span><span class="w"> </span><span class="nv">every</span><span class="w"> </span><span class="nv">render</span>.<span class="w"> </span><span class="nv">In</span><span class="w"> </span><span class="nv">this</span><span class="w"> </span><span class="nv">case</span>,<span class="w"> </span><span class="nv">the</span><span class="w"> </span><span class="nv">state</span><span class="w"> </span><span class="nv">update</span><span class="w"> </span><span class="nv">is</span><span class="w"> </span><span class="nv">directly</span><span class="w"> </span><span class="nv">in</span><span class="w"> </span><span class="nv">the</span><span class="w"> </span><span class="nv">render</span><span class="w"> </span><span class="nv">function</span>.
+</code></pre></div>
+
+<p><strong>Network Tab Analysis</strong>:
+- <strong>Request pattern</strong>: An endless waterfall of requests to <code>/api/user/1</code>. Thousands of identical requests are fired.
+- <strong>Timing</strong>: Each request is initiated before the previous one can even complete.
+- <strong>Status</strong>: The requests might be <code>(pending)</code> or eventually get canceled by the browser as it struggles to keep up.</p>
+<p><strong>React DevTools Evidence</strong>:
+- <strong>Render count</strong>: The Profiler would show <code>UserDashboard</code> re-rendering thousands of times per second.
+- <strong>Highlighted updates</strong>: The <code>UserDashboard</code> component would be flashing continuously, indicating constant updates.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: The application freezes.</p>
+<ul>
+<li><strong>Expected</strong>: The component should render, fetch data once, and then display it.</li>
+<li><strong>Actual</strong>: The component enters an infinite loop of rendering and fetching.</li>
+</ul>
+</li>
+<li>
+<p><strong>What the console reveals</strong>: The <code>console.log</code> fires endlessly, and React issues a "Maximum update depth exceeded" warning.</p>
+<ul>
+<li><strong>Key indicator</strong>: The error message explicitly tells us we're causing an infinite loop by updating state during a render.</li>
+<li><strong>Error location</strong>: The problem is the state update (<code>setUser</code>) being called as a direct result of rendering.</li>
+</ul>
+</li>
+<li>
+<p><strong>What DevTools shows</strong>: The Network tab confirms we are DDOSing our own API. The Profiler confirms the component is re-rendering uncontrollably.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: Calling <code>setUser</code> inside the component body triggers a re-render, which causes the fetch to run again, which calls <code>setUser</code> again, creating an infinite loop.</p>
+</li>
+<li>
+<p><strong>Why the current approach can't solve this</strong>: Component bodies must be pure. They are for <em>describing</em> the UI, not for <em>causing</em> side effects. Any state update within the render function will, by definition, cause another render.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: We need a way to tell React: "Run this piece of code <em>after</em> you have rendered the component, and please, only run it once (or when specific things change)." We need an "escape hatch" from the pure rendering world to the messy world of side effects.</p>
+</li>
+</ol>
+<h3 id="the-solution-useeffect">The Solution: <code>useEffect</code></h3>
+<p>This is precisely the problem the <code>useEffect</code> Hook was designed to solve. It provides a dedicated place for side effects, separating them from the rendering logic.</p>
+<p>The basic syntax is:
+<code>useEffect(setup, dependencies?)</code></p>
+<ul>
+<li><code>setup</code>: A function containing the side effect logic (e.g., our <code>fetch</code> call).</li>
+<li><code>dependencies</code> (optional): An array of values. React will only re-run the <code>setup</code> function if any of these values have changed since the last render.</li>
+</ul>
+<p>Let's fix our component.</p>
+<p><strong>After (Iteration 1)</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserDashboard.tsx (Version 1 - Corrected)</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span><span class="w"> </span><span class="c1">// Import useEffect</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserDashboard</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Rendering dashboard for user: </span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// The side effect is now safely inside useEffect</span>
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Effect is running for user:&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">userId</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/user/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">res</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">data</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">      </span><span class="p">});</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// ← The empty dependency array is CRITICAL</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="nx">data</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Email</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification">Verification</h3>
+<p>Let's run the updated code.</p>
+<p><strong>Browser Behavior</strong>:
+The component displays "Loading user data..." for about 1.5 seconds (our simulated delay), and then correctly displays the user's name and email. The application is stable and responsive.</p>
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">Rendering</span><span class="w"> </span><span class="nv">dashboard</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">user</span>:<span class="w"> </span><span class="mi">1</span>
+<span class="nv">Effect</span><span class="w"> </span><span class="nv">is</span><span class="w"> </span><span class="nv">running</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">user</span>:<span class="w"> </span><span class="mi">1</span>
+<span class="nv">Rendering</span><span class="w"> </span><span class="nv">dashboard</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">user</span>:<span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+
+<p><strong>Network Tab Analysis</strong>:
+- <strong>Request pattern</strong>: A single request is made to <code>/api/user/1</code>.
+- <strong>Status</strong>: The request completes with a <code>200 OK</code> status.</p>
+<p><strong>Let's parse this improvement</strong>:</p>
+<ol>
+<li><strong>The Render Log</strong>: The component renders once initially (<code>user</code> is <code>null</code>).</li>
+<li><strong>The Effect Log</strong>: After the initial render, React runs our effect. The <code>fetch</code> is initiated.</li>
+<li><strong>The State Update</strong>: When the <code>fetch</code> completes, <code>setUser</code> is called.</li>
+<li><strong>The Final Render</strong>: The state update triggers a final re-render. This time, <code>user</code> has data, so the user information is displayed.</li>
+</ol>
+<p>The empty dependency array <code>[]</code> tells React: "This effect does not depend on any props or state, so you only ever need to run it <strong>once</strong>, right after the initial render." This breaks the infinite loop and is the correct way to fetch data on component mount.</p>
+<p>However, our component is still very naive. It doesn't handle loading or error states properly, and it doesn't react to changes in its <code>userId</code> prop. We'll tackle these next.</p>
+<h2 id="fetching-data-the-naive-way">Fetching data (the naïve way)</h2>
+<h2 id="handling-real-world-network-conditions">Handling Real-World Network Conditions</h2>
+<p>Our <code>UserDashboard</code> from the previous section works, but only under ideal conditions. It assumes the network is instantaneous and infallible. In the real world, this is never the case.</p>
+<h3 id="iteration-1-adding-loading-and-error-states">Iteration 1: Adding Loading and Error States</h3>
+<p><strong>Current state recap</strong>: Our component fetches data once on mount using <code>useEffect</code>.</p>
+<p><strong>Current limitation</strong>:
+1.  <strong>No Loading State</strong>: While the 1.5-second API call is in progress, our UI shows a generic "Loading user data..." message. This is better than a blank screen, but we can be more explicit. What if different parts of the component needed to know about the loading status? A dedicated <code>isLoading</code> state is much cleaner.
+2.  <strong>No Error Handling</strong>: What happens if the <code>userId</code> is invalid and our API returns a 404 error? Or if the network fails entirely? Our component will crash or hang forever.</p>
+<p><strong>New Scenario Introduction</strong>:
+1.  We'll use the existing 1.5-second delay to properly test our loading state.
+2.  We'll add a button to the parent <code>page.tsx</code> to request a user that doesn't exist (e.g., <code>userId="3"</code>), forcing our API to return a 404.</p>
+<p>First, let's add the button to trigger an error.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/page.tsx (Updated)</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">UserDashboard</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;./components/UserDashboard&#39;</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Home</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">,</span><span class="w"> </span><span class="nx">setUserId</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">main</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;2rem&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span><span class="nx">User</span><span class="w"> </span><span class="nx">Dashboard</span><span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">marginBottom</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1rem&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setUserId</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">)}&gt;</span><span class="nx">Load</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="mf">1</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setUserId</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">)}&gt;</span><span class="nx">Load</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="mf">2</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">        </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setUserId</span><span class="p">(</span><span class="s1">&#39;3&#39;</span><span class="p">)}&gt;</span><span class="nx">Load</span><span class="w"> </span><span class="nx">Invalid</span><span class="w"> </span><span class="nx">User</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span><span class="cm">/* ← Add this */</span><span class="p">}</span>
+<span class="w">      </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">UserDashboard</span><span class="w"> </span><span class="na">userId</span><span class="o">=</span><span class="p">{</span><span class="nx">userId</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">main</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, let's see how our current <code>UserDashboard</code> fails when we click "Load Invalid User".</p>
+<h3 id="failure-demonstration">Failure Demonstration</h3>
+<p>When you click the "Load Invalid User" button, nothing happens in the UI. The "Loading user data..." message stays on the screen forever. (Note: We'll fix the "not re-fetching" bug in the next section. For now, refresh the page with the invalid user selected to see the error handling failure).</p>
+<h3 id="diagnostic-analysis-reading-the-failure_1">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+The component remains stuck in the "Loading user data..." state indefinitely.</p>
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code>Uncaught (in promise) SyntaxError: Unexpected token &#39;U&#39;, &quot;User not found&quot; is not valid JSON
+</code></pre></div>
+
+<p><strong>Network Tab Analysis</strong>:
+- <strong>Request</strong>: A request is made to <code>/api/user/3</code>.
+- <strong>Response</strong>: The server correctly responds with a <code>404 Not Found</code> status code.
+- <strong>Response Body</strong>: The body is plain text: <code>User not found</code>.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: The application hangs in a loading state with no feedback.</p>
+<ul>
+<li><strong>Expected</strong>: The application should show an error message explaining that the user could not be found.</li>
+<li><strong>Actual</strong>: The application provides no feedback and appears broken.</li>
+</ul>
+</li>
+<li>
+<p><strong>What the console reveals</strong>: A <code>SyntaxError</code>. This is a huge clue. Our code tries to parse the response as JSON using <code>res.json()</code>. But when the server sends a 404, the response body is plain text (<code>"User not found"</code>), which is not valid JSON. The <code>json()</code> method throws an error, which we are not catching.</p>
+</li>
+<li>
+<p><strong>What DevTools shows</strong>: The Network tab confirms we received a <code>404</code> status, which our code is not checking.</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: Our <code>fetch</code> logic blindly assumes every response will be successful (<code>200 OK</code>) and contain valid JSON. It doesn't handle non-200 status codes or non-JSON responses.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: A more robust data fetching pattern that explicitly manages three distinct states: <code>loading</code>, <code>success (with data)</code>, and <code>error</code>.</p>
+</li>
+</ol>
+<h3 id="the-solution-the-isloading-data-error-state-pattern">The Solution: The <code>isLoading</code>, <code>data</code>, <code>error</code> State Pattern</h3>
+<p>This is a fundamental pattern in any application that fetches data. Instead of one state for <code>user</code>, we'll use three:</p>
+<ul>
+<li><code>data</code>: Stores the successful response.</li>
+<li><code>isLoading</code>: A boolean that is <code>true</code> while the request is in flight.</li>
+<li><code>error</code>: Stores any error that occurs during the fetch.</li>
+</ul>
+<p>Let's refactor <code>UserDashboard</code> to use this pattern.</p>
+<p><strong>Before</strong> (Iteration 1):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserDashboard.tsx (Version 1)</span>
+<span class="kd">function</span><span class="w"> </span><span class="nx">UserDashboard</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/user/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">res</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">data</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">      </span><span class="p">});</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="nx">data</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong> (Iteration 2):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserDashboard.tsx (Version 2 - Robust States)</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserDashboard</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// 1. Use the three-state pattern</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">setIsLoading</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="nx">setError</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">string</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 2. Use async/await for cleaner logic</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">fetchData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// 3. Reset state on new fetch</span>
+<span class="w">      </span><span class="nx">setIsLoading</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">setError</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">      </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/user/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// 4. Check for non-successful responses</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">response</span><span class="p">.</span><span class="nx">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="sb">`HTTP error! status: </span><span class="si">${</span><span class="nx">response</span><span class="p">.</span><span class="nx">status</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">response</span><span class="p">.</span><span class="nx">json</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 5. Catch any errors (network, parsing, etc.)</span>
+<span class="w">        </span><span class="nx">setError</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">message</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s2">&quot;Failed to fetch user data:&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">e</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">finally</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 6. Always stop loading</span>
+<span class="w">        </span><span class="nx">setIsLoading</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="nx">fetchData</span><span class="p">();</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// Note: This dependency array is still wrong! We&#39;ll fix it next.</span>
+
+<span class="w">  </span><span class="c1">// 7. Render based on the three states</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">isLoading</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;</span><span class="ne">Error</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">error</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">No</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="nx">found</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Email</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification_1">Verification</h3>
+<p>Let's test our three scenarios now:</p>
+<ol>
+<li><strong>Loading User 1 (Success)</strong>: The UI shows "Loading..." for 1.5 seconds, then displays Alice's data. The console is clean.</li>
+<li><strong>Loading Invalid User (Error)</strong>: The UI shows "Loading..." for 1.5 seconds, then displays "Error: HTTP error! status: 404". The component has handled the error gracefully instead of crashing.</li>
+<li><strong>Switching Users</strong>: When we click "Load User 2", nothing happens. The component still shows User 1's data. This is the next problem we need to solve.</li>
+</ol>
+<p>Our component is now robust against network failures, but it's not yet dynamic. It doesn't react to changes in its props.</p>
+<h2 id="cleanup-and-dependencies">Cleanup and dependencies</h2>
+<h2 id="reacting-to-change-and-preventing-race-conditions">Reacting to Change and Preventing Race Conditions</h2>
+<p>Our component is now robust, but it's static. It fetches data once when it mounts and then never again. This is because we provided an empty dependency array <code>[]</code> to <code>useEffect</code>, telling React to run the effect only once.</p>
+<h3 id="iteration-2-making-the-effect-dynamic-with-dependencies">Iteration 2: Making the Effect Dynamic with Dependencies</h3>
+<p><strong>Current state recap</strong>: Our component handles loading and error states but only fetches data for the initial <code>userId</code> prop.</p>
+<p><strong>Current limitation</strong>: When the <code>userId</code> prop changes, the component re-renders with the new prop, but the <code>useEffect</code> does not run again, so no new data is fetched. The UI shows stale data.</p>
+<p><strong>New Scenario Introduction</strong>: We already have the UI for this. In our <code>page.tsx</code>, we have buttons to switch between "User 1", "User 2", and "Invalid User".</p>
+<h3 id="failure-demonstration_1">Failure Demonstration</h3>
+<ol>
+<li>Load the page. It correctly fetches and displays User 1's data.</li>
+<li>Click the "Load User 2" button.</li>
+<li><strong>Observe</strong>: The UI does not change. It continues to show User 1's data.</li>
+</ol>
+<h3 id="diagnostic-analysis-reading-the-failure_2">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Browser Behavior</strong>:
+The UI displays stale data, not reflecting the application's current state.</p>
+<p><strong>Browser Console Output</strong>:
+When switching users, you might see the <code>console.log</code> from the render body of the parent component, but you will <em>not</em> see any logs from inside our <code>useEffect</code>. This is the smoking gun.</p>
+<p><strong>React DevTools Evidence</strong>:
+- <strong>Components Tab</strong>: If you inspect <code>UserDashboard</code>, you will see its <code>userId</code> prop has correctly updated to <code>"2"</code>.
+- <strong>State</strong>: However, its internal <code>user</code> state will still hold the data for User 1.
+- <strong>Conclusion</strong>: The component knows it <em>should</em> be showing a different user, but its data-fetching effect never ran again to get the new data.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: Clicking a button does nothing. The app feels broken.</p>
+<ul>
+<li><strong>Expected</strong>: Clicking "Load User 2" should trigger a new data fetch and display Bob's information.</li>
+<li><strong>Actual</strong>: The UI remains unchanged.</li>
+</ul>
+</li>
+<li>
+<p><strong>What the console reveals</strong>: The absence of logs from <code>useEffect</code> proves it is not re-running.</p>
+</li>
+<li>
+<p><strong>What DevTools shows</strong>: A mismatch between incoming props (<code>userId: "2"</code>) and internal state (<code>user: {id: "1", ...}</code>).</p>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: The empty dependency array <code>[]</code> explicitly tells React to ignore all changes to props and state and only run the effect once.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: We need to tell React: "Please re-run this effect whenever the <code>userId</code> prop changes."</p>
+</li>
+</ol>
+<h3 id="the-solution-the-dependency-array">The Solution: The Dependency Array</h3>
+<p>This is the entire purpose of the <code>useEffect</code> dependency array. You list all the values from the component scope (props, state, etc.) that the effect depends on.</p>
+<p><strong>Before</strong>:
+<code>useEffect(..., []);</code> // Runs once</p>
+<p><strong>After</strong>:
+<code>useEffect(..., [userId]);</code> // Runs once on mount, AND anytime <code>userId</code> changes.</p>
+<p>Let's apply this simple but powerful fix.</p>
+<p><strong>After (Iteration 3)</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserDashboard.tsx (Version 3 - With Dependencies)</span>
+
+<span class="c1">// ... imports and type definition ...</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserDashboard</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">setIsLoading</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="nx">setError</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">string</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">fetchData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">setIsLoading</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">setError</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">      </span><span class="c1">// We don&#39;t need to reset the user data, as the loading state will hide it</span>
+
+<span class="w">      </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/user/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">response</span><span class="p">.</span><span class="nx">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="sb">`HTTP error! status: </span><span class="si">${</span><span class="nx">response</span><span class="p">.</span><span class="nx">status</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">response</span><span class="p">.</span><span class="nx">json</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setError</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">message</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span><span class="w"> </span><span class="c1">// Clear old user data on error</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">finally</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setIsLoading</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="nx">fetchData</span><span class="p">();</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span><span class="w"> </span><span class="c1">// ← THE FIX: Add userId to the dependency array</span>
+
+<span class="w">  </span><span class="c1">// ... render logic is the same ...</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">isLoading</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;</span><span class="ne">Error</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">error</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">No</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="nx">found</span><span class="p">.&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Email</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification_2">Verification</h3>
+<p>Now, when you click "Load User 2", you'll see the "Loading..." message appear, a new network request for <code>/api/user/2</code> will be sent, and then Bob's data will be displayed. It works!</p>
+<p>But we've just introduced a new, more subtle bug: a <strong>race condition</strong>.</p>
+<h3 id="the-race-condition-problem">The Race Condition Problem</h3>
+<p>What happens if the user clicks buttons very quickly?
+1.  Click "Load User 2" (this API call takes 1.5s).
+2.  Immediately (e.g., 100ms later), click "Load User 1" (this also takes 1.5s).</p>
+<p><strong>The sequence of events:</strong>
+-   <code>t=0ms</code>: Request for User 2 is sent.
+-   <code>t=100ms</code>: Request for User 1 is sent.
+-   <code>t=1500ms</code>: Response for User 2 arrives. <code>setUser</code> is called with Bob's data. The UI briefly shows "Bob".
+-   <code>t=1600ms</code>: Response for User 1 arrives. <code>setUser</code> is called with Alice's data. The UI now shows "Alice".</p>
+<p>The user clicked User 2 then User 1, and the final state is User 1. This seems correct. But what if the network is unpredictable?</p>
+<p><strong>New Scenario: Unpredictable Network Delay</strong>
+Let's modify our API to have a variable delay.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/app/api/user/[userId]/route.ts (Updated)</span>
+
+<span class="c1">// ...</span>
+<span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">GET</span><span class="p">(</span>
+<span class="w">  </span><span class="nx">request</span><span class="o">:</span><span class="w"> </span><span class="kt">Request</span><span class="p">,</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">params</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">params</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// User 1 is slow, User 2 is fast</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">delay</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">params</span><span class="p">.</span><span class="nx">userId</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;1&#39;</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">2000</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="kt">500</span><span class="p">;</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Promise</span><span class="p">(</span><span class="nx">res</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setTimeout</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span><span class="w"> </span><span class="nx">delay</span><span class="p">));</span>
+
+<span class="w">  </span><span class="c1">// ... rest of the function is the same</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">users</span><span class="p">.</span><span class="nx">find</span><span class="p">(</span><span class="nx">u</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">u</span><span class="p">.</span><span class="nx">id</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="nx">params</span><span class="p">.</span><span class="nx">userId</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now, let's repeat the quick-click experiment:
+1.  Click "Load User 1" (the slow 2s request).
+2.  Immediately click "Load User 2" (the fast 500ms request).</p>
+<h3 id="failure-demonstration_2">Failure Demonstration</h3>
+<p><strong>Browser Behavior</strong>:
+The UI shows "Loading...". After about 500ms, it correctly displays "Bob". But then, about 1.5 seconds later, it suddenly flips back to showing "Alice"! The final state is incorrect. The UI reflects the data from the <em>first</em> request, not the <em>last</em> one.</p>
+<h3 id="diagnostic-analysis-reading-the-failure_3">Diagnostic Analysis: Reading the Failure</h3>
+<p><strong>Network Tab Analysis</strong>:
+- <code>t=0ms</code>: Request for <code>/api/user/1</code> is sent.
+- <code>t=100ms</code>: Request for <code>/api/user/2</code> is sent.
+- <code>t=600ms</code>: Response for <code>/api/user/2</code> arrives. <code>setUser</code> is called with Bob's data.
+- <code>t=2000ms</code>: Response for <code>/api/user/1</code> arrives. <code>setUser</code> is called with Alice's data.</p>
+<p><strong>Let's parse this evidence</strong>:</p>
+<ol>
+<li>
+<p><strong>What the user experiences</strong>: The UI flickers and settles on stale, incorrect data.</p>
+<ul>
+<li><strong>Expected</strong>: The UI should show the data corresponding to the last button clicked (User 2).</li>
+<li><strong>Actual</strong>: The UI shows the data from an older, slower request that resolved later.</li>
+</ul>
+</li>
+<li>
+<p><strong>Root cause identified</strong>: Our effect fires for User 2, but it doesn't "cancel" the in-flight request for User 1. Both <code>fetch</code> promises are trying to update the same state, and the last one to finish wins, regardless of which one was initiated last.</p>
+</li>
+<li>
+<p><strong>What we need</strong>: When we start a new request, we need a way to tell the <em>previous</em>, now-obsolete request to ignore its result.</p>
+</li>
+</ol>
+<h3 id="the-solution-the-useeffect-cleanup-function">The Solution: The <code>useEffect</code> Cleanup Function</h3>
+<p><code>useEffect</code> can optionally return a function. This is called the <strong>cleanup function</strong>. React will run this function in two situations:
+1.  When the component is unmounted.
+2.  <strong>Before re-running the effect due to a dependency change.</strong></p>
+<p>This second point is exactly what we need. Before running the effect for <code>userId=2</code>, React will run the cleanup function from the <code>userId=1</code> effect.</p>
+<p>We can use a web standard called <code>AbortController</code> to cancel <code>fetch</code> requests.</p>
+<p><strong>After (Iteration 4 - Production Ready)</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserDashboard.tsx (Version 4 - With Cleanup)</span>
+
+<span class="c1">// ... imports and type definition ...</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserDashboard</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">setIsLoading</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="nx">setError</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">string</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 1. Create an AbortController for this specific effect run</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">controller</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">AbortController</span><span class="p">();</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">fetchData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">setIsLoading</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">setError</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">      </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 2. Pass the controller&#39;s signal to fetch</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/user/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span>
+<span class="w">          </span><span class="nx">signal</span><span class="o">:</span><span class="w"> </span><span class="kt">controller.signal</span><span class="w"> </span>
+<span class="w">        </span><span class="p">});</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">response</span><span class="p">.</span><span class="nx">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="sb">`HTTP error! status: </span><span class="si">${</span><span class="nx">response</span><span class="p">.</span><span class="nx">status</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">response</span><span class="p">.</span><span class="nx">json</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 3. Ignore abort errors, which are expected</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">name</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;AbortError&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Fetch aborted&#39;</span><span class="p">);</span>
+<span class="w">          </span><span class="k">return</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="nx">setError</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">message</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">finally</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">setIsLoading</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="nx">fetchData</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// 4. Return the cleanup function</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// This will be called when userId changes, before the next effect runs</span>
+<span class="w">      </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Cleaning up effect for user: </span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">controller</span><span class="p">.</span><span class="nx">abort</span><span class="p">();</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="c1">// ... render logic is the same ...</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">isLoading</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="p">...&lt;/</span><span class="nt">p</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="verification_3">Verification</h3>
+<p>Repeat the quick-click test:
+1.  Click "Load User 1" (slow request).
+2.  Quickly click "Load User 2" (fast request).</p>
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">Cleaning</span><span class="w"> </span><span class="nv">up</span><span class="w"> </span><span class="nv">effect</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nv">user</span>:<span class="w"> </span><span class="mi">1</span>
+<span class="nv">Fetch</span><span class="w"> </span><span class="nv">aborted</span>
+</code></pre></div>
+
+<p><strong>Browser Behavior</strong>:
+The UI shows "Loading...", then correctly displays "Bob" and stays that way. The stale data from the User 1 request never appears.</p>
+<p><strong>Network Tab Analysis</strong>:
+You will see the request for <code>/api/user/1</code> is now marked as <code>(canceled)</code>. Our cleanup function successfully aborted the obsolete request, preventing the race condition. Our component is now both dynamic and safe.</p>
+<h2 id="common-pitfalls-and-how-to-avoid-them">Common pitfalls and how to avoid them</h2>
+<h2 id="mastering-useeffect-a-catalog-of-failures">Mastering <code>useEffect</code>: A Catalog of Failures</h2>
+<p><code>useEffect</code> is one of the most powerful Hooks in React, but also one of the easiest to misuse. Understanding its common failure modes is key to using it effectively.</p>
+<h3 id="common-failure-modes-and-their-signatures">Common Failure Modes and Their Signatures</h3>
+<h4 id="symptom-the-infinite-loop">Symptom: The Infinite Loop</h4>
+<p>You already saw this in its most blatant form, but it can be more subtle.</p>
+<p><strong>Browser behavior</strong>:
+The page freezes or becomes extremely sluggish. Network requests fire continuously.</p>
+<p><strong>Console pattern</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">Warning</span><span class="o">:</span><span class="w"> </span><span class="n">Maximum</span><span class="w"> </span><span class="n">update</span><span class="w"> </span><span class="n">depth</span><span class="w"> </span><span class="n">exceeded</span><span class="o">.</span><span class="w"> </span><span class="n">This</span><span class="w"> </span><span class="n">can</span><span class="w"> </span><span class="n">happen</span><span class="w"> </span><span class="n">when</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">component</span><span class="w"> </span><span class="n">calls</span><span class="w"> </span><span class="n">setState</span><span class="w"> </span><span class="n">inside</span><span class="w"> </span><span class="n">useEffect</span><span class="o">,</span><span class="w"> </span><span class="n">but</span><span class="w"> </span><span class="n">useEffect</span><span class="w"> </span><span class="n">either</span><span class="w"> </span><span class="n">has</span><span class="w"> </span><span class="n">no</span><span class="w"> </span><span class="n">dependency</span><span class="w"> </span><span class="n">array</span><span class="o">,</span><span class="w"> </span><span class="n">or</span><span class="w"> </span><span class="n">one</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">changes</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="n">every</span><span class="w"> </span><span class="n">render</span><span class="o">.</span>
+</code></pre></div>
+
+<p>Or, you'll see <code>console.log</code> messages from your effect firing endlessly.</p>
+<p><strong>DevTools clues</strong>:
+- <strong>Network Tab</strong>: A waterfall of identical requests.
+- <strong>Profiler</strong>: The component re-renders thousands of times.</p>
+<p><strong>Root cause</strong>: The dependency array contains a value that is being re-created on every single render. The most common culprits are objects or functions defined inside the component body.</p>
+<p><strong>Example of the failure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">SearchComponent</span><span class="p">({</span><span class="w"> </span><span class="nx">query</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">query</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">results</span><span class="p">,</span><span class="w"> </span><span class="nx">setResults</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">([]);</span>
+
+<span class="w">  </span><span class="c1">// BAD: options object is new on every render</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="sb">`/api/search?q=</span><span class="si">${</span><span class="nx">query</span><span class="si">}</span><span class="sb">`</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">method</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;GET&#39;</span>
+<span class="w">  </span><span class="p">};</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// This effect runs on every render because `options` is always a new object</span>
+<span class="w">    </span><span class="nx">fetch</span><span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">url</span><span class="p">).</span><span class="nx">then</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">);</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">options</span><span class="p">]);</span><span class="w"> </span><span class="c1">// React sees a new object here every time</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;...&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Solution</strong>:
+1.  <strong>Primitive Dependencies</strong>: If possible, only include primitive values (strings, numbers, booleans) in the dependency array.
+    <code>tsx
+    useEffect(() =&gt; {
+      const url = `/api/search?q=${query}`;
+      fetch(url).then(/* ... */);
+    }, [query]); // GOOD: `query` is a stable primitive</code>
+2.  <strong>Memoize with <code>useMemo</code> or <code>useCallback</code></strong>: If you must depend on an object or function, wrap its creation in <code>useMemo</code> or <code>useCallback</code> to ensure it has a stable reference across re-renders. (These hooks are covered in Chapter 7).</p>
+<hr />
+<h4 id="symptom-stale-state-in-closures">Symptom: Stale State in Closures</h4>
+<p><strong>Browser behavior</strong>:
+An event listener or timeout set up in <code>useEffect</code> seems to use an old value of some state. For example, a button click handler inside an effect always shows the initial <code>count</code> as 0, even after the count has been updated.</p>
+<p><strong>Console pattern</strong>:
+No errors are thrown. <code>console.log</code> statements will reveal that the state variable inside the effect's callback is "stuck" on an old value.</p>
+<p><strong>DevTools clues</strong>:
+- The component's state in the DevTools is up-to-date.
+- The behavior in the UI does not match the state shown in DevTools.</p>
+<p><strong>Root cause</strong>: The <code>useEffect</code> ran only once on mount, creating a closure over the state as it existed during that initial render. Because the state variable was not included in the dependency array, the effect never re-ran to "see" the new state value.</p>
+<p><strong>Example of the failure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span><span class="w"> </span><span class="nx">Ticker</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// This effect runs only once.</span>
+<span class="w">    </span><span class="c1">// The `logCount` function closes over `count` when it was 0.</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">logCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`The count is: </span><span class="si">${</span><span class="nx">count</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span><span class="w"> </span><span class="c1">// Always logs 0</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;logButton&#39;</span><span class="p">)</span><span class="o">?</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s1">&#39;click&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">logCount</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;logButton&#39;</span><span class="p">)</span><span class="o">?</span><span class="p">.</span><span class="nx">removeEventListener</span><span class="p">(</span><span class="s1">&#39;click&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">logCount</span><span class="p">);</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span><span class="w"> </span><span class="c1">// BAD: Missing `count` dependency</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">Count</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setCount</span><span class="p">(</span><span class="nx">c</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">c</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1</span><span class="p">)}&gt;</span><span class="nx">Increment</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;logButton&quot;</span><span class="p">&gt;</span><span class="nx">Log</span><span class="w"> </span><span class="nx">Count</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Solution</strong>:
+1.  <strong>Add the Dependency</strong>: The correct fix is usually to add the state variable to the dependency array. This ensures the effect re-runs, removing the old event listener and adding a new one with a closure over the new state.
+    <code>tsx
+    useEffect(() =&gt; {
+      // ...
+    }, [count]); // GOOD: Effect re-subscribes when count changes</code>
+2.  <strong>Use a Ref</strong>: If re-running the effect is too expensive, you can store the value in a ref, which is stable across renders. This is an advanced pattern.
+3.  <strong>Functional State Updates</strong>: If the effect only needs to <em>update</em> state based on the previous state, you can use the functional update form of <code>setState</code> which doesn't require the state variable in the dependency array.</p>
+<hr />
+<h3 id="debugging-workflow-when-your-useeffect-fails">Debugging Workflow: When Your <code>useEffect</code> Fails</h3>
+<p>When a component with <code>useEffect</code> misbehaves, follow this systematic process.</p>
+<p><strong>Step 1: Observe the user experience</strong>
+-   Is the data stale? (Likely a dependency array issue).
+-   Is the app frozen? (Likely an infinite loop).
+-   Is the UI flickering between old and new data? (Likely a race condition).</p>
+<p><strong>Step 2: Check the console for React warnings</strong>
+-   React is excellent at detecting missing dependencies. Look for warnings like:
+    <code>React Hook useEffect has a missing dependency: 'userId'. Either include it or remove the dependency array.</code>
+-   Always trust these warnings. The ESLint plugin <code>eslint-plugin-react-hooks</code> is essential for catching these automatically.</p>
+<p><strong>Step 3: Add strategic <code>console.log</code> statements</strong>
+-   Log inside the component body to see when it renders.
+-   Log inside the <code>useEffect</code> setup function to see when the effect runs.
+-   Log inside the <code>useEffect</code> cleanup function to see when the effect is cleaned up.
+    <code>tsx
+    console.log('Component rendering...');
+    useEffect(() =&gt; {
+      console.log('Effect running.');
+      return () =&gt; {
+        console.log('Effect cleaning up.');
+      };
+    }, [dep]);</code>
+-   This trio of logs will give you a perfect trace of the component's lifecycle.</p>
+<p><strong>Step 4: Analyze network activity</strong>
+-   Use the Network tab to check for unexpected requests.
+-   Too many requests? Infinite loop.
+-   No requests when props change? Missing dependency.
+-   Overlapping requests where old ones are not canceled? Missing cleanup.</p>
+<p><strong>Step 5: Inspect with React DevTools</strong>
+-   Check if the props passed to your component are what you expect.
+-   Check if the component's internal state is updating correctly.
+-   Use the Profiler to confirm if a component is re-rendering unexpectedly.</p>
+<p>By combining these steps, you can systematically diagnose and fix almost any <code>useEffect</code> issue.</p>
+<h3 id="the-journey-from-problem-to-solution">The Journey: From Problem to Solution</h3>
+<p>Let's synthesize the evolution of our <code>UserDashboard</code> component.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Iteration</th>
+<th style="text-align: left;">Failure Mode</th>
+<th style="text-align: left;">Technique Applied</th>
+<th style="text-align: left;">Result</th>
+<th style="text-align: left;">Key Takeaway</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">Infinite loop, browser crash</td>
+<td style="text-align: left;">None (fetch in render body)</td>
+<td style="text-align: left;">Unusable application</td>
+<td style="text-align: left;">Side effects must be outside of render.</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">No loading/error UI, crashes on failure</td>
+<td style="text-align: left;"><code>useEffect</code> with <code>[]</code></td>
+<td style="text-align: left;">Works only for success cases</td>
+<td style="text-align: left;"><code>useEffect</code> isolates side effects.</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Stale data when props change</td>
+<td style="text-align: left;"><code>isLoading</code>, <code>error</code> states, <code>try/catch</code></td>
+<td style="text-align: left;">Robust but static UI</td>
+<td style="text-align: left;">Model async operations with 3 states.</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">Race condition on rapid prop changes</td>
+<td style="text-align: left;">Dependency array <code>[userId]</code></td>
+<td style="text-align: left;">Dynamic UI, but unsafe</td>
+<td style="text-align: left;">The dependency array makes effects reactive.</td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;"><strong>(None)</strong></td>
+<td style="text-align: left;"><code>useEffect</code> cleanup with <code>AbortController</code></td>
+<td style="text-align: left;"><strong>Production-ready, safe, and dynamic</strong></td>
+<td style="text-align: left;">Cleanup functions prevent race conditions.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="final-implementation">Final Implementation</h3>
+<p>This is the complete, production-ready version of our <code>UserDashboard</code> component, incorporating all the lessons learned.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserDashboard.tsx (Version 4 - Final)</span>
+
+<span class="s2">&quot;use client&quot;</span><span class="p">;</span>
+
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">useState</span><span class="p">,</span><span class="w"> </span><span class="nx">useEffect</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;react&#39;</span><span class="p">;</span>
+
+<span class="kr">type</span><span class="w"> </span><span class="nx">User</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">email</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserDashboard</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userId</span><span class="o">:</span><span class="kt">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">isLoading</span><span class="p">,</span><span class="w"> </span><span class="nx">setIsLoading</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">error</span><span class="p">,</span><span class="w"> </span><span class="nx">setError</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">string</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">controller</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">AbortController</span><span class="p">();</span>
+
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">fetchData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">setIsLoading</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">setError</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">      </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/user/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span>
+<span class="w">          </span><span class="nx">signal</span><span class="o">:</span><span class="w"> </span><span class="kt">controller.signal</span><span class="w"> </span>
+<span class="w">        </span><span class="p">});</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">response</span><span class="p">.</span><span class="nx">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="c1">// This will be caught by the catch block</span>
+<span class="w">          </span><span class="k">throw</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="ne">Error</span><span class="p">(</span><span class="sb">`Failed to fetch: </span><span class="si">${</span><span class="nx">response</span><span class="p">.</span><span class="nx">status</span><span class="si">}</span><span class="sb"> </span><span class="si">${</span><span class="nx">response</span><span class="p">.</span><span class="nx">statusText</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">response</span><span class="p">.</span><span class="nx">json</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">name</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">&#39;AbortError&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Fetch aborted for previous user.&#39;</span><span class="p">);</span>
+<span class="w">          </span><span class="k">return</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="nx">setError</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">message</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">finally</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// This check prevents a race condition where a fast-resolving</span>
+<span class="w">        </span><span class="c1">// request could set isLoading to false after a new request has started.</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">controller</span><span class="p">.</span><span class="nx">signal</span><span class="p">.</span><span class="nx">aborted</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nx">setIsLoading</span><span class="p">(</span><span class="kc">false</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="nx">fetchData</span><span class="p">();</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">controller</span><span class="p">.</span><span class="nx">abort</span><span class="p">();</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">isLoading</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">Loading</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="nx">profile</span><span class="p">...&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">color</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;red&#39;</span><span class="w"> </span><span class="p">}}&gt;</span><span class="ne">Error</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="nx">error</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">No</span><span class="w"> </span><span class="nx">user</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="nx">available</span><span class="p">.&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">style</span><span class="o">=</span><span class="p">{{</span><span class="w"> </span><span class="nx">border</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1px solid #ccc&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">padding</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;1rem&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">borderRadius</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;8px&#39;</span><span class="w"> </span><span class="p">}}&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;&lt;</span><span class="nt">strong</span><span class="p">&gt;</span><span class="nx">Email</span><span class="o">:</span><span class="p">&lt;/</span><span class="nt">strong</span><span class="p">&gt;</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="lessons-learned">Lessons Learned</h3>
+<ul>
+<li><strong>Purity is the Goal</strong>: Keep render logic pure. Use <code>useEffect</code> as a well-defined boundary for interactions with the outside world.</li>
+<li><strong>Model the Real World</strong>: Network requests aren't just about data. They involve loading and error states. Always model all three.</li>
+<li><strong>Dependencies Drive Reactivity</strong>: The dependency array is not an optimization; it is fundamental to how <code>useEffect</code> works. It's how you tell React <em>when</em> your effect should re-synchronize with the component's state.</li>
+<li><strong>Always Plan for Cleanup</strong>: If your effect starts something that needs to be stopped (a fetch, a subscription, a timer), you <em>must</em> return a cleanup function to prevent memory leaks and bugs.</li>
+</ul>
+<p>While this manual approach is powerful for learning, in large applications, you'll want to use a dedicated data-fetching library like TanStack Query (React Query) or SWR. These libraries handle caching, re-fetching, and race conditions for you, building on the same fundamental principles you've just mastered.</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-11-25 13:40:58 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>
