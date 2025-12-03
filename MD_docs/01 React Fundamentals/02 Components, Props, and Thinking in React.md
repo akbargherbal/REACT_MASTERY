@@ -2,603 +2,1232 @@
 
 ## Function components: the only kind that matters
 
-## The Building Block of React: The Component
+React components are JavaScript functions that return UI. That's it. No classes, no inheritance hierarchies, no lifecycle methods to memorize. A component is a function that takes data and returns what to display.
 
-Everything in a React application is a component. A button is a component. A form is a component. An entire page is a component. A component is a self-contained, reusable piece of UI. The core idea of React is to break down a complex user interface into a tree of these small, manageable components.
+Before we write any code, let's understand what problem components solve. Imagine building a user interface with plain HTML and JavaScript. You'd write the same markup patterns repeatedly—a user card here, a notification badge there, a button with an icon everywhere. Components let you define these patterns once and reuse them with different data.
 
-In modern React, a component is simply a JavaScript function.
+## The Anatomy of a Component
 
-That's it. It's a function that accepts some data as an argument and returns a description of what the UI should look like. This "description" is written in a syntax called JSX (JavaScript XML), which looks very much like HTML.
-
-Let's look at the simplest possible React component.
+A React component is a function that returns JSX—a syntax that looks like HTML but is actually JavaScript. Here's the simplest possible component:
 
 ```tsx
 // src/components/Welcome.tsx
-
 function Welcome() {
-  return <h1>Hello, world!</h1>;
+  return <h1>Hello, React!</h1>;
 }
 
 export default Welcome;
 ```
 
-This `Welcome` function is a valid React component. It takes no arguments and returns an `h1` element. The browser doesn't understand JSX directly; your build tool (like the one included in Next.js) transforms this HTML-like syntax into regular JavaScript that creates the corresponding DOM elements.
+Let's parse what's happening:
 
-### A Quick Note on History: Class Components
+1. **Function declaration**: `function Welcome()` - Just a regular JavaScript function
+2. **Return statement**: Returns JSX, which React converts to DOM elements
+3. **Export**: Makes the component available to other files
 
-If you look at older React tutorials or codebases, you might see components written as JavaScript classes:
+JSX looks like HTML, but it's syntactic sugar for `React.createElement()` calls. When you write `<h1>Hello, React!</h1>`, React transforms it into:
 
-```jsx
-// Old way: Class Component (for historical context only)
-import React from 'react';
-
-class Welcome extends React.Component {
-  render() {
-    return <h1>Hello, world!</h1>;
-  }
-}
+```javascript
+React.createElement('h1', null, 'Hello, React!')
 ```
 
-For many years, this was the standard way to write components, especially those that needed to manage state or lifecycle events. However, with the introduction of **Hooks** in React 16.8 (which we'll cover in detail in Chapter 3), function components became capable of everything class components could do, but with a much simpler and more direct syntax.
+You don't need to write `createElement` calls manually—that's what JSX does for you. But understanding this transformation helps when debugging.
 
-In this book, and in modern professional React development, **we will exclusively use function components**. They are simpler to write, easier to read, and the official recommendation from the React team for all new development. Understanding that class components exist is useful for historical context, but you do not need to learn how to write them.
+## Using Your Component
 
-## Your first useful component
-
-## Phase 1: Establish the Reference Implementation
-
-To learn how to "think in React," we need a concrete example to work with. Abstract concepts are hard to grasp, so we'll build a real UI element and improve it step-by-step throughout this chapter.
-
-Our anchor example will be a **`UserProfileCard`**. It's a common UI pattern that's simple enough to understand but complex enough to reveal the core principles of component design.
-
-Let's start with the most direct, naive implementation. We'll create a single component and hardcode all the information directly into it.
-
-**Project Structure**:
-```
-src/
-└── app/
-    └── page.tsx
-└── components/
-    └── UserProfileCard.tsx  ← We will create this file
-```
-
-Here is our first version, our reference implementation. It works, but as we'll soon see, it's deeply flawed.
+To use a component, import it and render it like an HTML tag:
 
 ```tsx
-// src/components/UserProfileCard.tsx
+// src/App.tsx
+import Welcome from './components/Welcome';
 
-export default function UserProfileCard() {
-  const userName = "Ada Lovelace";
-  const userHandle = "@ada";
-  const bio = "First computer programmer. Enchantress of Numbers.";
-  const avatarUrl = "https://i.imgur.com/Q9qg4MC.jpeg"; // A placeholder image
-
+function App() {
   return (
-    <div style={{ 
-      border: '1px solid #ccc', 
-      borderRadius: '8px', 
-      padding: '16px', 
-      maxWidth: '300px',
-      fontFamily: 'sans-serif'
-    }}>
-      <img 
-        src={avatarUrl} 
-        alt={`${userName}'s avatar`}
-        style={{ width: '100px', height: '100px', borderRadius: '50%' }} 
-      />
-      <h2 style={{ margin: '10px 0 5px' }}>{userName}</h2>
-      <p style={{ color: '#666', margin: '0 0 10px' }}>{userHandle}</p>
-      <p>{bio}</p>
+    <div>
+      <Welcome />
+      <Welcome />
+      <Welcome />
     </div>
   );
 }
+
+export default App;
 ```
 
-To see this on the screen, we'll import it into our main page file.
+**Browser Output**:
+```
+Hello, React!
+Hello, React!
+Hello, React!
+```
+
+Each `<Welcome />` creates an independent instance of the component. They're separate pieces of UI that happen to look identical right now.
+
+## JSX Rules You Must Know
+
+JSX has a few non-negotiable rules:
+
+### 1. Components must return a single root element
+
+**This fails**:
 
 ```tsx
-// src/app/page.tsx
-
-import UserProfileCard from '@/components/UserProfileCard';
-
-export default function HomePage() {
+function Broken() {
   return (
-    <main style={{ display: 'flex', justifyContent: 'center', paddingTop: '40px' }}>
-      <UserProfileCard />
-    </main>
+    <h1>Title</h1>
+    <p>Paragraph</p>
   );
 }
 ```
-
-### Iteration 0: The Monolithic Component
-
-When you run this, you'll see a nicely formatted user profile card for Ada Lovelace. It works perfectly.
-
-**Browser Behavior**:
-A single user profile card for Ada Lovelace is displayed on the page.
-
-So, what's the problem? The problem isn't a bug the user can see; it's a structural problem that affects us, the developers.
-
-**Current Limitation**: This component is completely rigid.
-1.  **It's not reusable**: It will *only* ever display information for Ada Lovelace. What if we want to show a card for Grace Hopper? Or Alan Turing?
-2.  **It's not configurable**: The data is hardcoded inside the component. To change the user, you have to edit the component's source code.
-3.  **It's not composable**: It's one giant block of JSX. We can't reuse just the avatar part or just the user info part in another place in our application.
-
-This monolithic approach is a dead end. In the next section, we'll address the first and most critical flaw: its lack of reusability.
-
-## Props: passing data down
-
-## Iteration 1: Making the Component Reusable with Props
-
-Our `UserProfileCard` works, but it's a one-trick pony. Let's introduce a new scenario that immediately breaks our current approach.
-
-**New Scenario**: The product manager asks us to display a list of three different users on the homepage.
-
-With our current `UserProfileCard.tsx`, our only option is to copy and paste the entire component's code three times, changing the hardcoded values in each copy. This is a recipe for disaster. A small change to the card's layout would require editing it in three separate places.
-
-This is a **maintainability failure**. We need a way to separate the component's structure (the JSX) from the data it displays.
-
-### Diagnostic Analysis: Reading the Failure
-
-**Browser Behavior**:
-The user sees exactly what we coded: one card for Ada Lovelace. The problem isn't what the user sees, but the pain we experience as developers trying to meet the new requirement.
-
-**Code Smell Evidence**:
-- **Hardcoded Values**: `const userName = "Ada Lovelace";` couples the data directly to the presentation.
-- **Low Cohesion**: The component is responsible for both its structure *and* its specific data.
-- **No Reusability**: The component cannot be used in any context other than displaying Ada Lovelace.
-
-**Let's parse this evidence**:
-
-1.  **What the developer experiences**: To show three users, I have to create `UserProfileCardAda.tsx`, `UserProfileCardGrace.tsx`, and `UserProfileCardAlan.tsx`. This is tedious and error-prone.
-
-2.  **What the code reveals**: The component's logic is not portable. The data is "stuck" inside.
-
-3.  **Root cause identified**: The component is self-contained in the wrong way. It fetches or defines its own data, making it impossible to configure from the outside.
-
-4.  **Why the current approach can't solve this**: It doesn't scale. For 100 users, we would need 100 component files. This is fundamentally unworkable.
-
-5.  **What we need**: A mechanism to pass data *into* a component from its parent, just like passing arguments to a function.
-
-### Technique Introduced: Props
-
-In React, this mechanism is called **props** (short for "properties"). Props are to components what arguments are to functions. They are the primary way to pass data from a parent component down to a child component.
-
-Props are passed as attributes in JSX, just like HTML attributes. The child component receives them as a single object, which is the first argument to its function.
-
-To make this robust, we'll use TypeScript to define the "shape" of our props object. This creates a contract: anyone using `UserProfileCard` *must* provide these specific props with the correct data types.
-
-### Solution Implementation
-
-Let's refactor `UserProfileCard` to accept its data via props.
-
-**Before** (Iteration 0): Hardcoded data inside the component.
-
-```tsx
-// src/components/UserProfileCard.tsx (Iteration 0)
-
-export default function UserProfileCard() {
-  const userName = "Ada Lovelace";
-  const userHandle = "@ada";
-  const bio = "First computer programmer. Enchantress of Numbers.";
-  const avatarUrl = "https://i.imgur.com/Q9qg4MC.jpeg";
-
-  return (
-    <div /* ... styles ... */>
-      <img src={avatarUrl} /* ... */ />
-      <h2>{userName}</h2>
-      <p>{userHandle}</p>
-      <p>{bio}</p>
-    </div>
-  );
-}
-```
-
-**After** (Iteration 1): Data is received via props.
-
-```tsx
-// src/components/UserProfileCard.tsx (Iteration 1)
-
-// 1. Define the shape of the props object with a TypeScript interface
-interface UserProfileCardProps {
-  userName: string;
-  userHandle: string;
-  bio: string;
-  avatarUrl: string;
-}
-
-// 2. The component function now accepts a 'props' object
-export default function UserProfileCard(props: UserProfileCardProps) {
-  // 3. Destructure the props object for easier access
-  const { userName, userHandle, bio, avatarUrl } = props;
-
-  return (
-    <div style={{ 
-      border: '1px solid #ccc', 
-      borderRadius: '8px', 
-      padding: '16px', 
-      maxWidth: '300px',
-      fontFamily: 'sans-serif'
-    }}>
-      <img 
-        src={avatarUrl} 
-        alt={`${userName}'s avatar`}
-        style={{ width: '100px', height: '100px', borderRadius: '50%' }} 
-      />
-      <h2 style={{ margin: '10px 0 5px' }}>{userName}</h2>
-      <p style={{ color: '#666', margin: '0 0 10px' }}>{userHandle}</p>
-      <p>{bio}</p>
-    </div>
-  );
-}
-```
-
-Our component is now a pure, reusable template. It describes how to render a user profile, but it has no knowledge of *which* user it's rendering. That responsibility now belongs to the parent component.
-
-### Verification
-
-Let's update our homepage to render three different user profiles using our new, flexible component.
-
-```tsx
-// src/app/page.tsx
-
-import UserProfileCard from '@/components/UserProfileCard';
-
-const users = [
-  {
-    userName: "Ada Lovelace",
-    userHandle: "@ada",
-    bio: "First computer programmer. Enchantress of Numbers.",
-    avatarUrl: "https://i.imgur.com/Q9qg4MC.jpeg",
-  },
-  {
-    userName: "Grace Hopper",
-    userHandle: "@grace",
-    bio: "Pioneering computer scientist and US Navy rear admiral.",
-    avatarUrl: "https://i.imgur.com/jA8hHMpm.jpg",
-  },
-  {
-    userName: "Alan Turing",
-    userHandle: "@alan",
-    bio: "Father of theoretical computer science and artificial intelligence.",
-    avatarUrl: "https://i.imgur.com/4oTq0K8.jpg",
-  }
-];
-
-export default function HomePage() {
-  return (
-    <main style={{ 
-      display: 'flex', 
-      gap: '20px', 
-      justifyContent: 'center', 
-      paddingTop: '40px' 
-    }}>
-      {users.map(user => (
-        <UserProfileCard
-          key={user.userHandle} // 'key' is a special prop for lists, covered later
-          userName={user.userName}
-          userHandle={user.userHandle}
-          bio={user.bio}
-          avatarUrl={user.avatarUrl}
-        />
-      ))}
-    </main>
-  );
-}
-```
-
-**Expected vs. Actual Improvement**:
-- **Expected**: We should be able to render multiple, different user cards without duplicating component code.
-- **Actual**: The browser now displays three distinct user profile cards, side-by-side. We achieved this by reusing a single component definition, which is a huge win for maintainability.
-
-**Limitation Preview**: Our component is reusable, but it's still monolithic. The layout is rigid. What if we want to add a "Verified" badge for one user, or extra action buttons for another? Adding more and more props to handle every variation will quickly become messy. This leads us to the next core principle of React: composition.
-
-### Common Failure Modes and Their Signatures
-
-#### Symptom: "Property 'userName' is missing in type '{}' but required in type 'UserProfileCardProps'."
 
 **Terminal Output**:
 ```bash
-src/app/page.tsx:35:9 - error TS2741:
-Property 'userName' is missing in type '{}' but required in type 'UserProfileCardProps'.
+src/components/Broken.tsx:3:5 - error TS1128:
+Declaration or statement expected.
 
-35         <UserProfileCard />
-           ~~~~~~~~~~~~~~~~~~~
+3     <p>Paragraph</p>
+      ~
 ```
 
-**Root cause**: You are trying to render the component without passing the required props. Our TypeScript interface `UserProfileCardProps` created a contract, and we violated it.
-**Solution**: Ensure you pass all props defined as required in the component's prop types.
+**Why it fails**: JSX must return one element. You're trying to return two siblings with no parent.
 
-#### Symptom: The component displays a value as `undefined` or an image is broken.
-
-**Browser behavior**: The card renders, but the `h2` for the name is blank, or the `img` tag has no `src`.
-
-**React DevTools Clues**:
-- Select the `UserProfileCard` component in the Components tab.
-- Look at the `props` panel on the right.
-- You might see `userName: undefined` or notice a typo like `userNmae: "Ada Lovelace"`.
-
-**Root cause**: You likely made a typo in the prop name when rendering the component (e.g., `userName` vs. `userNmae`). React doesn't know you meant `userName`, so the prop is never received by the child component.
-**Solution**: Check for typos in your prop names where you call the component. This is where TypeScript helps immensely, as it would have caught the typo before you even ran the code.
-
-## Composition over inheritance
-
-## Iteration 2: Making the Component Composable
-
-Our `UserProfileCard` is now reusable thanks to props. But it's still a rigid block. Let's introduce a new requirement that highlights this inflexibility.
-
-**New Scenario**: The design team wants two new variations of the user card:
-1.  A "Premium" user card that has a golden border and a "Premium Member" badge inside.
-2.  An "Admin" user card that includes "Edit" and "Delete" buttons at the bottom.
-
-The naive approach is to add more props to our `UserProfileCard`: `isPremium: boolean`, `isAdmin: boolean`.
-
-Let's see what that looks like.
+**Solution 1: Wrap in a div**:
 
 ```tsx
-// AVOID THIS PATTERN: UserProfileCard with boolean props for layout changes
-
-interface UserProfileCardProps {
-  // ... existing props
-  isPremium?: boolean;
-  isAdmin?: boolean;
-}
-
-export default function UserProfileCard(props: UserProfileCardProps) {
-  const { userName, userHandle, bio, avatarUrl, isPremium, isAdmin } = props;
-
-  const cardStyle = {
-    border: isPremium ? '2px solid gold' : '1px solid #ccc', // Conditional style
-    // ... other styles
-  };
-
+function Fixed() {
   return (
-    <div style={cardStyle}>
-      {/* ... avatar, name, bio ... */}
-      {isPremium && <p style={{color: 'gold'}}>Premium Member</p>} {/* Conditional UI */}
-      {isAdmin && (
-        <div>
-          <button>Edit</button>
-          <button>Delete</button>
-        </div>
-      )}
+    <div>
+      <h1>Title</h1>
+      <p>Paragraph</p>
     </div>
   );
 }
 ```
 
-This works, but it's a path to chaos. What happens when we need a `isDeactivated` state? Or a `hasNewMessage` indicator? The component becomes a tangled mess of conditional logic. This is a **complexity failure**.
-
-### Diagnostic Analysis: Reading the Failure
-
-**Browser Behavior**: The UI works as requested. We can create premium and admin cards. The failure is in the code's architecture.
-
-**Code Smell Evidence**:
-- **High Cyclomatic Complexity**: The number of possible paths through the component's render logic is growing.
-- **Violates Single Responsibility Principle**: The component is now responsible for its own layout AND the layout of premium badges AND the layout of admin buttons.
-- **Fragile**: Adding a new variation requires modifying and re-testing the core `UserProfileCard`, risking regressions for all other variations.
-
-**Let's parse this evidence**:
-
-1.  **What the developer experiences**: The component is becoming hard to read and reason about. I have to mentally track all the boolean props to understand what the final output will be.
-
-2.  **What the code reveals**: The component is not "open for extension but closed for modification." To extend its functionality, we have to modify its internal logic.
-
-3.  **Root cause identified**: The component is trying to own and control every possible piece of UI that could ever appear inside it. This is thinking in terms of **inheritance** (a PremiumCard *is a* UserProfileCard with modifications) rather than **composition**.
-
-4.  **Why the current approach can't solve this**: It's not scalable. Each new UI variation adds another layer of conditional logic, leading to an exponential increase in complexity.
-
-5.  **What we need**: A way for the parent component to decide what extra UI, if any, gets rendered inside the card, without the card needing to know anything about it.
-
-### Technique Introduced: Composition and the `children` Prop
-
-The React philosophy is **composition over inheritance**. Instead of creating a single, monolithic component that handles all variations, we should create smaller, focused components and assemble them like Lego bricks.
-
-The key to this is a special prop called `children`. Whatever JSX you put *between* a component's opening and closing tags is passed to that component as the `children` prop.
-
-Let's create a generic `Card` component that knows nothing about users. It only knows how to draw a box.
+**Solution 2: Use a Fragment** (when you don't want an extra DOM element):
 
 ```tsx
-// src/components/Card.tsx (New file)
-import React from 'react';
-
-interface CardProps {
-  children: React.ReactNode; // React.ReactNode can be any valid JSX
-  borderColor?: string;
-}
-
-export default function Card({ children, borderColor = '#ccc' }: CardProps) {
-  return (
-    <div style={{
-      border: `1px solid ${borderColor}`,
-      borderRadius: '8px',
-      padding: '16px',
-      maxWidth: '300px',
-      fontFamily: 'sans-serif'
-    }}>
-      {children} {/* This is where the magic happens */}
-    </div>
-  );
-}
-```
-
-This `Card` component is beautifully simple and infinitely reusable. It takes any content (`children`) and wraps it in a styled `div`.
-
-### Solution Implementation
-
-Now, let's break our original `UserProfileCard` into smaller pieces and reassemble them using our new `Card` component.
-
-**Step 1: Create smaller, focused components.**
-
-```tsx
-// src/components/Avatar.tsx (New file)
-interface AvatarProps {
-  src: string;
-  alt: string;
-}
-export default function Avatar({ src, alt }: AvatarProps) {
-  return (
-    <img 
-      src={src} 
-      alt={alt}
-      style={{ width: '100px', height: '100px', borderRadius: '50%' }} 
-    />
-  );
-}
-
-// src/components/UserInfo.tsx (New file)
-interface UserInfoProps {
-  name: string;
-  handle: string;
-  bio: string;
-}
-export default function UserInfo({ name, handle, bio }: UserInfoProps) {
+function FixedWithFragment() {
   return (
     <>
-      <h2 style={{ margin: '10px 0 5px' }}>{name}</h2>
-      <p style={{ color: '#666', margin: '0 0 10px' }}>{handle}</p>
-      <p>{bio}</p>
+      <h1>Title</h1>
+      <p>Paragraph</p>
     </>
   );
 }
 ```
 
-Notice these components are purely presentational. They take data and return UI. They have no wrappers or outer divs.
+The `<>` syntax is shorthand for `<React.Fragment>`. Fragments let you group elements without adding extra nodes to the DOM.
 
-**Step 2: Re-compose the `UserProfileCard` from these pieces.**
+### 2. JSX attributes use camelCase
 
-Our old `UserProfileCard.tsx` file is no longer needed. The "user profile card" is not a single component anymore; it's a *pattern of composition* that we create in our page file.
-
-### Verification
-
-Let's update `page.tsx` to build the standard, premium, and admin cards by composing our new, small components.
+HTML uses `class` and `for`. JSX uses `className` and `htmlFor` because `class` and `for` are reserved JavaScript keywords.
 
 ```tsx
-// src/app/page.tsx (Final Version)
-
-import Card from '@/components/Card';
-import Avatar from '@/components/Avatar';
-import UserInfo from '@/components/UserInfo';
-
-const ada = {
-  userName: "Ada Lovelace",
-  userHandle: "@ada",
-  bio: "First computer programmer. Enchantress of Numbers.",
-  avatarUrl: "https://i.imgur.com/Q9qg4MC.jpeg",
-};
-
-const grace = {
-  userName: "Grace Hopper",
-  userHandle: "@grace",
-  bio: "Pioneering computer scientist and US Navy rear admiral.",
-  avatarUrl: "https://i.imgur.com/jA8hHMpm.jpg",
-};
-
-export default function HomePage() {
+function StyledComponent() {
   return (
-    <main style={{ 
-      display: 'flex', 
-      gap: '20px', 
-      justifyContent: 'center', 
-      alignItems: 'flex-start',
-      padding: '40px' 
-    }}>
-      {/* Standard User Card */}
-      <Card>
-        <Avatar src={ada.avatarUrl} alt={ada.userName} />
-        <UserInfo name={ada.userName} handle={ada.userHandle} bio={ada.bio} />
-      </Card>
-
-      {/* Premium User Card */}
-      <Card borderColor="gold">
-        <Avatar src={grace.avatarUrl} alt={grace.userName} />
-        <UserInfo name={grace.userName} handle={grace.userHandle} bio={grace.bio} />
-        <p style={{ color: 'gold', fontWeight: 'bold', marginTop: '10px' }}>
-          Premium Member
-        </p>
-      </Card>
-
-      {/* Admin User Card (using Ada's data for example) */}
-      <Card>
-        <Avatar src={ada.avatarUrl} alt={ada.userName} />
-        <UserInfo name={ada.userName} handle={ada.userHandle} bio={ada.bio} />
-        <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-          <button>Edit Profile</button>
-          <button>Delete User</button>
-        </div>
-      </Card>
-    </main>
+    <div className="container">
+      <label htmlFor="email">Email:</label>
+      <input id="email" type="email" />
+    </div>
   );
 }
 ```
 
-**Expected vs. Actual Improvement**:
-- **Expected**: We should be able to create different card layouts without modifying any of the core components (`Card`, `Avatar`, `UserInfo`).
-- **Actual**: We did exactly that. The parent component (`HomePage`) now has full control over the layout. The `Card` component doesn't know or care that it contains admin buttons or premium badges. This is the power of composition. Our code is now more flexible, reusable, and easier to maintain.
+### 3. JavaScript expressions go in curly braces
 
-### Debugging Workflow: When Your Component Fails
+Any JavaScript expression can be embedded in JSX using `{}`:
 
-**Step 1: Observe the user experience**
-You create a new card, but the admin buttons you added don't appear.
+```tsx
+function MathComponent() {
+  const x = 10;
+  const y = 20;
+  
+  return (
+    <div>
+      <p>The sum is: {x + y}</p>
+      <p>Random number: {Math.random()}</p>
+      <p>Uppercase: {'hello'.toUpperCase()}</p>
+    </div>
+  );
+}
+```
 
-**Step 2: Check the console**
-There are no errors. This is a logic issue, not a crash.
+**Browser Output**:
+```
+The sum is: 30
+Random number: 0.7234891234
+Uppercase: HELLO
+```
 
-**Step 3: Inspect with React DevTools**
-- Open the Components tab in your browser's DevTools.
-- Find and click on your `<Card>` component in the component tree.
-- Look at the `props` panel on the right. You will see a `children` prop.
-- You can expand `children`. If it's an array, you can inspect each child. You should see your `Avatar`, `UserInfo`, and the `div` with your buttons. If they are there, the problem is not with the parent passing them down.
-- Now, look at the source code for `Card.tsx`. Is `{children}` actually being rendered? A common mistake is to define a component that accepts children but forget to render them.
+You can put any JavaScript expression inside `{}`, but not statements. This works: `{x + y}`. This doesn't: `{if (x > 5) return y}`.
 
-This systematic inspection allows you to trace the flow of your UI from parent to child and pinpoint exactly where the breakdown occurs.
+### 4. Self-closing tags must have a slash
 
-## Synthesis: The Complete Journey
+In HTML, `<img>` and `<input>` don't need closing tags. In JSX, they must be self-closed:
 
-## The Journey: From Problem to Solution
+```tsx
+function ImageComponent() {
+  return (
+    <div>
+      <img src="/logo.png" alt="Logo" />
+      <input type="text" />
+      <br />
+    </div>
+  );
+}
+```
 
-We have transformed our code from a rigid, unmaintainable block into a flexible, reusable system of components. This journey reflects the core of "thinking in React."
+## Component Naming Convention
 
-| Iteration | Failure Mode                               | Technique Applied      | Result                                                              | Code Quality Impact                               |
-| :-------- | :----------------------------------------- | :--------------------- | :------------------------------------------------------------------ | :------------------------------------------------ |
-| 0         | **Rigidity & Lack of Reusability**: Hardcoded data. | None (Initial State)   | A single, non-reusable card for one user.                           | Brittle, high maintenance, not scalable.          |
-| 1         | **Maintainability Failure**: Copy-pasting code to show new users. | **Props** & TypeScript Interfaces | A single, reusable `UserProfileCard` component configurable with data. | Reusable, maintainable, type-safe.                |
-| 2         | **Complexity Failure**: Adding boolean props and conditional logic for UI variations. | **Composition** (`children` prop) & Component Splitting | Small, single-purpose components (`Card`, `Avatar`, `UserInfo`) composed by the parent. | Flexible, scalable, follows Single Responsibility Principle. |
+Components must start with a capital letter. This is how React distinguishes components from HTML tags:
 
-### Final Implementation
+- `<button>` → HTML button element
+- `<Button>` → Your custom Button component
 
-Our final project structure reflects this compositional approach:
+**This fails silently**:
+
+```tsx
+function welcome() {  // lowercase - React thinks it's HTML
+  return <h1>Hello</h1>;
+}
+
+function App() {
+  return <welcome />;  // Renders nothing
+}
+```
+
+**Browser Output**:
+```
+(blank screen)
+```
+
+**Browser Console**:
+```
+Warning: The tag <welcome> is unrecognized in this browser.
+```
+
+**Why it fails**: React sees `<welcome>` and looks for an HTML element called "welcome". There isn't one, so it renders nothing.
+
+**Solution**: Capitalize the component name:
+
+```tsx
+function Welcome() {  // Capital W
+  return <h1>Hello</h1>;
+}
+
+function App() {
+  return <Welcome />;  // Works correctly
+}
+```
+
+## Arrow Functions vs. Function Declarations
+
+You can write components as arrow functions or function declarations. Both work identically:
+
+```tsx
+// Function declaration
+function Welcome() {
+  return <h1>Hello</h1>;
+}
+
+// Arrow function
+const Welcome = () => {
+  return <h1>Hello</h1>;
+};
+
+// Arrow function with implicit return
+const Welcome = () => <h1>Hello</h1>;
+```
+
+Choose based on your team's preference. Function declarations are slightly more common in React codebases, but arrow functions work perfectly. The implicit return syntax (no `return` keyword, no braces) is convenient for simple components.
+
+## Components Can Contain Logic
+
+Components are functions, so they can contain any JavaScript logic before the return statement:
+
+```tsx
+function Greeting() {
+  const hour = new Date().getHours();
+  const timeOfDay = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+  
+  return <h1>Good {timeOfDay}!</h1>;
+}
+```
+
+**Browser Output** (if it's 10 AM):
+```
+Good morning!
+```
+
+The logic runs every time the component renders. Right now, that's once when the page loads. In Chapter 3, we'll see how to make components re-render when data changes.
+
+## Props: passing data down
+
+Components become useful when they can display different data. Props (short for "properties") are how you pass data into components. Think of props as function parameters—they let you customize what a component displays.
+
+## The Problem: Hardcoded Components
+
+Let's say you're building a user profile display. Without props, you'd need a separate component for each user:
+
+```tsx
+// src/components/UserProfileAlice.tsx
+function UserProfileAlice() {
+  return (
+    <div className="profile">
+      <h2>Alice Johnson</h2>
+      <p>Software Engineer</p>
+      <p>alice@example.com</p>
+    </div>
+  );
+}
+
+// src/components/UserProfileBob.tsx
+function UserProfileBob() {
+  return (
+    <div className="profile">
+      <h2>Bob Smith</h2>
+      <p>Product Manager</p>
+      <p>bob@example.com</p>
+    </div>
+  );
+}
+```
+
+This is absurd. The structure is identical—only the data changes. Props solve this.
+
+## Props: Function Parameters for Components
+
+Props let you pass data to components like function arguments:
+
+```tsx
+// src/components/UserProfile.tsx
+function UserProfile(props) {
+  return (
+    <div className="profile">
+      <h2>{props.name}</h2>
+      <p>{props.role}</p>
+      <p>{props.email}</p>
+    </div>
+  );
+}
+
+export default UserProfile;
+```
+
+Now you can create multiple profiles with different data:
+
+```tsx
+// src/App.tsx
+import UserProfile from './components/UserProfile';
+
+function App() {
+  return (
+    <div>
+      <UserProfile 
+        name="Alice Johnson" 
+        role="Software Engineer" 
+        email="alice@example.com" 
+      />
+      <UserProfile 
+        name="Bob Smith" 
+        role="Product Manager" 
+        email="bob@example.com" 
+      />
+    </div>
+  );
+}
+```
+
+**Browser Output**:
+```
+Alice Johnson
+Software Engineer
+alice@example.com
+
+Bob Smith
+Product Manager
+bob@example.com
+```
+
+Each `<UserProfile />` receives different props and renders different data using the same component structure.
+
+## Destructuring Props (The Preferred Pattern)
+
+Instead of writing `props.name`, `props.role`, etc., destructure the props object in the function parameters:
+
+```tsx
+// src/components/UserProfile.tsx
+function UserProfile({ name, role, email }) {
+  return (
+    <div className="profile">
+      <h2>{name}</h2>
+      <p>{role}</p>
+      <p>{email}</p>
+    </div>
+  );
+}
+```
+
+This is cleaner and more common in React codebases. The component works identically—destructuring is just syntactic sugar for extracting properties from the props object.
+
+## TypeScript: Making Props Explicit
+
+Without TypeScript, you can pass any props and React won't complain until runtime. TypeScript lets you define exactly what props a component expects:
+
+```tsx
+// src/components/UserProfile.tsx
+interface UserProfileProps {
+  name: string;
+  role: string;
+  email: string;
+}
+
+function UserProfile({ name, role, email }: UserProfileProps) {
+  return (
+    <div className="profile">
+      <h2>{name}</h2>
+      <p>{role}</p>
+      <p>{email}</p>
+    </div>
+  );
+}
+
+export default UserProfile;
+```
+
+Now if you try to use the component incorrectly:
+
+```tsx
+// src/App.tsx
+<UserProfile name="Alice" role="Engineer" />  // Missing 'email'
+```
+
+**Terminal Output**:
+```bash
+src/App.tsx:8:7 - error TS2741:
+Property 'email' is missing in type '{ name: string; role: string; }'
+but required in type 'UserProfileProps'.
+
+8       <UserProfile name="Alice" role="Engineer" />
+        ~~~~~~~~~~~~
+```
+
+TypeScript catches the error before you run the code. This is why TypeScript is valuable—it turns runtime errors into compile-time errors.
+
+## Optional Props
+
+Make props optional with `?`:
+
+```tsx
+interface UserProfileProps {
+  name: string;
+  role: string;
+  email: string;
+  avatarUrl?: string;  // Optional
+}
+
+function UserProfile({ name, role, email, avatarUrl }: UserProfileProps) {
+  return (
+    <div className="profile">
+      {avatarUrl && <img src={avatarUrl} alt={name} />}
+      <h2>{name}</h2>
+      <p>{role}</p>
+      <p>{email}</p>
+    </div>
+  );
+}
+```
+
+The `{avatarUrl && <img ... />}` pattern means: "If `avatarUrl` exists, render the image. Otherwise, render nothing."
+
+## Default Props
+
+You can provide default values using JavaScript's default parameter syntax:
+
+```tsx
+interface UserProfileProps {
+  name: string;
+  role: string;
+  email: string;
+  avatarUrl?: string;
+}
+
+function UserProfile({ 
+  name, 
+  role, 
+  email, 
+  avatarUrl = '/default-avatar.png'  // Default value
+}: UserProfileProps) {
+  return (
+    <div className="profile">
+      <img src={avatarUrl} alt={name} />
+      <h2>{name}</h2>
+      <p>{role}</p>
+      <p>{email}</p>
+    </div>
+  );
+}
+```
+
+If `avatarUrl` isn't provided, it defaults to `'/default-avatar.png'`.
+
+## Props Are Read-Only
+
+**Critical rule**: Never modify props inside a component. Props flow down from parent to child and should be treated as immutable.
+
+**This is wrong**:
+
+```tsx
+function UserProfile({ name, role, email }: UserProfileProps) {
+  name = name.toUpperCase();  // ❌ Don't mutate props
+  
+  return (
+    <div className="profile">
+      <h2>{name}</h2>
+      <p>{role}</p>
+      <p>{email}</p>
+    </div>
+  );
+}
+```
+
+**This is correct**:
+
+```tsx
+function UserProfile({ name, role, email }: UserProfileProps) {
+  const displayName = name.toUpperCase();  // ✅ Create a new variable
+  
+  return (
+    <div className="profile">
+      <h2>{displayName}</h2>
+      <p>{role}</p>
+      <p>{email}</p>
+    </div>
+  );
+}
+```
+
+Props represent data flowing into the component. If you need to transform that data, create new variables. We'll see in Chapter 3 how to handle data that changes over time.
+
+## Passing Different Types of Props
+
+Props can be any JavaScript value:
+
+```tsx
+interface UserCardProps {
+  name: string;
+  age: number;
+  isActive: boolean;
+  tags: string[];
+  metadata: {
+    joinDate: string;
+    lastLogin: string;
+  };
+}
+
+function UserCard({ name, age, isActive, tags, metadata }: UserCardProps) {
+  return (
+    <div className="user-card">
+      <h2>{name}</h2>
+      <p>Age: {age}</p>
+      <p>Status: {isActive ? 'Active' : 'Inactive'}</p>
+      <p>Tags: {tags.join(', ')}</p>
+      <p>Joined: {metadata.joinDate}</p>
+      <p>Last login: {metadata.lastLogin}</p>
+    </div>
+  );
+}
+```
+
+Using it:
+
+```tsx
+<UserCard
+  name="Alice"
+  age={28}
+  isActive={true}
+  tags={['developer', 'team-lead']}
+  metadata={{
+    joinDate: '2023-01-15',
+    lastLogin: '2024-01-10'
+  }}
+/>
+```
+
+Notice the double braces for objects: `metadata={{...}}`. The outer braces mean "JavaScript expression", the inner braces are the object literal.
+
+## The Children Prop
+
+There's a special prop called `children` that represents content between component tags:
+
+```tsx
+interface CardProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+function Card({ title, children }: CardProps) {
+  return (
+    <div className="card">
+      <h3>{title}</h3>
+      <div className="card-content">
+        {children}
+      </div>
+    </div>
+  );
+}
+```
+
+Using it:
+
+```tsx
+<Card title="User Profile">
+  <p>Name: Alice</p>
+  <p>Role: Engineer</p>
+  <button>Edit Profile</button>
+</Card>
+```
+
+Everything between `<Card>` and `</Card>` becomes the `children` prop. This pattern is fundamental to composition, which we'll explore in the next section.
+
+`React.ReactNode` is the TypeScript type for anything that can be rendered: strings, numbers, elements, arrays of elements, or `null`/`undefined`.
+
+## Composition over inheritance
+
+React doesn't use inheritance. You don't extend classes or create component hierarchies. Instead, you compose components—build complex UIs by combining simple components.
+
+This is a fundamental shift if you're coming from object-oriented frameworks. In React, composition is the only pattern you need.
+
+## The Problem: Trying to Use Inheritance
+
+In class-based frameworks, you might create a base `Button` class and extend it:
+
+```
+BaseButton
+  ├── PrimaryButton extends BaseButton
+  ├── SecondaryButton extends BaseButton
+  └── DangerButton extends BaseButton
+```
+
+This creates rigid hierarchies. What if you need a button that's both primary and large? Or secondary and disabled? You end up with combinatorial explosion: `PrimaryLargeButton`, `SecondaryDisabledButton`, etc.
+
+React solves this with composition.
+
+## Composition Pattern 1: Props for Variants
+
+Instead of inheritance, use props to configure behavior:
+
+```tsx
+// src/components/Button.tsx
+interface ButtonProps {
+  variant: 'primary' | 'secondary' | 'danger';
+  size: 'small' | 'medium' | 'large';
+  children: React.ReactNode;
+  onClick?: () => void;
+}
+
+function Button({ variant, size, children, onClick }: ButtonProps) {
+  const baseClasses = 'px-4 py-2 rounded font-medium';
+  
+  const variantClasses = {
+    primary: 'bg-blue-600 text-white hover:bg-blue-700',
+    secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300',
+    danger: 'bg-red-600 text-white hover:bg-red-700'
+  };
+  
+  const sizeClasses = {
+    small: 'text-sm',
+    medium: 'text-base',
+    large: 'text-lg'
+  };
+  
+  const className = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]}`;
+  
+  return (
+    <button className={className} onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+
+export default Button;
+```
+
+Now you can create any combination:
+
+```tsx
+<Button variant="primary" size="large">Save</Button>
+<Button variant="secondary" size="small">Cancel</Button>
+<Button variant="danger" size="medium">Delete</Button>
+```
+
+One component, infinite variations. No inheritance needed.
+
+## Composition Pattern 2: Container Components
+
+Components can wrap other components to add behavior or styling:
+
+```tsx
+// src/components/Card.tsx
+interface CardProps {
+  children: React.ReactNode;
+}
+
+function Card({ children }: CardProps) {
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      {children}
+    </div>
+  );
+}
+
+// src/components/CardHeader.tsx
+interface CardHeaderProps {
+  children: React.ReactNode;
+}
+
+function CardHeader({ children }: CardHeaderProps) {
+  return (
+    <div className="border-b pb-4 mb-4">
+      {children}
+    </div>
+  );
+}
+
+// src/components/CardContent.tsx
+interface CardContentProps {
+  children: React.ReactNode;
+}
+
+function CardContent({ children }: CardContentProps) {
+  return (
+    <div className="text-gray-700">
+      {children}
+    </div>
+  );
+}
+```
+
+Compose them together:
+
+```tsx
+<Card>
+  <CardHeader>
+    <h2>User Profile</h2>
+  </CardHeader>
+  <CardContent>
+    <p>Name: Alice Johnson</p>
+    <p>Role: Software Engineer</p>
+  </CardContent>
+</Card>
+```
+
+Each component has one job. `Card` provides the container styling. `CardHeader` adds a header section. `CardContent` styles the body. You compose them to build the complete UI.
+
+## Composition Pattern 3: Specialized Components
+
+Create specialized versions by wrapping generic components:
+
+```tsx
+// src/components/Button.tsx - Generic button
+interface ButtonProps {
+  variant: 'primary' | 'secondary' | 'danger';
+  children: React.ReactNode;
+  onClick?: () => void;
+}
+
+function Button({ variant, children, onClick }: ButtonProps) {
+  const variantClasses = {
+    primary: 'bg-blue-600 text-white hover:bg-blue-700',
+    secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300',
+    danger: 'bg-red-600 text-white hover:bg-red-700'
+  };
+  
+  return (
+    <button 
+      className={`px-4 py-2 rounded ${variantClasses[variant]}`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+// src/components/PrimaryButton.tsx - Specialized version
+interface PrimaryButtonProps {
+  children: React.ReactNode;
+  onClick?: () => void;
+}
+
+function PrimaryButton({ children, onClick }: PrimaryButtonProps) {
+  return (
+    <Button variant="primary" onClick={onClick}>
+      {children}
+    </Button>
+  );
+}
+
+// src/components/DangerButton.tsx - Another specialized version
+interface DangerButtonProps {
+  children: React.ReactNode;
+  onClick?: () => void;
+}
+
+function DangerButton({ children, onClick }: DangerButtonProps) {
+  return (
+    <Button variant="danger" onClick={onClick}>
+      {children}
+    </Button>
+  );
+}
+```
+
+Now you can use either the generic `Button` with explicit variants, or the specialized versions:
+
+```tsx
+// Explicit variant
+<Button variant="primary">Save</Button>
+
+// Specialized component
+<PrimaryButton>Save</PrimaryButton>
+```
+
+Both approaches work. Specialized components are convenient when you use certain configurations frequently.
+
+## Composition Pattern 4: Render Props (Preview)
+
+Sometimes you need to share logic between components. One pattern is passing a function as a prop that returns JSX:
+
+```tsx
+interface DataFetcherProps {
+  url: string;
+  render: (data: any) => React.ReactNode;
+}
+
+function DataFetcher({ url, render }: DataFetcherProps) {
+  // Imagine this fetches data (we'll implement this properly in Chapter 4)
+  const data = { name: 'Alice', role: 'Engineer' };
+  
+  return <div>{render(data)}</div>;
+}
+```
+
+Using it:
+
+```tsx
+<DataFetcher
+  url="/api/user"
+  render={(data) => (
+    <div>
+      <h2>{data.name}</h2>
+      <p>{data.role}</p>
+    </div>
+  )}
+/>
+```
+
+The `DataFetcher` component handles the data fetching logic. The parent component controls how to display that data. This separates concerns: data fetching vs. presentation.
+
+We'll see more powerful patterns for sharing logic in later chapters (custom hooks in Chapter 4, context in Chapter 11). For now, understand that composition—not inheritance—is how you build complex UIs in React.
+
+## Why Composition Wins
+
+**Flexibility**: Combine components in any way. No rigid hierarchies.
+
+**Reusability**: Small, focused components can be used in many contexts.
+
+**Maintainability**: Each component has one job. Changes are localized.
+
+**Testability**: Small components are easier to test in isolation.
+
+React's component model is designed around composition. Embrace it.
+
+## Your first useful component
+
+Let's build something real. We'll create a **User Profile Dashboard** component that displays user information, recent activity, and notifications. This will be our reference implementation—we'll evolve it through the next several chapters as we learn state management, data fetching, and more advanced patterns.
+
+## Phase 1: The Reference Implementation
+
+We're building a dashboard that shows:
+- User profile information (name, role, email)
+- Recent activity feed (list of actions)
+- Notification count badge
 
 **Project Structure**:
 ```
 src/
-└── app/
-    └── page.tsx              ← Composition happens here
-└── components/
-    ├── Avatar.tsx            ← Reusable UI piece
-    ├── Card.tsx              ← Reusable container
-    └── UserInfo.tsx          ← Reusable UI piece
+├── components/
+│   ├── UserDashboard.tsx      ← Our main component
+│   ├── UserProfile.tsx         ← Profile section
+│   ├── ActivityFeed.tsx        ← Activity list
+│   └── NotificationBadge.tsx   ← Badge component
+├── App.tsx
+└── main.tsx
 ```
 
-The final code in `page.tsx` is declarative. It reads like a description of the UI we want to build, assembling our custom "Lego bricks" to achieve the desired result.
+Let's start with the complete, working implementation using only what we've learned so far: components, props, and composition.
 
-### Decision Framework: Props vs. Children
+### The Main Dashboard Component
 
-When building a component, you'll often face a choice: should this be controlled by a prop, or should I use `children`?
+```tsx
+// src/components/UserDashboard.tsx
+import UserProfile from './UserProfile';
+import ActivityFeed from './ActivityFeed';
+import NotificationBadge from './NotificationBadge';
 
-| Scenario                               | Choose          | Why?                                                                                              | Example                                                                |
-| :------------------------------------- | :-------------- | :------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------- |
-| Passing simple data (strings, numbers, booleans) | **Props**       | Props are explicit and create a clear API for your component. They are easy to type-check.        | `<Avatar src="..." alt="..." />`                                       |
-| Passing a data object                  | **Props**       | The component needs the data to render its internal structure.                                    | `<UserInfo user={userData} />`                                         |
-| Customizing a component's visual variant | **Props**       | For a small, fixed set of variations, props are simpler.                                          | `<Button variant="primary" />` vs. `<Button variant="secondary" />`     |
-| Passing arbitrary or unknown content   | **`children`**  | The component is a container and shouldn't care what's inside it.                                 | `<Card>...any content here...</Card>`                                   |
-| Creating different layouts with the same "chrome" | **`children`**  | Provides maximum flexibility to the parent component to control the layout.                       | Our Admin Card vs. Premium Card example.                               |
-| Wrapping other components              | **`children`**  | The core pattern for Higher-Order Components and providers (which we'll see later).               | `<AuthProvider>{/* The rest of the app */}</AuthProvider>`             |
+interface UserDashboardProps {
+  userId: string;
+}
 
-**Rule of Thumb**: Use props for *what* a component is (its data, its identity). Use `children` for *what's inside* it (its contents, its layout).
+function UserDashboard({ userId }: UserDashboardProps) {
+  // For now, we'll use hardcoded data
+  // In Chapter 4, we'll fetch this from an API
+  const userData = {
+    name: 'Alice Johnson',
+    role: 'Senior Software Engineer',
+    email: 'alice.johnson@example.com',
+    avatarUrl: '/avatars/alice.jpg'
+  };
+  
+  const activities = [
+    { id: '1', action: 'Completed code review for PR #234', timestamp: '2 hours ago' },
+    { id: '2', action: 'Deployed feature to production', timestamp: '5 hours ago' },
+    { id: '3', action: 'Created new branch: feature/user-settings', timestamp: '1 day ago' }
+  ];
+  
+  const notificationCount = 3;
+  
+  return (
+    <div className="dashboard">
+      <div className="dashboard-header">
+        <h1>Dashboard</h1>
+        <NotificationBadge count={notificationCount} />
+      </div>
+      
+      <div className="dashboard-content">
+        <UserProfile
+          name={userData.name}
+          role={userData.role}
+          email={userData.email}
+          avatarUrl={userData.avatarUrl}
+        />
+        
+        <ActivityFeed activities={activities} />
+      </div>
+    </div>
+  );
+}
 
-### Lessons Learned
+export default UserDashboard;
+```
 
-1.  **Start by Building, then Decompose**: It's often easiest to build a static, monolithic version of your UI first, as we did in Iteration 0. Once it looks right, break it down into a hierarchy of reusable components.
-2.  **Unidirectional Data Flow**: Notice that data always flows down: from the parent (`HomePage`) to the children (`Card`, `Avatar`). A child component never modifies the props it receives. This is a fundamental principle in React that makes applications easier to reason about.
-3.  **Composition is King**: Favoring composition over prop-based conditional logic leads to smaller, more predictable, and more reusable components. Your future self (and your teammates) will thank you for it.
+### The User Profile Component
+
+```tsx
+// src/components/UserProfile.tsx
+interface UserProfileProps {
+  name: string;
+  role: string;
+  email: string;
+  avatarUrl: string;
+}
+
+function UserProfile({ name, role, email, avatarUrl }: UserProfileProps) {
+  return (
+    <div className="user-profile">
+      <img 
+        src={avatarUrl} 
+        alt={`${name}'s avatar`}
+        className="avatar"
+      />
+      <div className="user-info">
+        <h2>{name}</h2>
+        <p className="role">{role}</p>
+        <p className="email">{email}</p>
+      </div>
+    </div>
+  );
+}
+
+export default UserProfile;
+```
+
+### The Activity Feed Component
+
+```tsx
+// src/components/ActivityFeed.tsx
+interface Activity {
+  id: string;
+  action: string;
+  timestamp: string;
+}
+
+interface ActivityFeedProps {
+  activities: Activity[];
+}
+
+function ActivityFeed({ activities }: ActivityFeedProps) {
+  return (
+    <div className="activity-feed">
+      <h3>Recent Activity</h3>
+      <ul className="activity-list">
+        {activities.map((activity) => (
+          <li key={activity.id} className="activity-item">
+            <p className="activity-action">{activity.action}</p>
+            <span className="activity-timestamp">{activity.timestamp}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export default ActivityFeed;
+```
+
+### The Notification Badge Component
+
+```tsx
+// src/components/NotificationBadge.tsx
+interface NotificationBadgeProps {
+  count: number;
+}
+
+function NotificationBadge({ count }: NotificationBadgeProps) {
+  if (count === 0) {
+    return null;  // Don't render anything if no notifications
+  }
+  
+  return (
+    <div className="notification-badge">
+      <span className="badge-count">{count}</span>
+    </div>
+  );
+}
+
+export default NotificationBadge;
+```
+
+### Using the Dashboard
+
+```tsx
+// src/App.tsx
+import UserDashboard from './components/UserDashboard';
+
+function App() {
+  return (
+    <div className="app">
+      <UserDashboard userId="user-123" />
+    </div>
+  );
+}
+
+export default App;
+```
+
+### Basic Styling (Optional)
+
+Here's minimal CSS to make it look presentable:
+
+```css
+/* src/index.css */
+.dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.dashboard-content {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+}
+
+.user-profile {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin-bottom: 15px;
+}
+
+.user-info h2 {
+  margin: 0 0 5px 0;
+}
+
+.role {
+  color: #666;
+  margin: 5px 0;
+}
+
+.email {
+  color: #999;
+  font-size: 14px;
+}
+
+.activity-feed {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.activity-list {
+  list-style: none;
+  padding: 0;
+}
+
+.activity-item {
+  padding: 15px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-action {
+  margin: 0 0 5px 0;
+}
+
+.activity-timestamp {
+  color: #999;
+  font-size: 12px;
+}
+
+.notification-badge {
+  background: #ef4444;
+  color: white;
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-size: 14px;
+  font-weight: bold;
+}
+```
+
+**Browser Output**:
+```
+Dashboard                                    [3]
+
+┌─────────────────────┐  ┌────────────────────────────────────┐
+│  [Avatar Image]     │  │ Recent Activity                    │
+│                     │  │                                    │
+│  Alice Johnson      │  │ • Completed code review for PR #234│
+│  Senior Software    │  │   2 hours ago                      │
+│  Engineer           │  │                                    │
+│  alice.johnson@     │  │ • Deployed feature to production   │
+│  example.com        │  │   5 hours ago                      │
+│                     │  │                                    │
+│                     │  │ • Created new branch: feature/...  │
+│                     │  │   1 day ago                        │
+└─────────────────────┘  └────────────────────────────────────┘
+```
+
+## What We've Built
+
+Let's analyze the component structure:
+
+### Composition in Action
+
+1. **UserDashboard** is the container component
+   - Owns the data (for now, hardcoded)
+   - Passes data down to child components via props
+   - Handles layout and structure
+
+2. **UserProfile** is a presentational component
+   - Receives user data via props
+   - Displays that data
+   - Has no knowledge of where the data comes from
+
+3. **ActivityFeed** is a list component
+   - Receives an array of activities
+   - Maps over the array to render individual items
+   - Uses the `key` prop (we'll explain why in Chapter 5)
+
+4. **NotificationBadge** is a conditional component
+   - Returns `null` if count is 0 (renders nothing)
+   - Otherwise displays the count
+
+### Data Flow
+
+Data flows in one direction: **down**.
+
+```
+UserDashboard (owns data)
+    ↓ props
+    ├─→ UserProfile (displays user data)
+    ├─→ ActivityFeed (displays activities)
+    └─→ NotificationBadge (displays count)
+```
+
+Parent components pass data to children via props. Children cannot modify that data—they can only display it.
+
+### TypeScript Benefits
+
+Notice how TypeScript helps:
+
+1. **Interface definitions** document what each component expects
+2. **Type checking** prevents passing wrong data types
+3. **Autocomplete** in your editor shows available props
+4. **Refactoring safety** - if you change a prop name, TypeScript shows all places that need updating
+
+## Current Limitations (Preview of What's Coming)
+
+This dashboard works, but it has significant limitations:
+
+1. **Static data**: Everything is hardcoded. In Chapter 4, we'll fetch real data from an API.
+
+2. **No interactivity**: You can't click anything or update the UI. In Chapter 3, we'll add state and event handlers.
+
+3. **No loading states**: When we fetch data, users will see a blank screen. In Chapter 4, we'll add loading indicators.
+
+4. **No error handling**: If data fetching fails, the app crashes. In Chapter 4, we'll handle errors gracefully.
+
+5. **Performance issues**: The entire dashboard re-renders even if only one piece changes. In Chapter 5, we'll optimize this.
+
+But right now, we have a solid foundation. We've built a component hierarchy using composition, passed data via props, and created a maintainable structure.
+
+## Key Takeaways
+
+### Components Are Functions
+
+React components are JavaScript functions that return JSX. No classes, no inheritance, just functions.
+
+### Props Flow Down
+
+Data flows from parent to child via props. Props are read-only—never modify them inside a component.
+
+### Composition Over Inheritance
+
+Build complex UIs by combining simple components. Use props for variants, container components for layout, and specialized components for common patterns.
+
+### TypeScript Adds Safety
+
+Define prop interfaces to catch errors at compile time. TypeScript makes refactoring safer and provides better developer experience.
+
+### One Component, One Job
+
+Each component should have a single responsibility. `UserProfile` displays user info. `ActivityFeed` displays activities. `UserDashboard` coordinates them.
+
+## What's Next
+
+In Chapter 3, we'll make this dashboard interactive. We'll add:
+- State management with `useState`
+- Event handlers for user interactions
+- The ability to update the UI in response to user actions
+
+Our static dashboard will become dynamic. But first, we need to understand why regular JavaScript variables don't work in React—and what React does instead.

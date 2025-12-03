@@ -2,854 +2,3300 @@
 
 ## When useState is enough (most of the time)
 
-## The Default Choice: `useState`
+## When useState is enough (most of the time)
 
-In React, state is the memory of your component. It's the data that changes over time and causes your UI to re-render. The most fundamental tool for managing this memory is the `useState` hook. For the vast majority of components you build, `useState` is not just sufficient—it's the best tool for the job due to its simplicity and directness.
+Before we dive into complex state management patterns, let's establish a critical truth: **most of your state management problems don't need complex solutions**. The React community has a tendency to reach for sophisticated tools prematurely. We're going to start by understanding when the simplest tool—`useState`—is exactly what you need.
 
-The core philosophy of `useState` is **co-location**: state is declared right next to the JSX that uses it. This makes components easy to understand, debug, and reuse.
+### Phase 1: The Reference Implementation
 
-Let's build the anchor example for this chapter: a `UserProfileForm`. This form will allow a user to edit their profile information. We will build upon and refactor this single component throughout the chapter to explore different state management strategies.
-
-### Phase 1: Establish the Reference Implementation
-
-Our goal is to create a form with several fields: name, email, bio, role, and a toggle for notifications.
+We're building a **Task Board** application—a realistic, multi-feature UI that will serve as our testing ground for state management patterns throughout this chapter. This isn't a toy example. It's the kind of component you'd build in a real application: multiple pieces of related state, user interactions, and enough complexity to expose the limitations of each approach.
 
 **Project Structure**:
-
-We'll work within a single page for simplicity.
-
 ```
 src/
-└── app/
-    └── chapter-10/
-        └── page.tsx   ← Our component will live here
+├── components/
+│   ├── TaskBoard.tsx          ← Our reference implementation
+│   ├── TaskList.tsx
+│   ├── TaskItem.tsx
+│   ├── TaskForm.tsx
+│   └── FilterBar.tsx
+├── types/
+│   └── task.ts
+└── App.tsx
 ```
 
-Here is the initial, "naive" implementation using multiple `useState` hooks. This is our baseline—it's correct, functional, and often the right way to start.
+Let's start with the domain model:
+
+```typescript
+// src/types/task.ts
+export type TaskStatus = 'todo' | 'in-progress' | 'done';
+export type TaskPriority = 'low' | 'medium' | 'high';
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  assignee: string;
+  createdAt: Date;
+  dueDate?: Date;
+}
+
+export interface TaskFilters {
+  status: TaskStatus | 'all';
+  priority: TaskPriority | 'all';
+  assignee: string;
+  searchQuery: string;
+}
+```
+
+Now, our initial implementation using only `useState`:
 
 ```tsx
-// src/app/chapter-10/page.tsx
-'use client';
+// src/components/TaskBoard.tsx - Version 1: Pure useState
+import { useState } from 'react';
+import { Task, TaskFilters, TaskStatus, TaskPriority } from '../types/task';
+import { TaskList } from './TaskList';
+import { TaskForm } from './TaskForm';
+import { FilterBar } from './FilterBar';
 
-import { useState, FormEvent } from 'react';
+export function TaskBoard() {
+  // State: Each piece of data gets its own useState
+  const [tasks, setTasks] = useState<Task[]>([
+    {
+      id: '1',
+      title: 'Implement user authentication',
+      description: 'Add JWT-based auth flow',
+      status: 'in-progress',
+      priority: 'high',
+      assignee: 'Alice',
+      createdAt: new Date('2024-01-15'),
+      dueDate: new Date('2024-02-01'),
+    },
+    {
+      id: '2',
+      title: 'Write API documentation',
+      description: 'Document all REST endpoints',
+      status: 'todo',
+      priority: 'medium',
+      assignee: 'Bob',
+      createdAt: new Date('2024-01-16'),
+    },
+    {
+      id: '3',
+      title: 'Fix mobile responsive issues',
+      description: 'Dashboard breaks on small screens',
+      status: 'done',
+      priority: 'high',
+      assignee: 'Alice',
+      createdAt: new Date('2024-01-10'),
+      dueDate: new Date('2024-01-20'),
+    },
+  ]);
 
-export default function UserProfilePage() {
-  const [name, setName] = useState('Jane Doe');
-  const [email, setEmail] = useState('jane.doe@example.com');
-  const [bio, setBio] = useState('A software developer specializing in React.');
-  const [role, setRole] = useState<'user' | 'admin'>('user');
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [filters, setFilters] = useState<TaskFilters>({
+    status: 'all',
+    priority: 'all',
+    assignee: '',
+    searchQuery: '',
+  });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    const formData = { name, email, bio, role, notificationsEnabled };
-    console.log('Submitting:', formData);
-    alert(`Form submitted! Check the console for data.`);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  // Derived state: filtered tasks
+  const filteredTasks = tasks.filter((task) => {
+    if (filters.status !== 'all' && task.status !== filters.status) {
+      return false;
+    }
+    if (filters.priority !== 'all' && task.priority !== filters.priority) {
+      return false;
+    }
+    if (filters.assignee && task.assignee !== filters.assignee) {
+      return false;
+    }
+    if (filters.searchQuery) {
+      const query = filters.searchQuery.toLowerCase();
+      return (
+        task.title.toLowerCase().includes(query) ||
+        task.description.toLowerCase().includes(query)
+      );
+    }
+    return true;
+  });
+
+  // Actions: Functions that modify state
+  const addTask = (taskData: Omit<Task, 'id' | 'createdAt'>) => {
+    const newTask: Task = {
+      ...taskData,
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+    };
+    setTasks((prev) => [...prev, newTask]);
+    setIsFormOpen(false);
+  };
+
+  const updateTask = (taskId: string, updates: Partial<Task>) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId ? { ...task, ...updates } : task
+      )
+    );
+    setEditingTask(null);
+    setIsFormOpen(false);
+  };
+
+  const deleteTask = (taskId: string) => {
+    setTasks((prev) => prev.filter((task) => task.id !== taskId));
+  };
+
+  const updateTaskStatus = (taskId: string, status: TaskStatus) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId ? { ...task, status } : task
+      )
+    );
+  };
+
+  const updateFilters = (newFilters: Partial<TaskFilters>) => {
+    setFilters((prev) => ({ ...prev, ...newFilters }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      status: 'all',
+      priority: 'all',
+      assignee: '',
+      searchQuery: '',
+    });
+  };
+
+  const openEditForm = (task: Task) => {
+    setEditingTask(task);
+    setIsFormOpen(true);
+  };
+
+  const closeForm = () => {
+    setIsFormOpen(false);
+    setEditingTask(null);
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-8 bg-gray-50 rounded-lg shadow-md">
-      <h1 className="text-2xl font-bold mb-6">Edit User Profile</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
-        </div>
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
-        </div>
-        <div>
-          <label htmlFor="bio" className="block text-sm font-medium text-gray-700">Bio</label>
-          <textarea
-            id="bio"
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            rows={3}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
-        </div>
-        <div>
-          <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role</label>
-          <select
-            id="role"
-            value={role}
-            onChange={(e) => setRole(e.target.value as 'user' | 'admin')}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
-        <div className="flex items-center">
-          <input
-            id="notifications"
-            type="checkbox"
-            checked={notificationsEnabled}
-            onChange={(e) => setNotificationsEnabled(e.target.checked)}
-            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-          />
-          <label htmlFor="notifications" className="ml-2 block text-sm text-gray-900">
-            Enable Notifications
-          </label>
-        </div>
-        <button
-          type="submit"
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Save Profile
+    <div className="task-board">
+      <header className="board-header">
+        <h1>Task Board</h1>
+        <button onClick={() => setIsFormOpen(true)}>
+          Add Task
         </button>
+      </header>
+
+      <FilterBar
+        filters={filters}
+        onFilterChange={updateFilters}
+        onClearFilters={clearFilters}
+        taskCount={filteredTasks.length}
+        totalCount={tasks.length}
+      />
+
+      <TaskList
+        tasks={filteredTasks}
+        onStatusChange={updateTaskStatus}
+        onEdit={openEditForm}
+        onDelete={deleteTask}
+      />
+
+      {isFormOpen && (
+        <TaskForm
+          task={editingTask}
+          onSubmit={editingTask ? 
+            (data) => updateTask(editingTask.id, data) : 
+            addTask
+          }
+          onCancel={closeForm}
+        />
+      )}
+    </div>
+  );
+}
+```
+
+The supporting components:
+
+```tsx
+// src/components/FilterBar.tsx
+import { TaskFilters, TaskStatus, TaskPriority } from '../types/task';
+
+interface FilterBarProps {
+  filters: TaskFilters;
+  onFilterChange: (filters: Partial<TaskFilters>) => void;
+  onClearFilters: () => void;
+  taskCount: number;
+  totalCount: number;
+}
+
+export function FilterBar({
+  filters,
+  onFilterChange,
+  onClearFilters,
+  taskCount,
+  totalCount,
+}: FilterBarProps) {
+  return (
+    <div className="filter-bar">
+      <div className="filter-group">
+        <label>Status:</label>
+        <select
+          value={filters.status}
+          onChange={(e) => onFilterChange({ 
+            status: e.target.value as TaskStatus | 'all' 
+          })}
+        >
+          <option value="all">All</option>
+          <option value="todo">To Do</option>
+          <option value="in-progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+
+      <div className="filter-group">
+        <label>Priority:</label>
+        <select
+          value={filters.priority}
+          onChange={(e) => onFilterChange({ 
+            priority: e.target.value as TaskPriority | 'all' 
+          })}
+        >
+          <option value="all">All</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+
+      <div className="filter-group">
+        <label>Search:</label>
+        <input
+          type="text"
+          value={filters.searchQuery}
+          onChange={(e) => onFilterChange({ searchQuery: e.target.value })}
+          placeholder="Search tasks..."
+        />
+      </div>
+
+      <button onClick={onClearFilters}>Clear Filters</button>
+
+      <div className="task-count">
+        Showing {taskCount} of {totalCount} tasks
+      </div>
+    </div>
+  );
+}
+```
+
+```tsx
+// src/components/TaskList.tsx
+import { Task, TaskStatus } from '../types/task';
+import { TaskItem } from './TaskItem';
+
+interface TaskListProps {
+  tasks: Task[];
+  onStatusChange: (taskId: string, status: TaskStatus) => void;
+  onEdit: (task: Task) => void;
+  onDelete: (taskId: string) => void;
+}
+
+export function TaskList({ 
+  tasks, 
+  onStatusChange, 
+  onEdit, 
+  onDelete 
+}: TaskListProps) {
+  if (tasks.length === 0) {
+    return (
+      <div className="empty-state">
+        <p>No tasks found. Create one to get started!</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="task-list">
+      {tasks.map((task) => (
+        <TaskItem
+          key={task.id}
+          task={task}
+          onStatusChange={onStatusChange}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      ))}
+    </div>
+  );
+}
+```
+
+```tsx
+// src/components/TaskItem.tsx
+import { Task, TaskStatus } from '../types/task';
+
+interface TaskItemProps {
+  task: Task;
+  onStatusChange: (taskId: string, status: TaskStatus) => void;
+  onEdit: (task: Task) => void;
+  onDelete: (taskId: string) => void;
+}
+
+export function TaskItem({ 
+  task, 
+  onStatusChange, 
+  onEdit, 
+  onDelete 
+}: TaskItemProps) {
+  const priorityColors = {
+    low: '#4caf50',
+    medium: '#ff9800',
+    high: '#f44336',
+  };
+
+  return (
+    <div className="task-item">
+      <div className="task-header">
+        <h3>{task.title}</h3>
+        <span 
+          className="priority-badge"
+          style={{ backgroundColor: priorityColors[task.priority] }}
+        >
+          {task.priority}
+        </span>
+      </div>
+
+      <p className="task-description">{task.description}</p>
+
+      <div className="task-meta">
+        <span>Assignee: {task.assignee}</span>
+        {task.dueDate && (
+          <span>Due: {task.dueDate.toLocaleDateString()}</span>
+        )}
+      </div>
+
+      <div className="task-actions">
+        <select
+          value={task.status}
+          onChange={(e) => onStatusChange(task.id, e.target.value as TaskStatus)}
+        >
+          <option value="todo">To Do</option>
+          <option value="in-progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+
+        <button onClick={() => onEdit(task)}>Edit</button>
+        <button onClick={() => onDelete(task.id)}>Delete</button>
+      </div>
+    </div>
+  );
+}
+```
+
+```tsx
+// src/components/TaskForm.tsx
+import { useState } from 'react';
+import { Task, TaskStatus, TaskPriority } from '../types/task';
+
+interface TaskFormProps {
+  task?: Task | null;
+  onSubmit: (taskData: Omit<Task, 'id' | 'createdAt'>) => void;
+  onCancel: () => void;
+}
+
+export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
+  const [formData, setFormData] = useState({
+    title: task?.title || '',
+    description: task?.description || '',
+    status: task?.status || 'todo' as TaskStatus,
+    priority: task?.priority || 'medium' as TaskPriority,
+    assignee: task?.assignee || '',
+    dueDate: task?.dueDate?.toISOString().split('T')[0] || '',
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({
+      ...formData,
+      dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
+    });
+  };
+
+  return (
+    <div className="modal-overlay">
+      <form className="task-form" onSubmit={handleSubmit}>
+        <h2>{task ? 'Edit Task' : 'New Task'}</h2>
+
+        <label>
+          Title:
+          <input
+            type="text"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            required
+          />
+        </label>
+
+        <label>
+          Description:
+          <textarea
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            required
+          />
+        </label>
+
+        <label>
+          Status:
+          <select
+            value={formData.status}
+            onChange={(e) => setFormData({ 
+              ...formData, 
+              status: e.target.value as TaskStatus 
+            })}
+          >
+            <option value="todo">To Do</option>
+            <option value="in-progress">In Progress</option>
+            <option value="done">Done</option>
+          </select>
+        </label>
+
+        <label>
+          Priority:
+          <select
+            value={formData.priority}
+            onChange={(e) => setFormData({ 
+              ...formData, 
+              priority: e.target.value as TaskPriority 
+            })}
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+
+        <label>
+          Assignee:
+          <input
+            type="text"
+            value={formData.assignee}
+            onChange={(e) => setFormData({ ...formData, assignee: e.target.value })}
+            required
+          />
+        </label>
+
+        <label>
+          Due Date:
+          <input
+            type="date"
+            value={formData.dueDate}
+            onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+          />
+        </label>
+
+        <div className="form-actions">
+          <button type="submit">
+            {task ? 'Update' : 'Create'} Task
+          </button>
+          <button type="button" onClick={onCancel}>
+            Cancel
+          </button>
+        </div>
       </form>
     </div>
   );
 }
 ```
 
-### Analysis of the `useState` Approach
+### What Makes This Work
 
-This code works perfectly. Each piece of state is independent and managed by its own `useState` hook.
+This implementation uses **only `useState`**, and it works perfectly well. Let's understand why:
 
-**What `useState` excels at:**
+**1. Clear State Ownership**
 
-1.  **Simplicity and Readability**: `const [value, setValue] = useState(initialValue)` is arguably the most intuitive API in React. It clearly states: "Here is a piece of state, and here is the function to change it."
-2.  **Independence**: When state variables are not related, managing them separately makes sense. Changing the user's `name` has no logical connection to their `notificationsEnabled` setting. `useState` reflects this separation.
-3.  **Performance**: React is highly optimized for `useState`. When you call `setName`, React knows that only the components using the `name` variable *might* need to re-render.
+Each piece of state has a clear owner and purpose:
+- `tasks`: The source of truth for all task data
+- `filters`: Current filter selections
+- `isFormOpen`: Modal visibility
+- `editingTask`: Which task is being edited (if any)
 
-**When to stick with `useState`:**
+**2. Predictable State Updates**
 
--   When managing simple, primitive values (strings, numbers, booleans).
--   When state updates are independent of each other.
--   When the logic to calculate the next state is simple (e.g., `setCount(count + 1)`).
--   In most components you write. **`useState` should be your default.**
+Every state change happens through a dedicated function:
+- `addTask`, `updateTask`, `deleteTask` for task mutations
+- `updateFilters`, `clearFilters` for filter changes
+- `openEditForm`, `closeForm` for UI state
 
-### Limitation Preview
+**3. Derived State is Computed, Not Stored**
 
-Our current form is excellent for simple field updates. But what happens when we need to implement more complex state transitions? For example, what if we need a "Reset Form" button that reverts all fields to their original values, or a "Load Data" button that populates the entire form from a mock API call?
+Notice `filteredTasks` is not in state—it's computed from `tasks` and `filters`. This is crucial. Storing derived state creates synchronization problems.
 
-With our current setup, we would need to call all five `set...` functions in each of those handlers. This can become repetitive and error-prone. This is the exact problem we will tackle in the next section.
+**4. Props Flow Downward**
+
+Data flows down through props. Child components receive:
+- Data they need to display
+- Callbacks to trigger state changes in the parent
+
+This is the **React mental model**: state lives at the top, flows down through props, and changes bubble up through callbacks.
+
+### When useState is Enough
+
+This pattern works well when:
+
+✅ **State is localized**: All related state lives in one component
+✅ **Updates are simple**: Each action changes one or two pieces of state
+✅ **No complex interdependencies**: State changes don't trigger cascading updates
+✅ **Component tree is shallow**: Props don't need to drill through many levels
+
+For our TaskBoard, all these conditions are true. The state is self-contained, updates are straightforward, and the component tree is only 2-3 levels deep.
+
+### The Real-World Test
+
+Let's verify this works by running through realistic user interactions:
+
+**Scenario 1: Filtering tasks**
+1. User selects "Status: In Progress"
+2. `updateFilters` is called with `{ status: 'in-progress' }`
+3. `filters` state updates
+4. `filteredTasks` recomputes automatically
+5. `TaskList` re-renders with filtered data
+
+**Scenario 2: Editing a task**
+1. User clicks "Edit" on a task
+2. `openEditForm` is called with the task object
+3. `editingTask` state updates to that task
+4. `isFormOpen` state updates to `true`
+5. `TaskForm` renders with pre-filled data
+6. User submits changes
+7. `updateTask` is called
+8. `tasks` state updates with new data
+9. `editingTask` resets to `null`
+10. `isFormOpen` resets to `false`
+
+**Browser Console** (with React DevTools):
+```
+[TaskBoard] Rendered
+[FilterBar] Rendered
+[TaskList] Rendered
+[TaskItem] Rendered (3 times - one per task)
+
+// After filtering:
+[TaskBoard] Re-rendered (filters changed)
+[FilterBar] Re-rendered (filters prop changed)
+[TaskList] Re-rendered (tasks prop changed)
+[TaskItem] Rendered (1 time - only in-progress task)
+
+// After editing:
+[TaskBoard] Re-rendered (editingTask changed)
+[TaskForm] Rendered (new component mounted)
+// ... user edits ...
+[TaskBoard] Re-rendered (tasks changed)
+[TaskList] Re-rendered (tasks prop changed)
+[TaskItem] Re-rendered (task prop changed)
+[TaskForm] Unmounted
+```
+
+Everything re-renders exactly when it should. No unnecessary updates. No stale data. No bugs.
+
+### The Simplicity Advantage
+
+This approach has significant benefits:
+
+**1. Easy to understand**: Any React developer can read this code and understand it immediately
+
+**2. Easy to debug**: React DevTools shows exactly what state exists and when it changes
+
+**3. Easy to test**: Each function is pure and testable in isolation
+
+**4. Easy to modify**: Adding a new piece of state or a new action is straightforward
+
+**5. No external dependencies**: No libraries to learn, no abstractions to understand
+
+### When to Stick with useState
+
+Most components in most applications should use this pattern. Reach for more complex solutions only when you encounter specific problems that `useState` cannot solve efficiently.
+
+**Signs that useState is working**:
+- Code is easy to read and modify
+- No performance issues
+- No prop drilling through more than 2-3 levels
+- State updates are predictable and debuggable
+- Team members understand the code without explanation
+
+If all these are true, **don't change anything**. The best code is the simplest code that works.
 
 ## useReducer for complex state logic
 
-## Managing Complexity with `useReducer`
+## useReducer for complex state logic
 
-As we previewed, our `useState`-based form is simple and effective, but it has a weakness: its state update logic is scattered. Each `onChange` handler contains its own logic. If we add more complex actions that affect multiple state variables at once, this decentralized approach becomes a liability.
+### Phase 2: When useState Shows Its Limits
 
-### Iteration 1: The Problem of Interrelated State Updates
+Our TaskBoard works well, but let's add a realistic feature that will expose the limitations of multiple `useState` calls: **undo/redo functionality**.
 
-**Current state recap**: Our `UserProfileForm` uses five separate `useState` hooks to manage its fields. It works well for individual field changes.
+Users want to undo accidental deletions or revert changes. This is a common requirement in task management applications. Let's try to implement it with our current approach.
 
-**Current limitation**: There's no centralized place to manage state logic. Actions like "resetting the form" or "loading data" require calling multiple state setters, leading to code duplication and potential bugs if a new field is added but forgotten in one of the handlers.
+### The Failure: State Synchronization Hell
 
-**New scenario introduction**: Let's add two new buttons to our form:
-1.  **Reset Form**: Reverts all fields to their initial state.
-2.  **Load Sample Data**: Populates the form with data for a different user, simulating an API response.
-
-Let's first try to implement this using our existing `useState` setup.
+Here's what happens when we try to add undo/redo with `useState`:
 
 ```tsx
-// src/app/chapter-10/page.tsx (Conceptual 'before' state)
+// src/components/TaskBoard.tsx - Attempting undo/redo with useState
+import { useState } from 'react';
+import { Task, TaskFilters } from '../types/task';
 
-// ... (imports and component definition)
-  const [name, setName] = useState('Jane Doe');
-  // ... (other useState hooks)
+interface HistoryEntry {
+  tasks: Task[];
+  filters: TaskFilters;
+  isFormOpen: boolean;
+  editingTask: Task | null;
+}
 
-  const initialData = {
-    name: 'Jane Doe',
-    email: 'jane.doe@example.com',
-    bio: 'A software developer specializing in React.',
-    role: 'user' as const,
-    notificationsEnabled: true,
-  };
+export function TaskBoard() {
+  const [tasks, setTasks] = useState<Task[]>([/* initial tasks */]);
+  const [filters, setFilters] = useState<TaskFilters>({/* initial filters */});
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-  const handleReset = () => {
-    setName(initialData.name);
-    setEmail(initialData.email);
-    setBio(initialData.bio);
-    setRole(initialData.role);
-    setNotificationsEnabled(initialData.notificationsEnabled);
-  };
+  // Undo/redo state
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
-  const handleLoadSampleData = () => {
-    const sampleData = {
-      name: 'John Smith',
-      email: 'john.smith@example.com',
-      bio: 'Lead Engineer with a passion for TypeScript.',
-      role: 'admin' as const,
-      notificationsEnabled: false,
+  // Try to save state to history before each change
+  const saveToHistory = () => {
+    const entry: HistoryEntry = {
+      tasks,
+      filters,
+      isFormOpen,
+      editingTask,
     };
-    setName(sampleData.name);
-    setEmail(sampleData.email);
-    setBio(sampleData.bio);
-    setRole(sampleData.role);
-    setNotificationsEnabled(sampleData.notificationsEnabled);
+    
+    // Remove any "future" history if we're not at the end
+    const newHistory = history.slice(0, historyIndex + 1);
+    setHistory([...newHistory, entry]);
+    setHistoryIndex(newHistory.length);
   };
 
-  // ... (rest of the component with new buttons)
-  /*
-  <div className="flex space-x-2 mt-4">
-    <button type="button" onClick={handleLoadSampleData}>Load Sample Data</button>
-    <button type="button" onClick={handleReset}>Reset</button>
-  </div>
-  */
+  const addTask = (taskData: Omit<Task, 'id' | 'createdAt'>) => {
+    saveToHistory(); // Save before change
+    
+    const newTask: Task = {
+      ...taskData,
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+    };
+    setTasks((prev) => [...prev, newTask]);
+    setIsFormOpen(false);
+  };
+
+  const deleteTask = (taskId: string) => {
+    saveToHistory(); // Save before change
+    setTasks((prev) => prev.filter((task) => task.id !== taskId));
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      const previousState = history[historyIndex - 1];
+      
+      // Now we need to restore ALL state
+      setTasks(previousState.tasks);
+      setFilters(previousState.filters);
+      setIsFormOpen(previousState.isFormOpen);
+      setEditingTask(previousState.editingTask);
+      setHistoryIndex(historyIndex - 1);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      const nextState = history[historyIndex + 1];
+      
+      // Restore ALL state again
+      setTasks(nextState.tasks);
+      setFilters(nextState.filters);
+      setIsFormOpen(nextState.isFormOpen);
+      setEditingTask(nextState.editingTask);
+      setHistoryIndex(historyIndex + 1);
+    }
+  };
+
+  // ... rest of component
+}
 ```
+
+Let's run this and see what happens:
+
+**Browser Behavior**:
+1. User adds a task
+2. User deletes a task
+3. User clicks "Undo"
+4. The deleted task reappears ✓
+5. User clicks "Undo" again
+6. The added task disappears ✓
+7. User changes a filter
+8. User clicks "Undo"
+9. **Nothing happens** ❌
+
+**Browser Console**:
+```
+Warning: Cannot update a component while rendering a different component.
+  at TaskBoard (TaskBoard.tsx:45)
+
+Warning: Maximum update depth exceeded. This can happen when a component 
+calls setState inside useEffect, but useEffect either doesn't have a 
+dependency array, or one of the dependencies changes on every render.
+  at TaskBoard (TaskBoard.tsx:52)
+```
+
+**React DevTools Evidence**:
+- Component tree: `TaskBoard` highlighted in red (error state)
+- State inspection:
+  - `history`: Array with 3 entries
+  - `historyIndex`: 1
+  - `tasks`: Correct data
+  - `filters`: **Not in history** - this is the problem
+- Render count: 847 renders in 2 seconds (infinite loop)
 
 ### Diagnostic Analysis: Reading the Failure
 
-This isn't a runtime failure, but a **maintainability and scalability failure**.
+**What the user experiences**:
+- Expected: Undo should revert the filter change
+- Actual: Undo does nothing, then the app freezes
 
-**Browser Behavior**:
-The UI works exactly as expected. Clicking "Reset" resets the form. Clicking "Load Sample Data" loads the new data.
+**What the console reveals**:
+- Key indicator: "Maximum update depth exceeded"
+- Error location: Inside `saveToHistory` function
+- This means we're triggering infinite state updates
 
-**Code Analysis**:
-The problem lies in the code's structure.
-- **Repetition**: The logic for updating the form state is duplicated. Both `handleReset` and `handleLoadSampleData` list out every single state setter.
-- **Fragility**: If we add a new field, say `username`, we must remember to add `const [username, setUsername] = useState('')` AND update `handleReset` AND `handleLoadSampleData`. Forgetting one of these will introduce a subtle bug where resetting the form doesn't reset the new field.
-- **Lack of Clarity**: The event handlers are cluttered with implementation details (`setName`, `setEmail`, etc.). They should ideally describe *what* the user is doing (e.g., "resetting the form"), not *how* the state is updated.
+**What DevTools shows**:
+- Component state: `history` array keeps growing
+- Render behavior: Component re-renders continuously
+- The problem: `saveToHistory` reads current state, but that state is stale by the time it executes
 
-**Let's parse this evidence**:
+**Root cause identified**: 
 
-1.  **What the user experiences**: A perfectly working form.
-2.  **What the code reveals**: A maintenance problem waiting to happen. The state update logic is scattered and repetitive.
-3.  **Root cause identified**: We've coupled the *intent* of an action (e.g., "reset form") with the low-level *mechanics* of updating each state slice.
-4.  **Why the current approach can't solve this**: `useState` is designed for independent state slices. It doesn't provide a built-in mechanism for coordinating updates across multiple slices.
-5.  **What we need**: A way to centralize all our state update logic into a single place, so that our event handlers can simply declare their intent by dispatching an "action".
+When we call `saveToHistory()` before a state update, we're reading the current state values. But React batches state updates, so by the time `saveToHistory` executes, the state hasn't actually changed yet. We're saving the old state, then updating to the new state, then trying to save again, creating an infinite loop.
 
-### Technique Introduced: `useReducer`
+Additionally, we have **four separate pieces of state** that must stay synchronized:
+1. `tasks`
+2. `filters`
+3. `isFormOpen`
+4. `editingTask`
 
-The `useReducer` hook is React's built-in solution for complex state management. It's an alternative to `useState` that is better suited for managing state objects with multiple sub-values and handling complex, multi-part state transitions.
+Every action must update the right combination of these, and every undo/redo must restore all of them atomically. With `useState`, there's no way to guarantee this happens correctly.
 
-It works with three core concepts:
-1.  **State**: A single object that holds all your component's state.
-2.  **Reducer**: A pure function that takes the current `state` and an `action` object and returns the *new* state. It's where all your update logic lives. `(currentState, action) => newState`.
-3.  **Dispatch**: A function you call from your event handlers to "dispatch" an action object to the reducer.
+**Why the current approach can't solve this**:
 
-This pattern moves the "how to update" logic from your component's body into the centralized reducer function.
+`useState` is designed for independent pieces of state. When you have multiple related pieces of state that must change together, you need a different tool.
 
-### Solution Implementation: Refactoring to `useReducer`
+**What we need**: 
 
-Let's refactor our `UserProfileForm`.
+A way to manage all related state as a single unit, with a clear definition of how each action transforms that state. We need `useReducer`.
 
-**Before** (Multiple `useState` hooks):
-```tsx
-const [name, setName] = useState('Jane Doe');
-const [email, setEmail] = useState('jane.doe@example.com');
-// ... and so on
-```
+### Iteration 1: Refactoring to useReducer
 
-**After** (A single `useReducer` hook):
+`useReducer` is React's built-in solution for complex state logic. It's based on the reducer pattern from Redux, but simpler and built into React.
 
-First, we define the types for our state and actions, and the initial state object.
+**The mental model**:
+- All state lives in a single object
+- Actions describe what happened
+- A reducer function defines how each action transforms the state
+- State updates are atomic and predictable
+
+Let's refactor our TaskBoard:
 
 ```typescript
-// src/app/chapter-10/reducer.ts (can be in the same file or separate)
+// src/types/task.ts - Add action types
+export type TaskStatus = 'todo' | 'in-progress' | 'done';
+export type TaskPriority = 'low' | 'medium' | 'high';
 
-export type State = {
-  name: string;
-  email: string;
-  bio: string;
-  role: 'user' | 'admin';
-  notificationsEnabled: boolean;
-};
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  assignee: string;
+  createdAt: Date;
+  dueDate?: Date;
+}
 
-// Define the actions our reducer can handle
-export type Action =
-  | { type: 'UPDATE_FIELD'; field: keyof State; value: any }
-  | { type: 'SET_FORM_DATA'; payload: State }
-  | { type: 'RESET' };
+export interface TaskFilters {
+  status: TaskStatus | 'all';
+  priority: TaskPriority | 'all';
+  assignee: string;
+  searchQuery: string;
+}
 
-export const initialState: State = {
-  name: 'Jane Doe',
-  email: 'jane.doe@example.com',
-  bio: 'A software developer specializing in React.',
-  role: 'user',
-  notificationsEnabled: true,
-};
+// New: State shape
+export interface TaskBoardState {
+  tasks: Task[];
+  filters: TaskFilters;
+  isFormOpen: boolean;
+  editingTask: Task | null;
+  history: TaskBoardState[];
+  historyIndex: number;
+}
 
-// The reducer function contains all state update logic
-export function formReducer(state: State, action: Action): State {
+// New: Action types
+export type TaskBoardAction =
+  | { type: 'ADD_TASK'; payload: Omit<Task, 'id' | 'createdAt'> }
+  | { type: 'UPDATE_TASK'; payload: { id: string; updates: Partial<Task> } }
+  | { type: 'DELETE_TASK'; payload: string }
+  | { type: 'UPDATE_TASK_STATUS'; payload: { id: string; status: TaskStatus } }
+  | { type: 'UPDATE_FILTERS'; payload: Partial<TaskFilters> }
+  | { type: 'CLEAR_FILTERS' }
+  | { type: 'OPEN_FORM' }
+  | { type: 'OPEN_EDIT_FORM'; payload: Task }
+  | { type: 'CLOSE_FORM' }
+  | { type: 'UNDO' }
+  | { type: 'REDO' };
+```
+
+Now the reducer function—the heart of our state management:
+
+```typescript
+// src/reducers/taskBoardReducer.ts
+import { TaskBoardState, TaskBoardAction, Task } from '../types/task';
+
+// Helper: Save current state to history before making changes
+function saveToHistory(state: TaskBoardState): TaskBoardState {
+  // Don't save history entries to history (avoid nested history)
+  const stateToSave: TaskBoardState = {
+    ...state,
+    history: [],
+    historyIndex: -1,
+  };
+
+  // Remove any "future" history if we're not at the end
+  const newHistory = state.history.slice(0, state.historyIndex + 1);
+
+  return {
+    ...state,
+    history: [...newHistory, stateToSave],
+    historyIndex: newHistory.length,
+  };
+}
+
+export function taskBoardReducer(
+  state: TaskBoardState,
+  action: TaskBoardAction
+): TaskBoardState {
   switch (action.type) {
-    case 'UPDATE_FIELD':
+    case 'ADD_TASK': {
+      const stateWithHistory = saveToHistory(state);
+      const newTask: Task = {
+        ...action.payload,
+        id: crypto.randomUUID(),
+        createdAt: new Date(),
+      };
+
+      return {
+        ...stateWithHistory,
+        tasks: [...stateWithHistory.tasks, newTask],
+        isFormOpen: false,
+      };
+    }
+
+    case 'UPDATE_TASK': {
+      const stateWithHistory = saveToHistory(state);
+      return {
+        ...stateWithHistory,
+        tasks: stateWithHistory.tasks.map((task) =>
+          task.id === action.payload.id
+            ? { ...task, ...action.payload.updates }
+            : task
+        ),
+        editingTask: null,
+        isFormOpen: false,
+      };
+    }
+
+    case 'DELETE_TASK': {
+      const stateWithHistory = saveToHistory(state);
+      return {
+        ...stateWithHistory,
+        tasks: stateWithHistory.tasks.filter(
+          (task) => task.id !== action.payload
+        ),
+      };
+    }
+
+    case 'UPDATE_TASK_STATUS': {
+      const stateWithHistory = saveToHistory(state);
+      return {
+        ...stateWithHistory,
+        tasks: stateWithHistory.tasks.map((task) =>
+          task.id === action.payload.id
+            ? { ...task, status: action.payload.status }
+            : task
+        ),
+      };
+    }
+
+    case 'UPDATE_FILTERS':
       return {
         ...state,
-        [action.field]: action.value,
+        filters: { ...state.filters, ...action.payload },
       };
-    case 'SET_FORM_DATA':
-      return { ...action.payload };
-    case 'RESET':
-      return initialState;
+
+    case 'CLEAR_FILTERS':
+      return {
+        ...state,
+        filters: {
+          status: 'all',
+          priority: 'all',
+          assignee: '',
+          searchQuery: '',
+        },
+      };
+
+    case 'OPEN_FORM':
+      return {
+        ...state,
+        isFormOpen: true,
+        editingTask: null,
+      };
+
+    case 'OPEN_EDIT_FORM':
+      return {
+        ...state,
+        isFormOpen: true,
+        editingTask: action.payload,
+      };
+
+    case 'CLOSE_FORM':
+      return {
+        ...state,
+        isFormOpen: false,
+        editingTask: null,
+      };
+
+    case 'UNDO': {
+      if (state.historyIndex > 0) {
+        const previousState = state.history[state.historyIndex - 1];
+        return {
+          ...previousState,
+          history: state.history,
+          historyIndex: state.historyIndex - 1,
+        };
+      }
+      return state;
+    }
+
+    case 'REDO': {
+      if (state.historyIndex < state.history.length - 1) {
+        const nextState = state.history[state.historyIndex + 1];
+        return {
+          ...nextState,
+          history: state.history,
+          historyIndex: state.historyIndex + 1,
+        };
+      }
+      return state;
+    }
+
     default:
       return state;
   }
 }
 ```
 
-Now, let's update the component to use this reducer.
+Now the component becomes much simpler:
 
 ```tsx
-// src/app/chapter-10/page.tsx (Refactored with useReducer)
-'use client';
+// src/components/TaskBoard.tsx - Version 2: Using useReducer
+import { useReducer, useMemo } from 'react';
+import { TaskBoardState, TaskStatus } from '../types/task';
+import { taskBoardReducer } from '../reducers/taskBoardReducer';
+import { TaskList } from './TaskList';
+import { TaskForm } from './TaskForm';
+import { FilterBar } from './FilterBar';
 
-import { useReducer, FormEvent } from 'react';
-import { formReducer, initialState, State } from './reducer'; // Assuming reducer is in a separate file
+const initialState: TaskBoardState = {
+  tasks: [
+    {
+      id: '1',
+      title: 'Implement user authentication',
+      description: 'Add JWT-based auth flow',
+      status: 'in-progress',
+      priority: 'high',
+      assignee: 'Alice',
+      createdAt: new Date('2024-01-15'),
+      dueDate: new Date('2024-02-01'),
+    },
+    {
+      id: '2',
+      title: 'Write API documentation',
+      description: 'Document all REST endpoints',
+      status: 'todo',
+      priority: 'medium',
+      assignee: 'Bob',
+      createdAt: new Date('2024-01-16'),
+    },
+    {
+      id: '3',
+      title: 'Fix mobile responsive issues',
+      description: 'Dashboard breaks on small screens',
+      status: 'done',
+      priority: 'high',
+      assignee: 'Alice',
+      createdAt: new Date('2024-01-10'),
+      dueDate: new Date('2024-01-20'),
+    },
+  ],
+  filters: {
+    status: 'all',
+    priority: 'all',
+    assignee: '',
+    searchQuery: '',
+  },
+  isFormOpen: false,
+  editingTask: null,
+  history: [],
+  historyIndex: -1,
+};
 
-export default function UserProfilePage() {
-  const [state, dispatch] = useReducer(formReducer, initialState);
+export function TaskBoard() {
+  const [state, dispatch] = useReducer(taskBoardReducer, initialState);
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    console.log('Submitting:', state);
-    alert(`Form submitted! Check the console for data.`);
-  };
+  // Derived state: filtered tasks
+  const filteredTasks = useMemo(() => {
+    return state.tasks.filter((task) => {
+      if (state.filters.status !== 'all' && task.status !== state.filters.status) {
+        return false;
+      }
+      if (state.filters.priority !== 'all' && task.priority !== state.filters.priority) {
+        return false;
+      }
+      if (state.filters.assignee && task.assignee !== state.filters.assignee) {
+        return false;
+      }
+      if (state.filters.searchQuery) {
+        const query = state.filters.searchQuery.toLowerCase();
+        return (
+          task.title.toLowerCase().includes(query) ||
+          task.description.toLowerCase().includes(query)
+        );
+      }
+      return true;
+    });
+  }, [state.tasks, state.filters]);
 
-  const handleFieldChange = (field: keyof State, value: any) => {
-    dispatch({ type: 'UPDATE_FIELD', field, value });
-  };
-
-  const handleLoadSampleData = () => {
-    const sampleData: State = {
-      name: 'John Smith',
-      email: 'john.smith@example.com',
-      bio: 'Lead Engineer with a passion for TypeScript.',
-      role: 'admin',
-      notificationsEnabled: false,
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          dispatch({ type: 'REDO' });
+        } else {
+          dispatch({ type: 'UNDO' });
+        }
+      }
     };
-    dispatch({ type: 'SET_FORM_DATA', payload: sampleData });
-  };
 
-  const handleReset = () => {
-    dispatch({ type: 'RESET' });
-  };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
-    <div className="max-w-2xl mx-auto p-8 bg-gray-50 rounded-lg shadow-md">
-      <h1 className="text-2xl font-bold mb-6">Edit User Profile</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Name Input */}
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
-          <input
-            id="name"
-            type="text"
-            value={state.name}
-            onChange={(e) => handleFieldChange('name', e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
+    <div className="task-board">
+      <header className="board-header">
+        <h1>Task Board</h1>
+        <div className="header-actions">
+          <button onClick={() => dispatch({ type: 'OPEN_FORM' })}>
+            Add Task
+          </button>
+          <button
+            onClick={() => dispatch({ type: 'UNDO' })}
+            disabled={state.historyIndex <= 0}
+          >
+            Undo (⌘Z)
+          </button>
+          <button
+            onClick={() => dispatch({ type: 'REDO' })}
+            disabled={state.historyIndex >= state.history.length - 1}
+          >
+            Redo (⌘⇧Z)
+          </button>
         </div>
-        {/* ... other form fields updated similarly ... */}
-        {/* Example: Checkbox */}
-        <div className="flex items-center">
-          <input
-            id="notifications"
-            type="checkbox"
-            checked={state.notificationsEnabled}
-            onChange={(e) => handleFieldChange('notificationsEnabled', e.target.checked)}
-            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-          />
-          <label htmlFor="notifications" className="ml-2 block text-sm text-gray-900">
-            Enable Notifications
-          </label>
-        </div>
-        
-        <div className="flex space-x-2 pt-4">
-            <button type="button" onClick={handleLoadSampleData} className="flex-1 justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Load Sample Data</button>
-            <button type="button" onClick={handleReset} className="flex-1 justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Reset</button>
-        </div>
+      </header>
 
-        <button
-          type="submit"
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Save Profile
-        </button>
-      </form>
+      <FilterBar
+        filters={state.filters}
+        onFilterChange={(filters) =>
+          dispatch({ type: 'UPDATE_FILTERS', payload: filters })
+        }
+        onClearFilters={() => dispatch({ type: 'CLEAR_FILTERS' })}
+        taskCount={filteredTasks.length}
+        totalCount={state.tasks.length}
+      />
+
+      <TaskList
+        tasks={filteredTasks}
+        onStatusChange={(id, status) =>
+          dispatch({ type: 'UPDATE_TASK_STATUS', payload: { id, status } })
+        }
+        onEdit={(task) =>
+          dispatch({ type: 'OPEN_EDIT_FORM', payload: task })
+        }
+        onDelete={(id) =>
+          dispatch({ type: 'DELETE_TASK', payload: id })
+        }
+      />
+
+      {state.isFormOpen && (
+        <TaskForm
+          task={state.editingTask}
+          onSubmit={(data) =>
+            state.editingTask
+              ? dispatch({
+                  type: 'UPDATE_TASK',
+                  payload: { id: state.editingTask.id, updates: data },
+                })
+              : dispatch({ type: 'ADD_TASK', payload: data })
+          }
+          onCancel={() => dispatch({ type: 'CLOSE_FORM' })}
+        />
+      )}
     </div>
   );
 }
 ```
 
-### Verification and Improvement Analysis
+### Verification: Does It Work?
 
-**Verification**: The form's behavior is identical to the user. All functionality remains.
+Let's run through the same scenario that failed before:
 
-**Expected vs. Actual Improvement**:
-- **Centralized Logic**: All state update logic is now inside `formReducer`. If we add a new field, we only need to update the `State` type and `initialState`. The `RESET` and `SET_FORM_DATA` actions will handle it automatically.
-- **Declarative Handlers**: The event handlers (`handleReset`, `handleLoadSampleData`) are now much cleaner. They describe the *user's intent* by dispatching an action, rather than implementing the state update themselves.
-- **Testability**: The `formReducer` is a pure function. You can export it and write unit tests for it completely independently of React, by simply passing in a state and an action and asserting the result.
+**User Actions**:
+1. Add a task → "Write tests"
+2. Delete a task → "Fix mobile responsive issues"
+3. Change filter → Status: "In Progress"
+4. Press ⌘Z (Undo)
+5. Press ⌘Z (Undo)
+6. Press ⌘Z (Undo)
 
-### When to Apply This Solution: `useState` vs. `useReducer`
+**Browser Console**:
+```
+[TaskBoard] Rendered
+[TaskBoard] Action dispatched: ADD_TASK
+[TaskBoard] State updated, re-rendering
+[TaskBoard] Action dispatched: DELETE_TASK
+[TaskBoard] State updated, re-rendering
+[TaskBoard] Action dispatched: UPDATE_FILTERS
+[TaskBoard] State updated, re-rendering
+[TaskBoard] Action dispatched: UNDO
+[TaskBoard] State updated, re-rendering (filter reverted)
+[TaskBoard] Action dispatched: UNDO
+[TaskBoard] State updated, re-rendering (deleted task restored)
+[TaskBoard] Action dispatched: UNDO
+[TaskBoard] State updated, re-rendering (added task removed)
+```
 
-| Scenario | `useState` (Preferred) | `useReducer` (Consider) |
-| :--- | :--- | :--- |
-| **State Shape** | Primitive (string, boolean) or simple object/array. | Complex object with multiple nested values. |
-| **State Updates** | Simple, independent updates. | Multiple sub-values are updated together. |
-| **Update Logic** | Next state is easily calculated from the event. | Next state depends on the previous state in a complex way. |
-| **Example** | A toggle switch's `on`/`off` state. | A multi-step form's state, a shopping cart. |
+**React DevTools Evidence**:
+- Component tree: `TaskBoard` rendering normally
+- State inspection:
+  - `state.tasks`: Array with 3 tasks (back to original)
+  - `state.filters`: Back to default values
+  - `state.history`: Array with 3 entries
+  - `state.historyIndex`: 0 (at the beginning)
+- Render count: 7 renders total (1 initial + 6 actions)
+- No infinite loops, no errors
 
-**Rule of thumb**: Start with `useState`. When you find yourself writing event handlers that call multiple `set...` functions, or when the logic for determining the next state becomes complex, it's a strong signal to refactor to `useReducer`.
+**Expected vs. Actual**:
+- ✅ Filter change undone correctly
+- ✅ Deleted task restored
+- ✅ Added task removed
+- ✅ All state synchronized
+- ✅ No performance issues
+- ✅ Keyboard shortcuts work
 
-### Limitation Preview
+### What Changed and Why It Works
 
-Our component is now robust and maintainable. However, it's a single, monolithic component. In a real application, we would likely break this form down into smaller, reusable components (`<TextInput>`, `<SelectInput>`, `<FormActions>`).
+**Before (useState)**:
+```tsx
+const [tasks, setTasks] = useState<Task[]>([]);
+const [filters, setFilters] = useState<TaskFilters>({});
+const [isFormOpen, setIsFormOpen] = useState(false);
+const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-When we do that, how will the child components access the `state` and `dispatch` function from the parent? We could pass them down as props, but this can lead to a problem called "prop drilling." This is the challenge we'll solve next.
+// Problem: Four separate pieces of state
+// Problem: No guarantee they update together
+// Problem: History must track all four separately
+```
+
+**After (useReducer)**:
+```tsx
+const [state, dispatch] = useReducer(taskBoardReducer, initialState);
+
+// Solution: One state object
+// Solution: All updates are atomic
+// Solution: History is built into the state
+```
+
+### The useReducer Mental Model
+
+Think of `useReducer` as a state machine:
+
+1. **State**: The current snapshot of your application
+2. **Actions**: Events that describe what happened
+3. **Reducer**: A pure function that computes the next state
+4. **Dispatch**: The function that sends actions to the reducer
+
+```
+Current State + Action → Reducer → Next State
+```
+
+The reducer is **pure**: given the same state and action, it always returns the same next state. This makes it:
+- Predictable
+- Testable
+- Debuggable
+- Time-travel-able (undo/redo)
+
+### When to Use useReducer
+
+Use `useReducer` when you have:
+
+✅ **Multiple related pieces of state** that must update together
+✅ **Complex update logic** with many conditional branches
+✅ **State transitions** that depend on previous state
+✅ **Need for undo/redo** or time-travel debugging
+✅ **Actions that need to be logged** or replayed
+
+Don't use `useReducer` when:
+
+❌ State is simple and independent
+❌ Updates are straightforward (just setting a value)
+❌ You're adding complexity without solving a real problem
+
+### Common Failure Modes with useReducer
+
+#### Symptom: State updates but component doesn't re-render
+
+**Root cause**: Mutating state instead of returning a new object
+
+**Wrong**:
+```typescript
+case 'ADD_TASK':
+  state.tasks.push(newTask); // Mutation!
+  return state; // Same reference, React won't re-render
+```
+
+**Right**:
+```typescript
+case 'ADD_TASK':
+  return {
+    ...state,
+    tasks: [...state.tasks, newTask], // New array
+  };
+```
+
+#### Symptom: Reducer becomes a giant switch statement
+
+**Root cause**: Too many actions, not enough abstraction
+
+**Solution**: Split into multiple reducers or extract helper functions
+
+```typescript
+// Instead of one giant reducer:
+function taskBoardReducer(state, action) {
+  switch (action.type) {
+    case 'ADD_TASK': /* ... */
+    case 'UPDATE_TASK': /* ... */
+    case 'DELETE_TASK': /* ... */
+    // ... 20 more cases
+  }
+}
+
+// Split into focused reducers:
+function tasksReducer(tasks, action) {
+  switch (action.type) {
+    case 'ADD_TASK': /* ... */
+    case 'UPDATE_TASK': /* ... */
+    case 'DELETE_TASK': /* ... */
+  }
+}
+
+function filtersReducer(filters, action) {
+  switch (action.type) {
+    case 'UPDATE_FILTERS': /* ... */
+    case 'CLEAR_FILTERS': /* ... */
+  }
+}
+
+function taskBoardReducer(state, action) {
+  return {
+    tasks: tasksReducer(state.tasks, action),
+    filters: filtersReducer(state.filters, action),
+    // ...
+  };
+}
+```
+
+### Testing useReducer
+
+Reducers are pure functions, making them trivial to test:
+
+```typescript
+// src/reducers/taskBoardReducer.test.ts
+import { describe, it, expect } from 'vitest';
+import { taskBoardReducer } from './taskBoardReducer';
+import { TaskBoardState } from '../types/task';
+
+describe('taskBoardReducer', () => {
+  const initialState: TaskBoardState = {
+    tasks: [],
+    filters: {
+      status: 'all',
+      priority: 'all',
+      assignee: '',
+      searchQuery: '',
+    },
+    isFormOpen: false,
+    editingTask: null,
+    history: [],
+    historyIndex: -1,
+  };
+
+  it('adds a task', () => {
+    const action = {
+      type: 'ADD_TASK' as const,
+      payload: {
+        title: 'Test task',
+        description: 'Test description',
+        status: 'todo' as const,
+        priority: 'medium' as const,
+        assignee: 'Alice',
+      },
+    };
+
+    const nextState = taskBoardReducer(initialState, action);
+
+    expect(nextState.tasks).toHaveLength(1);
+    expect(nextState.tasks[0].title).toBe('Test task');
+    expect(nextState.isFormOpen).toBe(false);
+    expect(nextState.history).toHaveLength(1); // History saved
+  });
+
+  it('deletes a task', () => {
+    const stateWithTask: TaskBoardState = {
+      ...initialState,
+      tasks: [
+        {
+          id: '1',
+          title: 'Task to delete',
+          description: 'Will be deleted',
+          status: 'todo',
+          priority: 'low',
+          assignee: 'Bob',
+          createdAt: new Date(),
+        },
+      ],
+    };
+
+    const action = {
+      type: 'DELETE_TASK' as const,
+      payload: '1',
+    };
+
+    const nextState = taskBoardReducer(stateWithTask, action);
+
+    expect(nextState.tasks).toHaveLength(0);
+    expect(nextState.history).toHaveLength(1); // History saved
+  });
+
+  it('supports undo', () => {
+    // Start with a task
+    const stateWithTask: TaskBoardState = {
+      ...initialState,
+      tasks: [
+        {
+          id: '1',
+          title: 'Original task',
+          description: 'Original',
+          status: 'todo',
+          priority: 'low',
+          assignee: 'Alice',
+          createdAt: new Date(),
+        },
+      ],
+    };
+
+    // Delete the task
+    const stateAfterDelete = taskBoardReducer(stateWithTask, {
+      type: 'DELETE_TASK',
+      payload: '1',
+    });
+
+    expect(stateAfterDelete.tasks).toHaveLength(0);
+
+    // Undo the deletion
+    const stateAfterUndo = taskBoardReducer(stateAfterDelete, {
+      type: 'UNDO',
+    });
+
+    expect(stateAfterUndo.tasks).toHaveLength(1);
+    expect(stateAfterUndo.tasks[0].title).toBe('Original task');
+  });
+
+  it('does nothing when undoing with no history', () => {
+    const action = { type: 'UNDO' as const };
+    const nextState = taskBoardReducer(initialState, action);
+
+    expect(nextState).toBe(initialState); // Same reference
+  });
+});
+```
+
+### The Reducer Pattern: Lessons Learned
+
+**1. Actions are data, not functions**
+
+Actions describe what happened, not how to handle it. The reducer decides how to handle it.
+
+**2. Reducers are pure**
+
+No side effects. No API calls. No randomness. Just: `(state, action) => nextState`.
+
+**3. State is immutable**
+
+Always return a new state object. Never mutate the existing state.
+
+**4. One source of truth**
+
+All related state lives in one object. No synchronization problems.
+
+**5. Time-travel debugging**
+
+Because every state change is explicit and reversible, you can implement undo/redo, replay actions, or debug by stepping through state changes.
+
+### When to Apply This Solution
+
+**What it optimizes for**:
+- State consistency
+- Complex update logic
+- Predictable state transitions
+- Testability
+- Debugging
+
+**What it sacrifices**:
+- Initial setup complexity
+- More boilerplate code
+- Learning curve for team members unfamiliar with reducers
+
+**When to choose this approach**:
+- Multiple pieces of state that must stay synchronized
+- Complex state update logic with many conditions
+- Need for undo/redo or time-travel debugging
+- State transitions that depend on previous state
+- Team is comfortable with Redux-style patterns
+
+**When to avoid this approach**:
+- Simple, independent state
+- Straightforward updates (just setting values)
+- Small components with minimal state
+- Team prefers simpler patterns
+
+**Code characteristics**:
+- Setup: More initial code (types, reducer, actions)
+- Maintenance: Easier to modify (add new actions without touching component)
+- Performance: Same as useState (React optimizes both equally)
+- Testing: Much easier (pure functions)
+
+The key insight: `useReducer` doesn't make your code faster or more performant. It makes it more **maintainable** and **predictable** when state logic becomes complex.
 
 ## Context API: use sparingly
 
-## Sharing State with the Context API
+## Context API: use sparingly
 
-Our `UserProfileForm` is now well-structured internally thanks to `useReducer`. But it's still one large component. Good React architecture favors composition—breaking down large components into smaller, focused ones.
+### Phase 3: The Prop Drilling Problem
 
-### Iteration 2: The Problem of Prop Drilling
+Our TaskBoard works well, but it's still a single component. In a real application, we'd want to split it into multiple pages and share state across them. Let's add a realistic feature: **a separate analytics dashboard** that shows task statistics.
 
-**Current state recap**: Our form uses `useReducer` to manage its state logic in a clean, centralized way.
+**New Project Structure**:
+```
+src/
+├── components/
+│   ├── TaskBoard.tsx
+│   ├── TaskList.tsx
+│   ├── TaskItem.tsx
+│   ├── TaskForm.tsx
+│   ├── FilterBar.tsx
+│   ├── AnalyticsDashboard.tsx  ← New
+│   └── TaskStats.tsx            ← New
+├── pages/
+│   ├── TasksPage.tsx            ← New
+│   └── AnalyticsPage.tsx        ← New
+├── App.tsx
+└── types/
+    └── task.ts
+```
 
-**Current limitation**: The component is monolithic. If we break it into child components, we'll need a way to provide the form's `state` and `dispatch` function to them.
+### The Failure: Prop Drilling Through Five Levels
 
-**New scenario introduction**: Let's refactor `UserProfileForm` into a parent component that orchestrates several smaller children:
--   `UserDetailsSection`: Contains the `name` and `email` inputs.
--   `UserBioSection`: Contains the `bio` textarea.
--   `FormActions`: Contains the "Save", "Reset", and "Load Data" buttons.
-
-The state and dispatch function will still live in the top-level `UserProfilePage` component. Let's see what happens when we pass them down as props.
+Let's try to share our task state across pages using props:
 
 ```tsx
-// src/app/chapter-10/page-with-prop-drilling.tsx (Conceptual 'before' state)
+// src/App.tsx - Attempting to share state via props
+import { useReducer } from 'react';
+import { TaskBoardState } from './types/task';
+import { taskBoardReducer } from './reducers/taskBoardReducer';
+import { TasksPage } from './pages/TasksPage';
+import { AnalyticsPage } from './pages/AnalyticsPage';
 
-// Assume UserDetailsSection, UserBioSection, etc. are defined as separate components
-// that accept state and dispatch (or specific handlers) as props.
-
-// Example Child Component
-const UserDetailsSection = ({ state, handleFieldChange }) => {
-  return (
-    <>
-      <div>
-        <label>Name</label>
-        <input
-          value={state.name}
-          onChange={(e) => handleFieldChange('name', e.target.value)}
-        />
-      </div>
-      <div>
-        <label>Email</label>
-        <input
-          value={state.email}
-          onChange={(e) => handleFieldChange('email', e.target.value)}
-        />
-      </div>
-    </>
-  );
+const initialState: TaskBoardState = {
+  /* ... initial state ... */
 };
 
-// Parent Component
-export default function UserProfilePage() {
-  const [state, dispatch] = useReducer(formReducer, initialState);
-
-  const handleFieldChange = (field: keyof State, value: any) => {
-    dispatch({ type: 'UPDATE_FIELD', field, value });
-  };
-  
-  // ... other handlers that call dispatch
+export function App() {
+  const [state, dispatch] = useReducer(taskBoardReducer, initialState);
+  const [currentPage, setCurrentPage] = useState<'tasks' | 'analytics'>('tasks');
 
   return (
-    <form>
-      {/* 
-        Here's the prop drilling. We pass down state and handlers.
-        If UserDetailsSection had its own children that needed this data,
-        it would have to pass them down again.
-      */}
-      <UserDetailsSection state={state} handleFieldChange={handleFieldChange} />
-      <UserBioSection state={state} handleFieldChange={handleFieldChange} />
-      {/* ... and so on for other components */}
-    </form>
+    <div className="app">
+      <nav>
+        <button onClick={() => setCurrentPage('tasks')}>Tasks</button>
+        <button onClick={() => setCurrentPage('analytics')}>Analytics</button>
+      </nav>
+
+      {currentPage === 'tasks' ? (
+        <TasksPage state={state} dispatch={dispatch} />
+      ) : (
+        <AnalyticsPage state={state} dispatch={dispatch} />
+      )}
+    </div>
   );
 }
 ```
 
-### Diagnostic Analysis: Reading the Failure
+```tsx
+// src/pages/TasksPage.tsx
+import { TaskBoardState, TaskBoardAction } from '../types/task';
+import { TaskBoard } from '../components/TaskBoard';
 
-Again, this is not a runtime error but an architectural one.
+interface TasksPageProps {
+  state: TaskBoardState;
+  dispatch: React.Dispatch<TaskBoardAction>;
+}
 
-**Browser Behavior**:
-The application works flawlessly.
-
-**Code Analysis**:
-- **Prop Drilling**: The `state` object and `handleFieldChange` function are passed down from `UserProfilePage` to each child. If we had another layer of nesting, say `<FormSection>` containing `<UserDetailsSection>`, then `<FormSection>` would have to accept those props just to pass them along, even if it doesn't use them itself.
-- **Tight Coupling**: The child components are tightly coupled to the parent. Their prop signatures are dictated by the parent's state structure.
-- **Refactoring Burden**: If we need to pass another piece of data from the parent to a deeply nested child, we have to add it to the prop list of every intermediate component.
-
-**Let's parse this evidence**:
-
-1.  **What the user experiences**: A working form.
-2.  **What the code reveals**: A verbose and rigid component structure that is difficult to maintain and refactor.
-3.  **Root cause identified**: State needed by deeply nested components is held high up in the tree, forcing intermediate components to act as tunnels for props.
-4.  **What we need**: A mechanism to "teleport" data from a provider component to any consumer component deep in the tree, without passing it through every level.
-
-### Technique Introduced: The Context API
-
-React's Context API is designed to solve exactly this problem. It allows a parent component (`Provider`) to make data available to any component in its subtree (`Consumer`), no matter how deep, without explicit prop passing.
-
-It consists of three main parts:
-1.  `createContext()`: Creates a context object.
-2.  `<MyContext.Provider value={...}>`: A component that provides a value to all its descendants.
-3.  `useContext(MyContext)`: A hook that lets a component subscribe to the context and get its value.
-
-### Solution Implementation: Refactoring to use Context
-
-Let's create a `FormContext` and refactor our components.
-
-**Before** (Prop drilling):
-Child components received props: `<UserDetailsSection state={state} handleFieldChange={...} />`
-
-**After** (Using Context):
+export function TasksPage({ state, dispatch }: TasksPageProps) {
+  return (
+    <div className="tasks-page">
+      <TaskBoard state={state} dispatch={dispatch} />
+    </div>
+  );
+}
+```
 
 ```tsx
-// src/app/chapter-10/FormContext.tsx
-import { createContext, useContext, Dispatch } from 'react';
-import { State, Action } from './reducer';
+// src/components/TaskBoard.tsx - Now needs props
+import { TaskBoardState, TaskBoardAction } from '../types/task';
+import { TaskList } from './TaskList';
+import { FilterBar } from './FilterBar';
 
-type FormContextType = {
-  state: State;
-  dispatch: Dispatch<Action>;
+interface TaskBoardProps {
+  state: TaskBoardState;
+  dispatch: React.Dispatch<TaskBoardAction>;
+}
+
+export function TaskBoard({ state, dispatch }: TaskBoardProps) {
+  // Now we have to pass state and dispatch to every child
+  return (
+    <div className="task-board">
+      <FilterBar
+        filters={state.filters}
+        onFilterChange={(filters) =>
+          dispatch({ type: 'UPDATE_FILTERS', payload: filters })
+        }
+        // ... more props
+      />
+
+      <TaskList
+        tasks={filteredTasks}
+        dispatch={dispatch} // Pass dispatch down
+        // ... more props
+      />
+    </div>
+  );
+}
+```
+
+```tsx
+// src/components/TaskList.tsx - Needs dispatch now
+import { Task, TaskBoardAction } from '../types/task';
+import { TaskItem } from './TaskItem';
+
+interface TaskListProps {
+  tasks: Task[];
+  dispatch: React.Dispatch<TaskBoardAction>; // Added
+}
+
+export function TaskList({ tasks, dispatch }: TaskListProps) {
+  return (
+    <div className="task-list">
+      {tasks.map((task) => (
+        <TaskItem
+          key={task.id}
+          task={task}
+          dispatch={dispatch} // Pass dispatch down again
+        />
+      ))}
+    </div>
+  );
+}
+```
+
+```tsx
+// src/components/TaskItem.tsx - Finally uses dispatch
+import { Task, TaskBoardAction } from '../types/task';
+
+interface TaskItemProps {
+  task: Task;
+  dispatch: React.Dispatch<TaskBoardAction>; // Added
+}
+
+export function TaskItem({ task, dispatch }: TaskItemProps) {
+  return (
+    <div className="task-item">
+      {/* ... task display ... */}
+      <button
+        onClick={() =>
+          dispatch({ type: 'DELETE_TASK', payload: task.id })
+        }
+      >
+        Delete
+      </button>
+    </div>
+  );
+}
+```
+
+Now let's add the analytics page:
+
+```tsx
+// src/pages/AnalyticsPage.tsx
+import { TaskBoardState, TaskBoardAction } from '../types/task';
+import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
+
+interface AnalyticsPageProps {
+  state: TaskBoardState;
+  dispatch: React.Dispatch<TaskBoardAction>;
+}
+
+export function AnalyticsPage({ state, dispatch }: AnalyticsPageProps) {
+  return (
+    <div className="analytics-page">
+      <h1>Task Analytics</h1>
+      <AnalyticsDashboard state={state} dispatch={dispatch} />
+    </div>
+  );
+}
+```
+
+```tsx
+// src/components/AnalyticsDashboard.tsx
+import { TaskBoardState, TaskBoardAction } from '../types/task';
+import { TaskStats } from './TaskStats';
+
+interface AnalyticsDashboardProps {
+  state: TaskBoardState;
+  dispatch: React.Dispatch<TaskBoardAction>;
+}
+
+export function AnalyticsDashboard({ state, dispatch }: AnalyticsDashboardProps) {
+  return (
+    <div className="analytics-dashboard">
+      <TaskStats state={state} dispatch={dispatch} />
+      {/* More analytics components */}
+    </div>
+  );
+}
+```
+
+```tsx
+// src/components/TaskStats.tsx
+import { TaskBoardState, TaskBoardAction } from '../types/task';
+
+interface TaskStatsProps {
+  state: TaskBoardState;
+  dispatch: React.Dispatch<TaskBoardAction>; // Doesn't even use this!
+}
+
+export function TaskStats({ state }: TaskStatsProps) {
+  const totalTasks = state.tasks.length;
+  const completedTasks = state.tasks.filter((t) => t.status === 'done').length;
+  const inProgressTasks = state.tasks.filter((t) => t.status === 'in-progress').length;
+
+  return (
+    <div className="task-stats">
+      <div className="stat">
+        <h3>Total Tasks</h3>
+        <p>{totalTasks}</p>
+      </div>
+      <div className="stat">
+        <h3>Completed</h3>
+        <p>{completedTasks}</p>
+      </div>
+      <div className="stat">
+        <h3>In Progress</h3>
+        <p>{inProgressTasks}</p>
+      </div>
+    </div>
+  );
+}
+```
+
+### Diagnostic Analysis: Reading the Prop Drilling Problem
+
+**Browser Behavior**:
+- App works correctly
+- Data flows from App → Pages → Components
+- But the code is becoming unmaintainable
+
+**React DevTools Evidence**:
+- Component tree shows the prop chain:
+  ```
+  App
+    └─ TasksPage (props: state, dispatch)
+        └─ TaskBoard (props: state, dispatch)
+            └─ TaskList (props: tasks, dispatch)
+                └─ TaskItem (props: task, dispatch)
+  ```
+- Every intermediate component passes props it doesn't use
+- `TaskList` doesn't use `dispatch`, but must pass it to `TaskItem`
+- `AnalyticsDashboard` doesn't use `dispatch`, but must pass it to `TaskStats`
+
+**Code smell indicators**:
+1. **Props that tunnel through**: Components receive props only to pass them down
+2. **Brittle refactoring**: Moving a component requires updating all intermediate components
+3. **Type duplication**: Every component needs the same prop types
+4. **Cognitive overhead**: Hard to understand what each component actually needs
+
+**What the user experiences**:
+- Expected: App works fine
+- Actual: App works fine, but developers suffer
+
+**Root cause identified**: 
+
+We're using props for **global state**. Props are designed for parent-to-child communication, not for application-wide state. When state needs to be accessed by components at different levels of the tree, props become a burden.
+
+**Why the current approach can't solve this**:
+
+Props flow downward. To share state between distant components, you must lift state to a common ancestor and pass it down through every intermediate component. This creates coupling and maintenance problems.
+
+**What we need**: 
+
+A way to make state available to any component that needs it, without passing it through every intermediate component. We need Context.
+
+### Iteration 2: Refactoring to Context
+
+The Context API provides a way to share values between components without explicitly passing props through every level of the tree.
+
+**The mental model**:
+- Create a Context to hold shared state
+- Provide the Context value at the top of your component tree
+- Consume the Context value in any descendant component
+
+Let's refactor:
+
+```tsx
+// src/contexts/TaskBoardContext.tsx
+import { createContext, useContext, useReducer, ReactNode } from 'react';
+import { TaskBoardState, TaskBoardAction } from '../types/task';
+import { taskBoardReducer } from '../reducers/taskBoardReducer';
+
+// Define the context value type
+interface TaskBoardContextValue {
+  state: TaskBoardState;
+  dispatch: React.Dispatch<TaskBoardAction>;
+}
+
+// Create the context with undefined as default
+// (we'll provide the real value in the Provider)
+const TaskBoardContext = createContext<TaskBoardContextValue | undefined>(
+  undefined
+);
+
+// Initial state
+const initialState: TaskBoardState = {
+  tasks: [
+    {
+      id: '1',
+      title: 'Implement user authentication',
+      description: 'Add JWT-based auth flow',
+      status: 'in-progress',
+      priority: 'high',
+      assignee: 'Alice',
+      createdAt: new Date('2024-01-15'),
+      dueDate: new Date('2024-02-01'),
+    },
+    {
+      id: '2',
+      title: 'Write API documentation',
+      description: 'Document all REST endpoints',
+      status: 'todo',
+      priority: 'medium',
+      assignee: 'Bob',
+      createdAt: new Date('2024-01-16'),
+    },
+    {
+      id: '3',
+      title: 'Fix mobile responsive issues',
+      description: 'Dashboard breaks on small screens',
+      status: 'done',
+      priority: 'high',
+      assignee: 'Alice',
+      createdAt: new Date('2024-01-10'),
+      dueDate: new Date('2024-01-20'),
+    },
+  ],
+  filters: {
+    status: 'all',
+    priority: 'all',
+    assignee: '',
+    searchQuery: '',
+  },
+  isFormOpen: false,
+  editingTask: null,
+  history: [],
+  historyIndex: -1,
 };
 
-// Create the context with a default value (can be null or a mock)
-export const FormContext = createContext<FormContextType | null>(null);
+// Provider component
+interface TaskBoardProviderProps {
+  children: ReactNode;
+}
 
-// Custom hook for easier consumption
-export function useFormContext() {
-  const context = useContext(FormContext);
-  if (!context) {
-    throw new Error('useFormContext must be used within a FormProvider');
+export function TaskBoardProvider({ children }: TaskBoardProviderProps) {
+  const [state, dispatch] = useReducer(taskBoardReducer, initialState);
+
+  const value: TaskBoardContextValue = {
+    state,
+    dispatch,
+  };
+
+  return (
+    <TaskBoardContext.Provider value={value}>
+      {children}
+    </TaskBoardContext.Provider>
+  );
+}
+
+// Custom hook to use the context
+export function useTaskBoard() {
+  const context = useContext(TaskBoardContext);
+
+  if (context === undefined) {
+    throw new Error('useTaskBoard must be used within a TaskBoardProvider');
   }
+
   return context;
 }
 ```
 
+Now update the App to use the Provider:
+
 ```tsx
-// src/app/chapter-10/page.tsx (Refactored with Context)
-'use client';
+// src/App.tsx - Using Context Provider
+import { useState } from 'react';
+import { TaskBoardProvider } from './contexts/TaskBoardContext';
+import { TasksPage } from './pages/TasksPage';
+import { AnalyticsPage } from './pages/AnalyticsPage';
 
-import { useReducer, FormEvent } from 'react';
-import { formReducer, initialState } from './reducer';
-import { FormContext } from './FormContext';
-import { UserDetailsSection } from './UserDetailsSection'; // Assume these are now separate components
-import { FormActions } from './FormActions';
-
-export default function UserProfilePage() {
-  const [state, dispatch] = useReducer(formReducer, initialState);
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    console.log('Submitting:', state);
-    alert(`Form submitted! Check the console for data.`);
-  };
+export function App() {
+  const [currentPage, setCurrentPage] = useState<'tasks' | 'analytics'>('tasks');
 
   return (
-    <FormContext.Provider value={{ state, dispatch }}>
-      <div className="max-w-2xl mx-auto p-8 bg-gray-50 rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold mb-6">Edit User Profile</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <UserDetailsSection />
-          {/* Other sections would go here */}
-          <FormActions />
-        </form>
+    <TaskBoardProvider>
+      <div className="app">
+        <nav>
+          <button onClick={() => setCurrentPage('tasks')}>Tasks</button>
+          <button onClick={() => setCurrentPage('analytics')}>Analytics</button>
+        </nav>
+
+        {currentPage === 'tasks' ? <TasksPage /> : <AnalyticsPage />}
       </div>
-    </FormContext.Provider>
-  );
-}
-
-// src/app/chapter-10/UserDetailsSection.tsx
-import { useFormContext } from './FormContext';
-
-export function UserDetailsSection() {
-  const { state, dispatch } = useFormContext();
-
-  const handleFieldChange = (field: keyof typeof state, value: any) => {
-    dispatch({ type: 'UPDATE_FIELD', field, value });
-  };
-
-  return (
-    <>
-      <div>
-        <label htmlFor="name">Name</label>
-        <input
-          id="name"
-          type="text"
-          value={state.name}
-          onChange={(e) => handleFieldChange('name', e.target.value)}
-          // ... className
-        />
-      </div>
-      {/* ... email field ... */}
-    </>
+    </TaskBoardProvider>
   );
 }
 ```
 
-### Verification and The Hidden Trap
+Pages no longer need props:
 
-The form still works perfectly. We've successfully eliminated prop drilling. The child components are now decoupled from their parents; they only need to know about the `FormContext`.
+```tsx
+// src/pages/TasksPage.tsx - No props needed
+import { TaskBoard } from '../components/TaskBoard';
 
-**But we've introduced a new, more insidious problem: performance.**
+export function TasksPage() {
+  return (
+    <div className="tasks-page">
+      <TaskBoard />
+    </div>
+  );
+}
+```
 
-**New scenario**: Let's analyze what happens when the user types in the "Name" input field.
+```tsx
+// src/pages/AnalyticsPage.tsx - No props needed
+import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
 
-### Diagnostic Analysis: The Performance Failure
+export function AnalyticsPage() {
+  return (
+    <div className="analytics-page">
+      <h1>Task Analytics</h1>
+      <AnalyticsDashboard />
+    </div>
+  );
+}
+```
 
-**Browser Behavior**:
-The UI seems fine on this small form. On a larger, more complex application, it might feel sluggish.
+Components consume context directly:
+
+```tsx
+// src/components/TaskBoard.tsx - Using Context
+import { useMemo } from 'react';
+import { useTaskBoard } from '../contexts/TaskBoardContext';
+import { TaskList } from './TaskList';
+import { FilterBar } from './FilterBar';
+import { TaskForm } from './TaskForm';
+
+export function TaskBoard() {
+  const { state, dispatch } = useTaskBoard(); // Get from context
+
+  const filteredTasks = useMemo(() => {
+    return state.tasks.filter((task) => {
+      if (state.filters.status !== 'all' && task.status !== state.filters.status) {
+        return false;
+      }
+      if (state.filters.priority !== 'all' && task.priority !== state.filters.priority) {
+        return false;
+      }
+      if (state.filters.assignee && task.assignee !== state.filters.assignee) {
+        return false;
+      }
+      if (state.filters.searchQuery) {
+        const query = state.filters.searchQuery.toLowerCase();
+        return (
+          task.title.toLowerCase().includes(query) ||
+          task.description.toLowerCase().includes(query)
+        );
+      }
+      return true;
+    });
+  }, [state.tasks, state.filters]);
+
+  return (
+    <div className="task-board">
+      <header className="board-header">
+        <h1>Task Board</h1>
+        <div className="header-actions">
+          <button onClick={() => dispatch({ type: 'OPEN_FORM' })}>
+            Add Task
+          </button>
+          <button
+            onClick={() => dispatch({ type: 'UNDO' })}
+            disabled={state.historyIndex <= 0}
+          >
+            Undo
+          </button>
+          <button
+            onClick={() => dispatch({ type: 'REDO' })}
+            disabled={state.historyIndex >= state.history.length - 1}
+          >
+            Redo
+          </button>
+        </div>
+      </header>
+
+      <FilterBar
+        filters={state.filters}
+        onFilterChange={(filters) =>
+          dispatch({ type: 'UPDATE_FILTERS', payload: filters })
+        }
+        onClearFilters={() => dispatch({ type: 'CLEAR_FILTERS' })}
+        taskCount={filteredTasks.length}
+        totalCount={state.tasks.length}
+      />
+
+      <TaskList tasks={filteredTasks} />
+
+      {state.isFormOpen && (
+        <TaskForm
+          task={state.editingTask}
+          onSubmit={(data) =>
+            state.editingTask
+              ? dispatch({
+                  type: 'UPDATE_TASK',
+                  payload: { id: state.editingTask.id, updates: data },
+                })
+              : dispatch({ type: 'ADD_TASK', payload: data })
+          }
+          onCancel={() => dispatch({ type: 'CLOSE_FORM' })}
+        />
+      )}
+    </div>
+  );
+}
+```
+
+```tsx
+// src/components/TaskList.tsx - No dispatch prop needed
+import { Task } from '../types/task';
+import { TaskItem } from './TaskItem';
+
+interface TaskListProps {
+  tasks: Task[];
+}
+
+export function TaskList({ tasks }: TaskListProps) {
+  if (tasks.length === 0) {
+    return (
+      <div className="empty-state">
+        <p>No tasks found. Create one to get started!</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="task-list">
+      {tasks.map((task) => (
+        <TaskItem key={task.id} task={task} />
+      ))}
+    </div>
+  );
+}
+```
+
+```tsx
+// src/components/TaskItem.tsx - Gets dispatch from context
+import { Task, TaskStatus } from '../types/task';
+import { useTaskBoard } from '../contexts/TaskBoardContext';
+
+interface TaskItemProps {
+  task: Task;
+}
+
+export function TaskItem({ task }: TaskItemProps) {
+  const { dispatch } = useTaskBoard(); // Get from context
+
+  const priorityColors = {
+    low: '#4caf50',
+    medium: '#ff9800',
+    high: '#f44336',
+  };
+
+  return (
+    <div className="task-item">
+      <div className="task-header">
+        <h3>{task.title}</h3>
+        <span
+          className="priority-badge"
+          style={{ backgroundColor: priorityColors[task.priority] }}
+        >
+          {task.priority}
+        </span>
+      </div>
+
+      <p className="task-description">{task.description}</p>
+
+      <div className="task-meta">
+        <span>Assignee: {task.assignee}</span>
+        {task.dueDate && (
+          <span>Due: {task.dueDate.toLocaleDateString()}</span>
+        )}
+      </div>
+
+      <div className="task-actions">
+        <select
+          value={task.status}
+          onChange={(e) =>
+            dispatch({
+              type: 'UPDATE_TASK_STATUS',
+              payload: { id: task.id, status: e.target.value as TaskStatus },
+            })
+          }
+        >
+          <option value="todo">To Do</option>
+          <option value="in-progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+
+        <button
+          onClick={() =>
+            dispatch({ type: 'OPEN_EDIT_FORM', payload: task })
+          }
+        >
+          Edit
+        </button>
+        <button
+          onClick={() =>
+            dispatch({ type: 'DELETE_TASK', payload: task.id })
+          }
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+```tsx
+// src/components/TaskStats.tsx - Gets state from context
+import { useTaskBoard } from '../contexts/TaskBoardContext';
+
+export function TaskStats() {
+  const { state } = useTaskBoard(); // Get from context
+
+  const totalTasks = state.tasks.length;
+  const completedTasks = state.tasks.filter((t) => t.status === 'done').length;
+  const inProgressTasks = state.tasks.filter(
+    (t) => t.status === 'in-progress'
+  ).length;
+  const todoTasks = state.tasks.filter((t) => t.status === 'todo').length;
+
+  const completionRate =
+    totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  return (
+    <div className="task-stats">
+      <div className="stat">
+        <h3>Total Tasks</h3>
+        <p className="stat-value">{totalTasks}</p>
+      </div>
+      <div className="stat">
+        <h3>Completed</h3>
+        <p className="stat-value">{completedTasks}</p>
+      </div>
+      <div className="stat">
+        <h3>In Progress</h3>
+        <p className="stat-value">{inProgressTasks}</p>
+      </div>
+      <div className="stat">
+        <h3>To Do</h3>
+        <p className="stat-value">{todoTasks}</p>
+      </div>
+      <div className="stat">
+        <h3>Completion Rate</h3>
+        <p className="stat-value">{completionRate}%</p>
+      </div>
+    </div>
+  );
+}
+```
+
+### Verification: Does It Work?
+
+**Browser Console**:
+```
+[App] Rendered
+[TaskBoardProvider] Rendered
+[TasksPage] Rendered
+[TaskBoard] Rendered
+[TaskList] Rendered
+[TaskItem] Rendered (3 times)
+
+// User switches to Analytics page:
+[AnalyticsPage] Rendered
+[AnalyticsDashboard] Rendered
+[TaskStats] Rendered
+// TaskStats has access to the same state!
+
+// User deletes a task on Tasks page:
+[TaskBoard] Action dispatched: DELETE_TASK
+[TaskBoardProvider] State updated
+[TaskBoard] Re-rendered
+[TaskList] Re-rendered
+[TaskItem] Re-rendered (2 times - one task removed)
+
+// User switches back to Analytics page:
+[AnalyticsPage] Re-rendered
+[TaskStats] Re-rendered
+// Stats automatically updated with new task count!
+```
 
 **React DevTools Evidence**:
-Using the React DevTools Profiler, we can record a render while typing a single character into the name field.
+- Component tree:
+  ```
+  App
+    └─ TaskBoardProvider (provides context)
+        ├─ TasksPage
+        │   └─ TaskBoard (consumes context)
+        │       └─ TaskList
+        │           └─ TaskItem (consumes context)
+        └─ AnalyticsPage
+            └─ AnalyticsDashboard
+                └─ TaskStats (consumes context)
+  ```
+- Context value visible in DevTools
+- No prop drilling through intermediate components
+- State shared across both pages
 
-**React DevTools - Profiler Tab**:
--   Recorded render: Typing "s" into the name field.
--   Components that re-rendered:
-    -   `UserProfilePage` (because its state changed)
-    -   `UserDetailsSection` (consumes context, expected)
-    -   `UserBioSection` (consumes context, **unexpected!**)
-    -   `FormActions` (consumes context, **unexpected!**)
--   Reason for re-render for all children: "Context changed".
+**Expected vs. Actual**:
+- ✅ No prop drilling
+- ✅ Components access state directly
+- ✅ State shared across pages
+- ✅ Changes in one page reflect in another
+- ✅ Cleaner component interfaces
 
-**Let's parse this evidence**:
+### What Changed and Why It Works
 
-1.  **What the user experiences**: A working form, possibly with subtle input lag on complex pages.
-2.  **What DevTools reveals**: When we update `state.name`, every single component that consumes our `FormContext` re-renders.
-3.  **Root cause identified**: When the `value` prop of a Context Provider changes, React has no choice but to re-render **all** components that consume that context. It doesn't know which part of the `value` object changed; it only knows the object reference is new.
-4.  **Why this is a problem**: Our `FormActions` component only needs `dispatch` (which never changes) and our `UserBioSection` only needs `state.bio`. They are re-rendering needlessly on every keystroke in the `name` field. This is a classic performance bottleneck.
+**Before (Props)**:
+```tsx
+// Every component in the chain needs props
+<App state={state} dispatch={dispatch}>
+  <TasksPage state={state} dispatch={dispatch}>
+    <TaskBoard state={state} dispatch={dispatch}>
+      <TaskList dispatch={dispatch}>
+        <TaskItem dispatch={dispatch} />
+```
 
-### When to Apply Context (and When to Avoid It)
+**After (Context)**:
+```tsx
+// Only Provider and consumers need to know about state
+<TaskBoardProvider>
+  <TasksPage>
+    <TaskBoard> {/* uses context */}
+      <TaskList>
+        <TaskItem /> {/* uses context */}
+```
 
-Context is a powerful tool, but it is not a general-purpose state manager.
+### The Context Mental Model
 
--   **What it optimizes for**: Avoiding prop drilling.
--   **What it sacrifices**: Render performance. All consumers re-render on any change.
+Think of Context as a **wormhole** through your component tree:
 
-**When to choose Context:**
--   For **low-frequency updates**: Theme (light/dark mode), user authentication status, language/locale settings. Data that changes rarely.
--   For passing down **stable values**: Functions like `dispatch` that have a stable identity, or configuration that is set once.
+1. **Provider**: Creates the wormhole entrance at the top
+2. **Consumer**: Opens the wormhole exit anywhere below
+3. **Value**: Travels through the wormhole instantly
 
-**When to avoid Context:**
--   For **high-frequency updates**: Form state, mouse coordinates, animation values. Anything that changes on every keystroke or frame.
+No intermediate components need to know about the wormhole.
 
-This leads us to the final, crucial question: if `useState` is too simple, `useReducer` creates a monolith, and `Context` has performance issues, what is the right way to structure state in a complex application?
+### The Performance Problem: Why "Use Sparingly"
+
+Context solves prop drilling, but it introduces a new problem: **unnecessary re-renders**.
+
+Let's see the failure:
+
+```tsx
+// src/components/TaskStats.tsx - Add console.log
+import { useTaskBoard } from '../contexts/TaskBoardContext';
+
+export function TaskStats() {
+  console.log('[TaskStats] Rendering');
+  const { state } = useTaskBoard();
+
+  // ... rest of component
+}
+```
+
+```tsx
+// src/components/FilterBar.tsx - Add console.log
+import { TaskFilters } from '../types/task';
+import { useTaskBoard } from '../contexts/TaskBoardContext';
+
+export function FilterBar() {
+  console.log('[FilterBar] Rendering');
+  const { state, dispatch } = useTaskBoard();
+
+  return (
+    <div className="filter-bar">
+      <select
+        value={state.filters.status}
+        onChange={(e) =>
+          dispatch({
+            type: 'UPDATE_FILTERS',
+            payload: { status: e.target.value },
+          })
+        }
+      >
+        {/* ... options ... */}
+      </select>
+    </div>
+  );
+}
+```
+
+Now let's change a filter:
+
+**Browser Console**:
+```
+// User changes filter from "All" to "In Progress"
+[FilterBar] Rendering
+[TaskBoard] Rendering
+[TaskList] Rendering
+[TaskItem] Rendering (1 time - filtered task)
+[TaskStats] Rendering  ← Why is this rendering?
+```
+
+**React DevTools Evidence**:
+- Profiler shows `TaskStats` re-rendered
+- Reason: Context value changed
+- `TaskStats` is on a different page (not even visible!)
+- But it still re-renders because it consumes the context
+
+### Diagnostic Analysis: The Context Re-render Problem
+
+**What the user experiences**:
+- Expected: Only visible components re-render
+- Actual: All context consumers re-render, even hidden ones
+
+**What DevTools shows**:
+- Every component that calls `useTaskBoard()` re-renders
+- This happens even if they don't use the changed part of state
+- `TaskStats` only uses `state.tasks`, but re-renders when `state.filters` changes
+
+**Root cause identified**:
+
+When context value changes, **every component that consumes that context re-renders**. React doesn't know which parts of the context value each component uses, so it re-renders all of them.
+
+This is fine for small apps, but becomes a performance problem as your app grows.
+
+**Why the current approach can't solve this**:
+
+Context is all-or-nothing. You can't subscribe to just part of the context value. If any part changes, all consumers re-render.
+
+### Iteration 3: Optimizing Context with Selectors
+
+We can mitigate this with careful context design:
+
+```tsx
+// src/contexts/TaskBoardContext.tsx - Optimized version
+import {
+  createContext,
+  useContext,
+  useReducer,
+  useMemo,
+  ReactNode,
+} from 'react';
+import { TaskBoardState, TaskBoardAction } from '../types/task';
+import { taskBoardReducer } from '../reducers/taskBoardReducer';
+
+interface TaskBoardContextValue {
+  state: TaskBoardState;
+  dispatch: React.Dispatch<TaskBoardAction>;
+}
+
+const TaskBoardContext = createContext<TaskBoardContextValue | undefined>(
+  undefined
+);
+
+const initialState: TaskBoardState = {
+  /* ... */
+};
+
+export function TaskBoardProvider({ children }: { children: ReactNode }) {
+  const [state, dispatch] = useReducer(taskBoardReducer, initialState);
+
+  // Memoize the context value to prevent unnecessary re-renders
+  const value = useMemo(
+    () => ({ state, dispatch }),
+    [state] // Only recreate when state changes
+  );
+
+  return (
+    <TaskBoardContext.Provider value={value}>
+      {children}
+    </TaskBoardContext.Provider>
+  );
+}
+
+// Base hook
+export function useTaskBoard() {
+  const context = useContext(TaskBoardContext);
+  if (context === undefined) {
+    throw new Error('useTaskBoard must be used within a TaskBoardProvider');
+  }
+  return context;
+}
+
+// Selector hooks - only re-render when selected data changes
+export function useTaskBoardTasks() {
+  const { state } = useTaskBoard();
+  return state.tasks;
+}
+
+export function useTaskBoardFilters() {
+  const { state } = useTaskBoard();
+  return state.filters;
+}
+
+export function useTaskBoardDispatch() {
+  const { dispatch } = useTaskBoard();
+  return dispatch;
+}
+
+export function useTaskBoardFormState() {
+  const { state } = useTaskBoard();
+  return {
+    isFormOpen: state.isFormOpen,
+    editingTask: state.editingTask,
+  };
+}
+```
+
+Now components can use specific selectors:
+
+```tsx
+// src/components/TaskStats.tsx - Using selector
+import { useTaskBoardTasks } from '../contexts/TaskBoardContext';
+
+export function TaskStats() {
+  console.log('[TaskStats] Rendering');
+  const tasks = useTaskBoardTasks(); // Only subscribes to tasks
+
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter((t) => t.status === 'done').length;
+  // ... rest of component
+}
+```
+
+**Browser Console** (after changing filter):
+```
+// User changes filter from "All" to "In Progress"
+[FilterBar] Rendering
+[TaskBoard] Rendering
+[TaskList] Rendering
+[TaskItem] Rendering (1 time)
+// TaskStats does NOT render! ✓
+```
+
+But this is still not perfect. `TaskStats` will still re-render when tasks change, even though it's on a hidden page. The real solution is to **not use Context for everything**.
+
+### When to Use Context
+
+Use Context when:
+
+✅ **Truly global state**: Theme, authentication, language
+✅ **Infrequently changing**: User preferences, feature flags
+✅ **Widely consumed**: Many components need the same data
+✅ **Not performance-critical**: Re-renders are acceptable
+
+Don't use Context when:
+
+❌ **Frequently changing state**: Form inputs, filters, search queries
+❌ **Performance-critical**: Large lists, real-time updates
+❌ **Only a few components need it**: Props are simpler
+❌ **State is local to a feature**: Keep it in the feature component
+
+### Common Failure Modes with Context
+
+#### Symptom: Entire app re-renders on every state change
+
+**Browser Console**:
+```
+[Every component in the app] Rendering
+[Every component in the app] Rendering
+[Every component in the app] Rendering
+```
+
+**React DevTools Evidence**:
+- Profiler shows all components highlighted
+- Reason: Context value changes
+- All consumers re-render
+
+**Root cause**: Context value is too broad, changes too frequently
+
+**Solution**: Split into multiple contexts or use a state management library
+
+#### Symptom: "useContext must be used within Provider" error
+
+**Browser Console**:
+```
+Error: useTaskBoard must be used within a TaskBoardProvider
+  at useTaskBoard (TaskBoardContext.tsx:45)
+  at TaskItem (TaskItem.tsx:12)
+```
+
+**Root cause**: Component using context is rendered outside the Provider
+
+**Solution**: Ensure Provider wraps all components that need the context
+
+```tsx
+// Wrong:
+<TaskItem /> {/* Outside provider */}
+<TaskBoardProvider>
+  <TaskBoard />
+</TaskBoardProvider>
+
+// Right:
+<TaskBoardProvider>
+  <TaskItem /> {/* Inside provider */}
+  <TaskBoard />
+</TaskBoardProvider>
+```
+
+#### Symptom: Context value is undefined or stale
+
+**React DevTools Evidence**:
+- Context value shows old data
+- Component doesn't re-render when context changes
+
+**Root cause**: Context value not memoized, or component not consuming context correctly
+
+**Solution**: Memoize context value and ensure `useContext` is called at component top level
+
+### The Context Decision Framework
+
+**Question 1**: How many components need this state?
+- 1-2 components: Use props
+- 3-5 components: Consider lifting state up
+- 6+ components: Consider Context
+
+**Question 2**: How often does this state change?
+- Rarely (theme, auth): Context is fine
+- Occasionally (user settings): Context is okay
+- Frequently (form inputs, filters): Avoid Context
+
+**Question 3**: How performance-critical is this?
+- Not critical (UI preferences): Context is fine
+- Somewhat critical (data tables): Be careful with Context
+- Very critical (real-time updates): Avoid Context
+
+**Question 4**: Is this truly global?
+- Yes (current user, theme): Context is appropriate
+- No (feature-specific state): Keep it local
+
+### When to Apply This Solution
+
+**What Context optimizes for**:
+- Eliminating prop drilling
+- Sharing state across distant components
+- Simplifying component interfaces
+- Reducing coupling between components
+
+**What Context sacrifices**:
+- Performance (all consumers re-render)
+- Explicit data flow (harder to trace where data comes from)
+- Testing complexity (need to wrap components in Provider)
+
+**When to choose Context**:
+- State is truly global (theme, auth, language)
+- Many components need the same data
+- Prop drilling is becoming painful
+- Performance is not critical
+
+**When to avoid Context**:
+- State changes frequently
+- Only a few components need it
+- Performance is critical
+- State is feature-specific
+
+**Code characteristics**:
+- Setup: Moderate (Provider, custom hooks)
+- Maintenance: Easy (add consumers without changing intermediate components)
+- Performance: Can be problematic (all consumers re-render)
+- Testing: More complex (need Provider wrapper)
+
+The key insight: Context is a tool for **convenience**, not **performance**. Use it to eliminate prop drilling, but be aware of the re-render cost. For high-performance state management, you'll need a different solution (which we'll explore in the next chapter).
 
 ## Lifting state up vs. pushing it down
 
-## The Fundamental Trade-off: State Placement
+## Lifting state up vs. pushing it down
 
-We've journeyed from simple `useState` to centralized `useReducer` to shared `Context`, and at each step, we solved one problem while revealing another. This journey highlights the central question of state management in React: **Where should state live?**
+### Phase 4: The State Placement Problem
 
-The answer involves a trade-off between two primary strategies: lifting state up and pushing state down.
+We've learned three tools for managing state:
+1. `useState` for simple, local state
+2. `useReducer` for complex state logic
+3. Context for sharing state across components
 
-### The Two Philosophies
+But we haven't addressed the most fundamental question: **Where should state live?**
 
-#### 1. Lifting State Up
+This is the state placement problem, and getting it wrong causes more bugs and performance issues than any other React mistake.
 
-This is the strategy of placing state in the lowest common ancestor of all components that need to read or write it.
+### The Two Competing Forces
 
--   **Pros**:
-    -   Creates a "single source of truth."
-    -   Allows sibling components to share and react to the same state.
-    -   Makes state changes predictable and easy to trace.
--   **Cons**:
-    -   Can lead to prop drilling if not paired with Context.
-    -   Can cause performance issues by forcing a large part of the component tree to re-render, even if only a small part of the state changed. Our `Context` example was an extreme case of this.
+**Lifting state up**: Moving state to a common ancestor so multiple components can access it
 
-#### 2. Pushing State Down (Co-location)
+**Pushing state down**: Keeping state as close as possible to where it's used
 
-This is the strategy of keeping state as close as possible to the component that uses it.
+These forces are in constant tension. Lift too high, and you get unnecessary re-renders. Push too low, and you get prop drilling or duplicated state.
 
--   **Pros**:
-    -   **Excellent performance**. State updates are localized, causing only the component that owns the state (and its children) to re-render.
-    -   **Encapsulation**. Components manage their own state, making them more reusable and easier to reason about in isolation.
--   **Cons**:
-    -   Makes it difficult for sibling components to communicate or share state. To do so, you are forced to lift the state up.
+### The Failure: State in the Wrong Place
 
-### Iteration 3: Finding the Right Balance
+Let's add a new feature to our TaskBoard: **inline task editing**. Users should be able to click a task title and edit it directly, without opening the modal form.
 
-Our `Context`-based form suffered because we lifted *all* the form state up, even though each component only cared about a small slice of it. The solution is not to abandon lifting state, but to be more precise about what we lift.
-
-**A Better Solution: Composition and Callbacks**
-
-Let's refactor our form one last time. The parent `UserProfilePage` will still own the state using `useReducer` (because the state logic is complex and shared), but instead of providing the entire `state` object via Context, it will pass down only the necessary pieces as props. This is a more controlled version of "lifting state up."
-
-**Before** (Context-based, poor performance):
-```tsx
-// Parent
-<FormContext.Provider value={{ state, dispatch }}>
-  <UserDetailsSection />
-</FormContext.Provider>
-
-// Child
-const { state, dispatch } = useFormContext();
-// ... uses state.name, state.email
-```
-
-**After** (Props-based, performant):
+Here's the naive approach—putting edit state in the parent:
 
 ```tsx
-// src/app/chapter-10/page.tsx (Final, balanced version)
-'use client';
+// src/components/TaskBoard.tsx - Edit state in parent (WRONG)
+import { useState, useMemo } from 'react';
+import { useTaskBoard } from '../contexts/TaskBoardContext';
+import { TaskList } from './TaskList';
 
-import { useReducer, FormEvent, useCallback } from 'react';
-import { formReducer, initialState, State } from './reducer';
+export function TaskBoard() {
+  const { state, dispatch } = useTaskBoard();
 
-// Child components are now "controlled components"
-// They receive values and callbacks to report changes.
+  // Edit state for ALL tasks in the parent
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
 
-function UserDetailsSection({ name, email, onFieldChange }) {
-  console.log('Rendering UserDetailsSection');
-  return (
-    <>
-      <div>
-        <label>Name</label>
-        <input value={name} onChange={(e) => onFieldChange('name', e.target.value)} />
-      </div>
-      <div>
-        <label>Email</label>
-        <input value={email} onChange={(e) => onFieldChange('email', e.target.value)} />
-      </div>
-    </>
-  );
-}
+  const filteredTasks = useMemo(() => {
+    return state.tasks.filter((task) => {
+      // ... filtering logic
+    });
+  }, [state.tasks, state.filters]);
 
-function UserBioSection({ bio, onFieldChange }) {
-  console.log('Rendering UserBioSection');
-  return (
-    <div>
-      <label>Bio</label>
-      <textarea value={bio} onChange={(e) => onFieldChange('bio', e.target.value)} />
-    </div>
-  );
-}
+  const startEditing = (taskId: string, currentTitle: string) => {
+    setEditingTaskId(taskId);
+    setEditingTitle(currentTitle);
+  };
 
-export default function UserProfilePage() {
-  const [state, dispatch] = useReducer(formReducer, initialState);
+  const saveEdit = () => {
+    if (editingTaskId) {
+      dispatch({
+        type: 'UPDATE_TASK',
+        payload: {
+          id: editingTaskId,
+          updates: { title: editingTitle },
+        },
+      });
+      setEditingTaskId(null);
+      setEditingTitle('');
+    }
+  };
 
-  // Use useCallback to ensure the function identity is stable between renders,
-  // preventing unnecessary re-renders of children if we were to use React.memo.
-  const handleFieldChange = useCallback((field: keyof State, value: any) => {
-    dispatch({ type: 'UPDATE_FIELD', field, value });
-  }, []); // dispatch is stable
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    console.log('Submitting:', state);
+  const cancelEdit = () => {
+    setEditingTaskId(null);
+    setEditingTitle('');
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-6">Edit User Profile</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <UserDetailsSection 
-          name={state.name} 
-          email={state.email} 
-          onFieldChange={handleFieldChange} 
-        />
-        <UserBioSection 
-          bio={state.bio} 
-          onFieldChange={handleFieldChange} 
-        />
-        {/* ... other components and buttons */}
-      </form>
+    <div className="task-board">
+      {/* ... header ... */}
+
+      <TaskList
+        tasks={filteredTasks}
+        editingTaskId={editingTaskId}
+        editingTitle={editingTitle}
+        onStartEditing={startEditing}
+        onSaveEdit={saveEdit}
+        onCancelEdit={cancelEdit}
+        onTitleChange={setEditingTitle}
+      />
     </div>
   );
 }
 ```
 
-### Diagnostic Analysis: The Performance Win
+```tsx
+// src/components/TaskList.tsx - Passing edit props down
+import { Task } from '../types/task';
+import { TaskItem } from './TaskItem';
 
-If you run this version with the `console.log` statements and type in the "Name" input, you will see this in the console:
+interface TaskListProps {
+  tasks: Task[];
+  editingTaskId: string | null;
+  editingTitle: string;
+  onStartEditing: (taskId: string, currentTitle: string) => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onTitleChange: (title: string) => void;
+}
 
+export function TaskList({
+  tasks,
+  editingTaskId,
+  editingTitle,
+  onStartEditing,
+  onSaveEdit,
+  onCancelEdit,
+  onTitleChange,
+}: TaskListProps) {
+  return (
+    <div className="task-list">
+      {tasks.map((task) => (
+        <TaskItem
+          key={task.id}
+          task={task}
+          isEditing={editingTaskId === task.id}
+          editingTitle={editingTitle}
+          onStartEditing={onStartEditing}
+          onSaveEdit={onSaveEdit}
+          onCancelEdit={onCancelEdit}
+          onTitleChange={onTitleChange}
+        />
+      ))}
+    </div>
+  );
+}
 ```
-Rendering UserDetailsSection
-Rendering UserBioSection
-Rendering UserDetailsSection
-Rendering UserBioSection
-...
-```
-
-Wait, this is the same behavior as before! Both components re-render. Why? Because when the parent's state changes, React re-renders the parent, which in turn re-renders all its children by default.
-
-To fix this, we need one final piece: `React.memo`. `memo` is a higher-order component that prevents a component from re-rendering if its props haven't changed.
-
-Let's apply it:
 
 ```tsx
-import { memo } from 'react';
+// src/components/TaskItem.tsx - Using edit props
+import { Task } from '../types/task';
+import { useTaskBoard } from '../contexts/TaskBoardContext';
 
-const MemoizedUserDetailsSection = memo(UserDetailsSection);
-const MemoizedUserBioSection = memo(UserBioSection);
+interface TaskItemProps {
+  task: Task;
+  isEditing: boolean;
+  editingTitle: string;
+  onStartEditing: (taskId: string, currentTitle: string) => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onTitleChange: (title: string) => void;
+}
 
-// In UserProfilePage's return:
-<MemoizedUserDetailsSection 
-  name={state.name} 
-  email={state.email} 
-  onFieldChange={handleFieldChange} 
-/>
-<MemoizedUserBioSection 
-  bio={state.bio} 
-  onFieldChange={handleFieldChange} 
-/>
+export function TaskItem({
+  task,
+  isEditing,
+  editingTitle,
+  onStartEditing,
+  onSaveEdit,
+  onCancelEdit,
+  onTitleChange,
+}: TaskItemProps) {
+  const { dispatch } = useTaskBoard();
+
+  return (
+    <div className="task-item">
+      <div className="task-header">
+        {isEditing ? (
+          <input
+            type="text"
+            value={editingTitle}
+            onChange={(e) => onTitleChange(e.target.value)}
+            onBlur={onSaveEdit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onSaveEdit();
+              if (e.key === 'Escape') onCancelEdit();
+            }}
+            autoFocus
+          />
+        ) : (
+          <h3 onClick={() => onStartEditing(task.id, task.title)}>
+            {task.title}
+          </h3>
+        )}
+      </div>
+      {/* ... rest of task item ... */}
+    </div>
+  );
+}
 ```
 
-Now, when you type in the "Name" input, the console output will be:
+Let's test this:
 
+**Browser Behavior**:
+1. User clicks on task title "Implement user authentication"
+2. Input appears, user types "Implement OAuth authentication"
+3. User clicks on a different task title "Write API documentation"
+4. **Both tasks show edit inputs!** ❌
+5. The second task's input shows "Implement OAuth authentication" ❌
+
+**Browser Console**:
 ```
-Rendering UserDetailsSection
-Rendering UserDetailsSection
-Rendering UserDetailsSection
-...
+[TaskBoard] Rendered
+[TaskList] Rendered
+[TaskItem] Rendered (3 times)
+
+// User clicks first task:
+[TaskBoard] Re-rendered (editingTaskId changed)
+[TaskList] Re-rendered (props changed)
+[TaskItem] Re-rendered (3 times - ALL tasks re-render!)
+
+// User types in input:
+[TaskBoard] Re-rendered (editingTitle changed)
+[TaskList] Re-rendered (props changed)
+[TaskItem] Re-rendered (3 times - ALL tasks re-render on every keystroke!)
 ```
 
-`UserBioSection` no longer re-renders! We have achieved optimal performance. We lifted the state to the parent but passed down only the necessary props, allowing `memo` to prevent unnecessary re-renders of sibling components.
+**React DevTools Evidence**:
+- Profiler shows all 3 `TaskItem` components re-rendering on every keystroke
+- State in `TaskBoard`:
+  - `editingTaskId`: "1"
+  - `editingTitle`: "Implement OAuth authentication"
+- When user clicks second task:
+  - `editingTaskId` changes to "2"
+  - But `editingTitle` still has the old value
+  - Second task shows wrong text
+
+### Diagnostic Analysis: State Too High
+
+**What the user experiences**:
+- Expected: Only the edited task updates
+- Actual: All tasks re-render, wrong task shows edit state
+
+**What the console reveals**:
+- Key indicator: All tasks re-render on every keystroke
+- This is a performance problem
+- 3 tasks × 10 keystrokes = 30 unnecessary re-renders
+
+**What DevTools shows**:
+- Component tree: `TaskBoard` → `TaskList` → `TaskItem` (all highlighted)
+- Render reason: Props changed
+- The problem: Edit state is in the parent, so changing it re-renders all children
+
+**Root cause identified**:
+
+Edit state is **lifted too high**. Only one task is being edited at a time, but the state lives in `TaskBoard`, which means:
+1. Changing edit state re-renders the entire board
+2. All tasks re-render even though only one is editing
+3. Edit state is shared across all tasks (causing the wrong-text bug)
+
+**Why the current approach can't solve this**:
+
+When state lives in a parent component, changing that state re-renders all children. React can't know that only one child cares about the edit state.
+
+**What we need**:
+
+Edit state should live in the `TaskItem` component itself. Each task should manage its own edit state independently.
+
+### Iteration 4: Pushing State Down
+
+Let's move edit state to where it's actually used:
+
+```tsx
+// src/components/TaskBoard.tsx - No edit state here
+import { useMemo } from 'react';
+import { useTaskBoard } from '../contexts/TaskBoardContext';
+import { TaskList } from './TaskList';
+
+export function TaskBoard() {
+  const { state, dispatch } = useTaskBoard();
+
+  const filteredTasks = useMemo(() => {
+    return state.tasks.filter((task) => {
+      // ... filtering logic
+    });
+  }, [state.tasks, state.filters]);
+
+  return (
+    <div className="task-board">
+      {/* ... header ... */}
+
+      <TaskList tasks={filteredTasks} />
+      {/* No edit props! */}
+    </div>
+  );
+}
+```
+
+```tsx
+// src/components/TaskList.tsx - No edit props here either
+import { Task } from '../types/task';
+import { TaskItem } from './TaskItem';
+
+interface TaskListProps {
+  tasks: Task[];
+}
+
+export function TaskList({ tasks }: TaskListProps) {
+  return (
+    <div className="task-list">
+      {tasks.map((task) => (
+        <TaskItem key={task.id} task={task} />
+        {/* No edit props! */}
+      ))}
+    </div>
+  );
+}
+```
+
+```tsx
+// src/components/TaskItem.tsx - Edit state lives here
+import { useState } from 'react';
+import { Task, TaskStatus } from '../types/task';
+import { useTaskBoard } from '../contexts/TaskBoardContext';
+
+interface TaskItemProps {
+  task: Task;
+}
+
+export function TaskItem({ task }: TaskItemProps) {
+  const { dispatch } = useTaskBoard();
+
+  // Edit state is local to this component
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(task.title);
+
+  const startEditing = () => {
+    setIsEditing(true);
+    setEditingTitle(task.title);
+  };
+
+  const saveEdit = () => {
+    if (editingTitle.trim() !== task.title) {
+      dispatch({
+        type: 'UPDATE_TASK',
+        payload: {
+          id: task.id,
+          updates: { title: editingTitle.trim() },
+        },
+      });
+    }
+    setIsEditing(false);
+  };
+
+  const cancelEdit = () => {
+    setEditingTitle(task.title);
+    setIsEditing(false);
+  };
+
+  const priorityColors = {
+    low: '#4caf50',
+    medium: '#ff9800',
+    high: '#f44336',
+  };
+
+  return (
+    <div className="task-item">
+      <div className="task-header">
+        {isEditing ? (
+          <input
+            type="text"
+            value={editingTitle}
+            onChange={(e) => setEditingTitle(e.target.value)}
+            onBlur={saveEdit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') saveEdit();
+              if (e.key === 'Escape') cancelEdit();
+            }}
+            autoFocus
+            className="task-title-input"
+          />
+        ) : (
+          <h3 onClick={startEditing} className="task-title">
+            {task.title}
+          </h3>
+        )}
+        <span
+          className="priority-badge"
+          style={{ backgroundColor: priorityColors[task.priority] }}
+        >
+          {task.priority}
+        </span>
+      </div>
+
+      <p className="task-description">{task.description}</p>
+
+      <div className="task-meta">
+        <span>Assignee: {task.assignee}</span>
+        {task.dueDate && (
+          <span>Due: {task.dueDate.toLocaleDateString()}</span>
+        )}
+      </div>
+
+      <div className="task-actions">
+        <select
+          value={task.status}
+          onChange={(e) =>
+            dispatch({
+              type: 'UPDATE_TASK_STATUS',
+              payload: { id: task.id, status: e.target.value as TaskStatus },
+            })
+          }
+        >
+          <option value="todo">To Do</option>
+          <option value="in-progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+
+        <button
+          onClick={() =>
+            dispatch({ type: 'OPEN_EDIT_FORM', payload: task })
+          }
+        >
+          Edit
+        </button>
+        <button
+          onClick={() =>
+            dispatch({ type: 'DELETE_TASK', payload: task.id })
+          }
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+### Verification: Does It Work?
+
+**Browser Console**:
+```
+[TaskBoard] Rendered
+[TaskList] Rendered
+[TaskItem] Rendered (3 times)
+
+// User clicks first task:
+[TaskItem] Re-rendered (1 time - only the edited task!)
+
+// User types in input:
+[TaskItem] Re-rendered (1 time - only the edited task!)
+[TaskItem] Re-rendered (1 time - only the edited task!)
+[TaskItem] Re-rendered (1 time - only the edited task!)
+
+// User clicks second task:
+[TaskItem] Re-rendered (1 time - first task saves and stops editing)
+[TaskItem] Re-rendered (1 time - second task starts editing)
+```
+
+**React DevTools Evidence**:
+- Profiler shows only the edited `TaskItem` re-rendering
+- Other tasks remain unchanged
+- Each task has its own independent edit state
+- No interference between tasks
+
+**Expected vs. Actual**:
+- ✅ Only edited task re-renders
+- ✅ Other tasks unaffected
+- ✅ Each task has independent edit state
+- ✅ No wrong-text bug
+- ✅ Performance: 3 re-renders instead of 30
+
+### The State Placement Decision Tree
+
+Use this flowchart to decide where state should live:
+
+**Question 1**: Does only one component need this state?
+- **Yes** → Keep it in that component
+- **No** → Continue to Question 2
+
+**Question 2**: Do sibling components need to share this state?
+- **Yes** → Lift to common parent
+- **No** → Continue to Question 3
+
+**Question 3**: Do components far apart in the tree need this state?
+- **Yes** → Consider Context
+- **No** → Keep it local
+
+**Question 4**: Does this state change frequently?
+- **Yes** → Keep it as low as possible
+- **No** → Lifting is okay
+
+**Question 5**: Is this state truly global?
+- **Yes** → Use Context
+- **No** → Keep it local or lift minimally
+
+### The Lifting State Up Pattern
+
+Sometimes you do need to lift state. Here's when and how:
+
+**When to lift state up**:
+- Two sibling components need to share state
+- Parent needs to coordinate children
+- State represents a single source of truth
+
+**Example: Coordinated filters**
+
+```tsx
+// src/components/TaskBoard.tsx - Filters must be lifted
+import { useState } from 'react';
+import { TaskFilters } from '../types/task';
+import { FilterBar } from './FilterBar';
+import { TaskList } from './TaskList';
+import { TaskStats } from './TaskStats';
+
+export function TaskBoard() {
+  // Filters must be in parent because both FilterBar and TaskList need them
+  const [filters, setFilters] = useState<TaskFilters>({
+    status: 'all',
+    priority: 'all',
+    assignee: '',
+    searchQuery: '',
+  });
+
+  const filteredTasks = tasks.filter((task) => {
+    // Apply filters...
+  });
+
+  return (
+    <div className="task-board">
+      {/* FilterBar modifies filters */}
+      <FilterBar filters={filters} onFilterChange={setFilters} />
+
+      {/* TaskList uses filtered results */}
+      <TaskList tasks={filteredTasks} />
+
+      {/* TaskStats uses filtered results */}
+      <TaskStats tasks={filteredTasks} />
+    </div>
+  );
+}
+```
+
+This is correct lifting: filters are in the parent because multiple children need them.
+
+### The Pushing State Down Pattern
+
+**When to push state down**:
+- State is only used by one component
+- State changes frequently
+- State is UI-specific (not business logic)
+
+**Example: Dropdown open state**
+
+```tsx
+// src/components/TaskItem.tsx - Dropdown state is local
+import { useState } from 'react';
+import { Task } from '../types/task';
+
+export function TaskItem({ task }: { task: Task }) {
+  // Dropdown state is local - only this component cares
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  return (
+    <div className="task-item">
+      <h3>{task.title}</h3>
+
+      <button onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+        Actions
+      </button>
+
+      {isDropdownOpen && (
+        <div className="dropdown">
+          <button onClick={() => {/* edit */}}>Edit</button>
+          <button onClick={() => {/* delete */}}>Delete</button>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+This is correct pushing: dropdown state is local because only this component cares about it.
+
+### Common Failure Modes
+
+#### Symptom: Entire component tree re-renders on every keystroke
+
+**Browser Console**:
+```
+[Parent] Rendering
+[Child1] Rendering
+[Child2] Rendering
+[Child3] Rendering
+// ... repeats on every keystroke
+```
+
+**Root cause**: Input state is lifted too high
+
+**Solution**: Push input state down to the component that contains the input
+
+#### Symptom: Components can't share state
+
+**Browser Console**:
+```
+Warning: Cannot update a component while rendering a different component
+```
+
+**Root cause**: State is too low, siblings can't communicate
+
+**Solution**: Lift state to common parent
+
+#### Symptom: Props drilling through many levels
+
+**React DevTools Evidence**:
+- Component tree shows props passed through 5+ levels
+- Intermediate components don't use the props
+
+**Root cause**: State is lifted too high, or should use Context
+
+**Solution**: Either push state down or use Context
+
+### The Performance Impact
+
+Let's measure the difference:
+
+**State Too High** (edit state in parent):
+```
+User types 10 characters
+= 10 state updates in parent
+= 10 re-renders of parent
+= 10 re-renders of TaskList
+= 10 × 3 re-renders of TaskItem
+= 30 total TaskItem re-renders
+```
+
+**State Pushed Down** (edit state in TaskItem):
+```
+User types 10 characters
+= 10 state updates in TaskItem
+= 10 re-renders of TaskItem
+= 10 total TaskItem re-renders
+```
+
+**Result**: 3× fewer re-renders by pushing state down.
+
+### The Complete Journey: State Placement Evolution
+
+| Iteration | State Location | Problem | Solution | Performance |
+|-----------|---------------|---------|----------|-------------|
+| 0 | Edit state in TaskBoard | All tasks re-render | - | 30 re-renders |
+| 1 | Edit state in TaskItem | Only edited task re-renders | Push state down | 10 re-renders |
+| 2 | Filters in TaskBoard | Multiple components need them | Lift state up | Correct |
+| 3 | Dropdown in TaskItem | Only one component needs it | Keep state local | Optimal |
 
 ### Decision Framework: Where Should State Live?
 
-Use this flowchart to decide on your state management strategy.
+**Principle 1: Start Local**
 
-1.  **Does this state belong to a single component?**
-    *   **Yes** -> Keep the state inside that component.
-        *   Is the state logic complex or are multiple values updated together?
-            *   **Yes** -> Use `useReducer`.
-            *   **No** -> Use `useState`. (This is the most common case).
+Always start with state in the component that uses it. Only lift when you have a concrete reason.
 
-2.  **No, the state needs to be shared between components.**
-    *   Are the components siblings?
-        *   **Yes** -> **Lift state up** to their common parent. Pass data down as props and updates up via callbacks. Use `React.memo` on children to optimize performance.
-    *   Are the components far apart in the tree?
-        *   Does the state change frequently (e.g., form input)?
-            *   **Yes** -> **Avoid Context**. Lift state up as described above, or consider a dedicated state management library (covered in Chapter 11).
-        *   Does the state change infrequently (e.g., theme, user auth)?
-            *   **Yes** -> **Context API** is an excellent choice to avoid prop drilling.
+**Principle 2: Lift Minimally**
 
-### The Journey: From Problem to Solution
+When you do lift, lift only as high as necessary. Don't lift to App if lifting to a feature component is enough.
 
-| Iteration | Problem / Failure Mode | Technique Applied | Result | Performance Impact |
-| :--- | :--- | :--- | :--- | :--- |
-| 0 | Initial requirement | Multiple `useState` | Works, but scattered logic. | Baseline |
-| 1 | Repetitive, error-prone update logic | `useReducer` | Centralized, robust logic. | Neutral |
-| 2 | Prop drilling in component breakdown | `Context API` | Decoupled components. | **Negative**: Excessive re-renders. |
-| 3 | Excessive re-renders from Context | Lift State Up + Props + `memo` | Decoupled & performant. | **Optimal** |
+**Principle 3: Consider Performance**
+
+Frequently changing state should be as low as possible. Infrequently changing state can be higher.
+
+**Principle 4: Optimize for Maintainability**
+
+Sometimes it's worth a small performance cost for clearer code. Don't prematurely optimize.
+
+### When to Apply These Patterns
+
+**Push State Down**:
+- What it optimizes for: Performance, isolation, simplicity
+- What it sacrifices: Sharing state between components
+- When to use: State is local, changes frequently, UI-specific
+- When to avoid: Multiple components need the state
+
+**Lift State Up**:
+- What it optimizes for: Sharing state, coordination, single source of truth
+- What it sacrifices: Performance (more re-renders), complexity
+- When to use: Siblings need to share state, parent needs to coordinate
+- When to avoid: Only one component needs the state
+
+**Use Context**:
+- What it optimizes for: Eliminating prop drilling, global state
+- What it sacrifices: Performance (all consumers re-render), explicit data flow
+- When to use: Truly global state, many distant components need it
+- When to avoid: State changes frequently, only a few components need it
 
 ### Lessons Learned
 
--   **Start simple**: Always begin with `useState` and co-located state. It's often all you need.
--   **Centralize when complex**: Move to `useReducer` when state transitions become interdependent and complex.
--   **Use Context for static data**: Context is for avoiding prop drilling of data that rarely changes. It is not a substitute for a state manager.
--   **Lift state deliberately**: When sharing state between components, lift it to a common ancestor, but pass down only the minimal props required. Combine this with `React.memo` for performance.
+**1. State placement is a design decision**
 
-Mastering local state is about understanding these trade-offs and choosing the simplest, most performant tool for the job at hand.
+There's no one right answer. Consider:
+- How many components need the state?
+- How often does it change?
+- How performance-critical is it?
+- How maintainable is the code?
+
+**2. Start simple, refactor when needed**
+
+Don't prematurely optimize. Start with the simplest solution (local state), and refactor when you encounter problems.
+
+**3. Performance is about re-renders**
+
+The higher state lives, the more components re-render when it changes. This is the fundamental trade-off.
+
+**4. Composition over configuration**
+
+Sometimes the best solution is to restructure your components, not to move state around.
+
+**5. Measure, don't guess**
+
+Use React DevTools Profiler to see actual re-render counts. Don't optimize based on assumptions.
+
+The key insight: State placement is the most important decision you make in React. Get it right, and your app is fast and maintainable. Get it wrong, and you'll fight performance problems and prop drilling forever.

@@ -2,945 +2,2104 @@
 
 ## Code splitting and lazy loading
 
-## The Monolithic Monster: Why Loading Everything at Once Fails
+## The Problem: Everything Loads at Once
 
-In modern web applications, speed is not a feature; it's a prerequisite. Users expect pages to load instantly. One of the biggest enemies of a fast initial load is a large JavaScript bundle. When your application grows, you add more pages, more features, and more libraries. Without a deliberate strategy, all of this code gets bundled into a single, massive file that every user must download when they first visit your site, regardless of which page they actually need.
+In Chapter 13, we built a multi-page documentation site with React Router. It works—users can navigate between pages without full page reloads. But there's a hidden performance problem that becomes obvious as the application grows.
 
-This chapter will guide you through transforming a slow, monolithic application into a highly optimized, performant user experience using advanced routing patterns available in Next.js.
-
-### Phase 1: Establish the Reference Implementation
-
-We will build a simple E-commerce Admin Dashboard. This dashboard will have three main pages:
-1.  **Overview**: The main landing page.
-2.  **Orders**: A page to view recent orders, containing a complex charting library.
-3.  **Products**: A page to manage a long list of products.
-
-This dashboard is our **anchor example**. We will start with a naive implementation and progressively refine it throughout this chapter, demonstrating how each advanced routing pattern solves a specific, tangible problem.
-
-First, let's set up the initial project structure.
+Let's establish our reference implementation: a documentation site with multiple sections. This will be our anchor example throughout this chapter.
 
 **Project Structure**:
 ```
 src/
-├── app/
-│   ├── layout.tsx         # Root layout with navigation
-│   ├── page.tsx           # Overview page
-│   ├── orders/
-│   │   └── page.tsx       # Orders page (with heavy component)
-│   └── products/
-│       └── page.tsx       # Products page
-└── components/
-    ├── Nav.tsx            # Navigation component
-    └── HeavyChart.tsx     # A simulated heavy component for the Orders page
+├── pages/
+│   ├── Home.tsx           ← Landing page
+│   ├── GettingStarted.tsx ← Tutorial content
+│   ├── APIReference.tsx   ← Large API docs
+│   ├── Examples.tsx       ← Code examples
+│   └── Changelog.tsx      ← Version history
+├── components/
+│   ├── Navigation.tsx
+│   └── Layout.tsx
+└── App.tsx               ← Router setup
 ```
 
-Here is the initial, problematic code.
+Here's our initial implementation:
 
 ```tsx
-// src/components/HeavyChart.tsx
-// A placeholder for a large charting library like D3 or Chart.js
-// Imagine this component is 500KB of JavaScript.
-"use client";
+// src/App.tsx
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Layout from './components/Layout';
+import Home from './pages/Home';
+import GettingStarted from './pages/GettingStarted';
+import APIReference from './pages/APIReference';
+import Examples from './pages/Examples';
+import Changelog from './pages/Changelog';
 
-export default function HeavyChart() {
+function App() {
   return (
-    <div className="bg-gray-100 p-8 rounded-lg">
-      <h2 className="text-xl font-bold mb-4">Sales Data Chart</h2>
-      <p>(This is a placeholder for a very large and complex chart component.)</p>
-      <div className="w-full h-64 bg-gray-300 animate-pulse mt-4"></div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="getting-started" element={<GettingStarted />} />
+          <Route path="api" element={<APIReference />} />
+          <Route path="examples" element={<Examples />} />
+          <Route path="changelog" element={<Changelog />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
+```
+
+## Route-based data loading
+
+## The Problem: Data Fetching Waterfalls
+
+Our routes load quickly now, but there's another performance problem. Let's add data fetching to our API Reference page:
+
+```tsx
+// src/pages/APIReference.tsx - Initial Implementation
+import { useState, useEffect } from 'react';
+
+interface APIMethod {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  parameters: Array<{
+    name: string;
+    type: string;
+    description: string;
+  }>;
+  examples: string[];
+}
+
+export default function APIReference() {
+  const [methods, setMethods] = useState<APIMethod[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/methods')
+      .then(res => res.json())
+      .then(data => {
+        setMethods(data);
+        setIsLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setIsLoading(false);
+      });
+  }, []);
+
+  if (isLoading) return <div>Loading API methods...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <div className="api-reference">
+      <h1>API Reference</h1>
+      {methods.map(method => (
+        <div key={method.id} className="method">
+          <h2>{method.name}</h2>
+          <p>{method.description}</p>
+          {/* Render method details */}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+Let's see what happens when a user navigates to the API Reference page:
+
+**Browser DevTools - Network Tab**:
+```
+Timeline:
+0.0s: User clicks "API Reference" link
+0.0s: Request for APIReference-c2d3e4f5.js starts
+1.9s: APIReference-c2d3e4f5.js finishes downloading
+1.9s: React renders component, useEffect runs
+1.9s: Request for /api/methods starts
+3.2s: /api/methods finishes (1.3s response time)
+3.2s: Content appears
+```
+
+**Browser Console**:
+```
+[React Router] Navigating to /api
+[Suspense] APIReference suspended
+[Suspense] APIReference resolved
+[Component] APIReference mounted
+[Network] GET /api/methods
+[Component] APIReference updated with data
+```
+
+### Diagnostic Analysis: The Waterfall Problem
+
+**Browser Behavior**:
+User clicks "API Reference". They see "Loading page..." for 1.9 seconds. Then they see "Loading API methods..." for another 1.3 seconds. Total wait: 3.2 seconds before seeing content.
+
+**Network Tab Evidence**:
+The smoking gun: Sequential requests.
+1. First: Download the component code (1.9s)
+2. Then: Download the data (1.3s)
+3. Total: 3.2 seconds
+
+This is a **waterfall**: The second request can't start until the first completes.
+
+**Performance Metrics**:
+- Time to First Byte (TTFB): 1.9s (waiting for component)
+- Time to Content: 3.2s (waiting for component + data)
+- Largest Contentful Paint (LCP): 3.4s (poor)
+
+**Let's parse this evidence**:
+
+1. **What the user experiences**:
+   - Expected: Page loads in ~2 seconds
+   - Actual: Two separate loading states, 3.2 seconds total
+
+2. **What the Network tab reveals**:
+   - Key indicator: Sequential requests (waterfall pattern)
+   - Component code must download before data request starts
+   - Each request blocks the next
+
+3. **Root cause identified**: The component code contains the data fetching logic. React can't fetch data until the component code downloads and executes. The data request is blocked by the code request.
+
+4. **Why the current approach can't solve this**: `useEffect` runs after component mounts. Component can't mount until its code downloads. This creates an unavoidable waterfall.
+
+5. **What we need**: A way to start fetching data before the component code downloads. Ideally, both requests should start simultaneously.
+
+### Solution 1: Loader Functions (React Router 6.4+)
+
+React Router 6.4 introduced **loaders**: functions that run before a route renders. They can fetch data in parallel with component code.
+
+```tsx
+// src/loaders/apiReferenceLoader.ts
+import { LoaderFunctionArgs } from 'react-router-dom';
+
+export interface APIMethod {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  parameters: Array<{
+    name: string;
+    type: string;
+    description: string;
+  }>;
+  examples: string[];
+}
+
+export async function apiReferenceLoader({ params }: LoaderFunctionArgs) {
+  const response = await fetch('/api/methods');
+  
+  if (!response.ok) {
+    throw new Error(`Failed to load API methods: ${response.statusText}`);
+  }
+  
+  const methods: APIMethod[] = await response.json();
+  return { methods };
+}
+```
+
+```tsx
+// src/pages/APIReference.tsx - Iteration 1: Using Loader
+import { useLoaderData } from 'react-router-dom';
+import { APIMethod } from '../loaders/apiReferenceLoader';
+
+export default function APIReference() {
+  // Data is already loaded by the time component renders
+  const { methods } = useLoaderData() as { methods: APIMethod[] };
+
+  return (
+    <div className="api-reference">
+      <h1>API Reference</h1>
+      {methods.map(method => (
+        <div key={method.id} className="method">
+          <h2>{method.name}</h2>
+          <p>{method.description}</p>
+          {/* Render method details */}
+        </div>
+      ))}
     </div>
   );
 }
 ```
 
 ```tsx
-// src/app/orders/page.tsx
-import HeavyChart from "@/components/HeavyChart";
+// src/App.tsx - Iteration 4: Adding Loader to Route
+import { 
+  createBrowserRouter, 
+  RouterProvider,
+  Outlet 
+} from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import Layout from './components/Layout';
+import Home from './pages/Home';
+import GettingStarted from './pages/GettingStarted';
+import { apiReferenceLoader } from './loaders/apiReferenceLoader';
 
-export default function OrdersPage() {
+const APIReference = lazy(() => import('./pages/APIReference'));
+const Examples = lazy(() => import('./pages/Examples'));
+const Changelog = lazy(() => import('./pages/Changelog'));
+
+function RouteLoadingFallback() {
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Orders</h1>
-      <HeavyChart />
+    <div className="route-loading">
+      <div className="spinner" />
+      <p>Loading...</p>
+    </div>
+  );
+}
+
+// Create router with loader
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Layout />,
+    children: [
+      {
+        index: true,
+        element: <Home />
+      },
+      {
+        path: 'getting-started',
+        element: <GettingStarted />
+      },
+      {
+        path: 'api',
+        element: (
+          <Suspense fallback={<RouteLoadingFallback />}>
+            <APIReference />
+          </Suspense>
+        ),
+        loader: apiReferenceLoader // ← Loader runs before component renders
+      },
+      {
+        path: 'examples',
+        element: (
+          <Suspense fallback={<RouteLoadingFallback />}>
+            <Examples />
+          </Suspense>
+        )
+      },
+      {
+        path: 'changelog',
+        element: (
+          <Suspense fallback={<RouteLoadingFallback />}>
+            <Changelog />
+          </Suspense>
+        )
+      }
+    ]
+  }
+]);
+
+function App() {
+  return <RouterProvider router={router} />;
+}
+
+export default App;
+```
+
+Now let's see what happens when a user navigates to the API Reference page:
+
+**Browser DevTools - Network Tab**:
+```
+Timeline:
+0.0s: User clicks "API Reference" link
+0.0s: Request for APIReference-c2d3e4f5.js starts
+0.0s: Request for /api/methods starts (parallel!)
+1.3s: /api/methods finishes
+1.9s: APIReference-c2d3e4f5.js finishes
+1.9s: Content appears (data already available)
+```
+
+**Expected vs. Actual Improvement**:
+
+| Metric | Before (useEffect) | After (Loader) | Improvement |
+|--------|-------------------|----------------|-------------|
+| Time to Content | 3.2s | 1.9s | 41% faster |
+| Number of loading states | 2 | 1 | Simpler UX |
+| Waterfall eliminated | No | Yes | Parallel loading |
+
+**What changed**:
+1. Loader function runs when navigation starts (before component code downloads)
+2. Data request and component code request happen in parallel
+3. Component renders only after both complete
+4. User sees single loading state, then content
+
+### Handling Loader Errors
+
+Loaders can throw errors. React Router catches them and renders an error boundary:
+
+```tsx
+// src/loaders/apiReferenceLoader.ts - Iteration 2: Error Handling
+import { LoaderFunctionArgs } from 'react-router-dom';
+
+export async function apiReferenceLoader({ params }: LoaderFunctionArgs) {
+  const response = await fetch('/api/methods');
+  
+  if (!response.ok) {
+    // Throw with structured error data
+    throw new Response('Failed to load API methods', {
+      status: response.status,
+      statusText: response.statusText
+    });
+  }
+  
+  const methods = await response.json();
+  return { methods };
+}
+```
+
+```tsx
+// src/components/ErrorBoundary.tsx
+import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
+
+export default function ErrorBoundary() {
+  const error = useRouteError();
+
+  if (isRouteErrorResponse(error)) {
+    return (
+      <div className="error-boundary">
+        <h1>{error.status} {error.statusText}</h1>
+        <p>{error.data}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="error-boundary">
+      <h1>Oops! Something went wrong</h1>
+      <p>{error instanceof Error ? error.message : 'Unknown error'}</p>
     </div>
   );
 }
 ```
 
 ```tsx
-// src/app/products/page.tsx
-export default function ProductsPage() {
-  // Generate a long list to demonstrate scrolling issues later
-  const products = Array.from({ length: 100 }, (_, i) => `Product ${i + 1}`);
+// src/App.tsx - Adding Error Boundary
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Layout />,
+    errorElement: <ErrorBoundary />, // ← Catches loader errors
+    children: [
+      // ... routes
+      {
+        path: 'api',
+        element: (
+          <Suspense fallback={<RouteLoadingFallback />}>
+            <APIReference />
+          </Suspense>
+        ),
+        loader: apiReferenceLoader
+      }
+    ]
+  }
+]);
+```
+
+### Loading States with Loaders
+
+Loaders don't show loading states by default. The navigation waits until the loader completes. For slow loaders, this creates a "frozen" UI. Let's add a loading indicator:
+
+```tsx
+// src/components/Layout.tsx - Iteration 5: Navigation Loading State
+import { Outlet, useNavigation } from 'react-router-dom';
+import Navigation from './Navigation';
+
+export default function Layout() {
+  const navigation = useNavigation();
+  const isLoading = navigation.state === 'loading';
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Products</h1>
-      <ul className="space-y-2">
-        {products.map((product) => (
-          <li key={product} className="p-2 border rounded">
-            {product}
-          </li>
-        ))}
-      </ul>
+    <div className="layout">
+      <Navigation />
+      
+      {/* Show loading bar during navigation */}
+      {isLoading && (
+        <div className="loading-bar">
+          <div className="loading-bar-progress" />
+        </div>
+      )}
+      
+      <main>
+        <Outlet />
+      </main>
     </div>
   );
 }
 ```
 
-```tsx
-// src/components/Nav.tsx
-import Link from "next/link";
+**Browser Behavior**:
+User clicks "API Reference". A loading bar appears at the top of the page. The current page remains visible. After 1.9 seconds, the loading bar disappears and the new page appears.
 
-export default function Nav() {
+**Improvement**: User sees immediate feedback (loading bar) while keeping the current page visible. Better than a blank screen or full-page spinner.
+
+### Solution 2: Prefetching Data (Advanced)
+
+For even better performance, we can prefetch data before the user clicks:
+
+```tsx
+// src/components/Navigation.tsx - Iteration 6: Prefetch on Hover
+import { Link, useNavigate } from 'react-router-dom';
+import { apiReferenceLoader } from '../loaders/apiReferenceLoader';
+
+export default function Navigation() {
+  const navigate = useNavigate();
+
+  // Prefetch data when user hovers over link
+  const handleMouseEnter = () => {
+    // Start loading data before user clicks
+    apiReferenceLoader({ params: {}, request: new Request('/api') } as any);
+  };
+
   return (
-    <nav className="bg-gray-800 p-4">
-      <ul className="flex space-x-6 text-white">
-        <li><Link href="/" className="hover:text-blue-300">Overview</Link></li>
-        <li><Link href="/orders" className="hover:text-blue-300">Orders</Link></li>
-        <li><Link href="/products" className="hover:text-blue-300">Products</Link></li>
-      </ul>
+    <nav>
+      <Link to="/">Home</Link>
+      <Link to="/getting-started">Getting Started</Link>
+      <Link 
+        to="/api" 
+        onMouseEnter={handleMouseEnter} // ← Prefetch on hover
+      >
+        API Reference
+      </Link>
+      <Link to="/examples">Examples</Link>
+      <Link to="/changelog">Changelog</Link>
     </nav>
   );
 }
 ```
 
-```tsx
-// src/app/layout.tsx
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import Nav from "@/components/Nav";
-
-const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "Admin Dashboard",
-  description: "E-commerce Admin",
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="en">
-      <body className={inter.className}>
-        <Nav />
-        <main className="p-8">{children}</main>
-      </body>
-    </html>
-  );
-}
+**Browser DevTools - Network Tab** (with prefetch):
+```
+Timeline:
+0.0s: User hovers over "API Reference" link
+0.0s: Request for /api/methods starts (prefetch)
+0.5s: User clicks link
+0.5s: Request for APIReference-c2d3e4f5.js starts
+1.3s: /api/methods finishes (already in cache)
+1.4s: APIReference-c2d3e4f5.js finishes
+1.4s: Content appears instantly (data already loaded)
 ```
 
-```tsx
-// src/app/page.tsx
-export default function OverviewPage() {
-  return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Dashboard Overview</h1>
-      <p>Welcome to your admin dashboard.</p>
-    </div>
-  );
-}
-```
+**Expected vs. Actual Improvement**:
 
-### Iteration 0: The Problem of the Monolithic Bundle
+| Metric | Loader Only | Loader + Prefetch | Improvement |
+|--------|-------------|-------------------|-------------|
+| Time to Content | 1.9s | 1.4s | 26% faster |
+| Perceived speed | Fast | Instant | Feels immediate |
 
-With the code above, we have a fully functional application. However, it hides a severe performance problem. Let's run the app (`npm run dev`), open the browser's developer tools, and analyze what happens on the initial page load.
+**When to Apply Prefetching**:
 
-### Diagnostic Analysis: Reading the Failure
+**What it optimizes for**:
+- Perceived performance (feels instant)
+- User experience on fast connections
+- Frequently accessed routes
 
-**Browser Behavior**:
-The user visits `http://localhost:3000`. The page loads, but on a slow connection, there's a noticeable delay before anything appears.
+**What it sacrifices**:
+- Bandwidth (may fetch data user doesn't need)
+- Server load (more requests)
+- Complexity (more code to maintain)
 
-**Browser DevTools - Network Tab** (Filter by JS, Disable cache):
-When you load the homepage (`/`), you'll see a large JavaScript file being downloaded. This file is often named something like `app/page-....js` or a similar hash-based name.
+**When to prefetch**:
+- High-probability navigation (user hovering over link)
+- Fast data endpoints (< 500ms response time)
+- Small data payloads (< 100 KB)
+- Frequently accessed routes (> 50% of users visit)
 
-```
-Name                    Status  Type      Size
-----------------------------------------------------
-page-....js             200     script    525 KB  <-- PROBLEM
-...other chunks
-```
+**When NOT to prefetch**:
+- Slow data endpoints (> 1s response time)
+- Large data payloads (> 500 KB)
+- Rarely accessed routes
+- Mobile users on metered connections
+- Data that changes frequently (risk of stale data)
 
-**Performance Metrics** (Simulated Slow 3G connection):
-- **Bundle size**: ~525 KB (where 500 KB is our simulated `HeavyChart`)
-- **Initial load time**: 3.5s
-- **Largest Contentful Paint (LCP)**: 3.2s
-- **Time to Interactive (TTI)**: 3.4s
+### Combining Loaders with React Query
 
-**Let's parse this evidence**:
-
-1.  **What the user experiences**: A slow initial page load. They are forced to wait for code they might never use.
-
-    -   **Expected**: The homepage should load quickly, only downloading the code necessary for the "Overview" page.
-    -   **Actual**: The browser downloads the code for the Overview, Orders, *and* Products pages, including the massive `HeavyChart` component, just to show the simple homepage.
-
-2.  **What the Network tab reveals**: A single, large JavaScript chunk contains the code for all our pages.
-
-    -   **Key indicator**: The size of the initial JS chunk is far larger than what's needed for the simple overview page.
-
-3.  **Root cause identified**: By default, Next.js bundles components that are statically imported together. Because our `orders/page.tsx` statically imports `HeavyChart`, and it's part of the same application, its code is included in the initial JavaScript payload.
-
-4.  **Why the current approach can't solve this**: Static `import` statements are resolved at build time. The bundler sees `import HeavyChart from '@/components/HeavyChart'` and has no choice but to include it in the bundle. It cannot know that the user won't visit the `/orders` page immediately.
-
-5.  **What we need**: A way to tell Next.js: "Don't bundle this component initially. Only load its code when the user actually navigates to the page that needs it." This is called **code splitting** on a route level, and the technique is **lazy loading**.
-
-### Iteration 1: Slaying the Monolith with `next/dynamic`
-
-To solve this, we'll use `next/dynamic`, a special function that allows for dynamic, client-side loading of React components. It tells Next.js to create a separate JavaScript chunk for the specified component.
-
-**Before** (Iteration 0): The `OrdersPage` directly imports `HeavyChart`.
+For more sophisticated data management, combine loaders with React Query:
 
 ```tsx
-// src/app/orders/page.tsx - Version 0
-import HeavyChart from "@/components/HeavyChart";
+// src/loaders/apiReferenceLoader.ts - Iteration 3: React Query Integration
+import { QueryClient } from '@tanstack/react-query';
+import { LoaderFunctionArgs } from 'react-router-dom';
 
-export default function OrdersPage() {
-  return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Orders</h1>
-      <HeavyChart />
-    </div>
-  );
-}
-```
+const queryClient = new QueryClient();
 
-**After** (Iteration 1): We use `next/dynamic` to load `HeavyChart` lazily.
-
-```tsx
-// src/app/orders/page.tsx - Version 1
-import dynamic from "next/dynamic";
-
-// The dynamic import creates a separate chunk for HeavyChart.
-const HeavyChart = dynamic(() => import("@/components/HeavyChart"), {
-  // Optional: Show a loading component while the dynamic component is loading.
-  loading: () => <p>Loading chart...</p>,
-  // Optional: Disable Server-Side Rendering for this component if it relies on browser APIs.
-  ssr: false, 
-});
-
-export default function OrdersPage() {
-  return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Orders</h1>
-      <HeavyChart />
-    </div>
-  );
-}
-```
-
-### Verification: Checking the Results
-
-Let's clear the cache and reload the homepage (`/`) again, observing the Network tab.
-
-**Browser DevTools - Network Tab** (on initial load of `/`):
-
-```
-Name                    Status  Type      Size
-----------------------------------------------------
-page-....js             200     script    25 KB   <-- IMPROVEMENT!
-...other chunks
-```
-
-The initial JavaScript chunk is now tiny! The code for `HeavyChart` is gone.
-
-Now, navigate to the `/orders` page.
-
-**Browser DevTools - Network Tab** (when navigating to `/orders`):
-
-```
-Name                    Status  Type      Size
-----------------------------------------------------
-components_HeavyChart_tsx-....js  200  script  500 KB  <-- Loaded on demand
-```
-
-A new chunk containing `HeavyChart` is downloaded only when we navigate to the page that uses it.
-
-**Performance Metrics** (Simulated Slow 3G connection):
-- **Before**:
-  - Bundle size: 525 KB
-  - LCP: 3.2s
-- **After**:
-  - Bundle size: 25 KB (95% reduction)
-  - LCP: 0.8s (75% improvement)
-
-**Improvement**: The initial page load is dramatically faster. Users who never visit the "Orders" page will never download the 500KB charting library, saving bandwidth and improving their experience.
-
-### When to Apply This Solution
-
--   **What it optimizes for**: Fast initial page loads (Time to Interactive, First Contentful Paint).
--   **What it sacrifices**: A small delay on the first navigation to the lazy-loaded route while the new chunk is downloaded.
--   **When to choose this approach**:
-    -   For pages or large components that are not visible on the initial load.
-    -   For features behind a login wall.
-    -   For components with heavy dependencies (e.g., charting, mapping, or 3D rendering libraries).
--   **When to avoid this approach**:
-    -   For small components where the overhead of a separate network request outweighs the bundle size savings.
-    -   For components critical to the initial view (e.g., the navigation bar itself).
-
-**Limitation preview**: While we've solved the initial bundle size, our data loading is still naive. In the next section, we'll see how fetching data on the client side after the page loads creates a new set of performance problems.
-
-## Route-based data loading
-
-## The Client-Side Fetching Waterfall
-
-Our application now has excellent code splitting. The initial load is fast, and secondary pages are loaded on demand. But what about the *data* for those pages? A common pattern, especially for developers coming from Single-Page Applications (SPAs), is to fetch data inside a `useEffect` hook.
-
-Let's refactor our `ProductsPage` to fetch its data from an API endpoint.
-
-### Iteration 1 Recap
-
-Our `ProductsPage` currently uses a hardcoded array.
-
-```tsx
-// src/app/products/page.tsx - Version 0
-export default function ProductsPage() {
-  const products = Array.from({ length: 100 }, (_, i) => `Product ${i + 1}`);
-  // ... renders products
-}
-```
-
-### Iteration 2: Introducing Client-Side Data Fetching
-
-First, let's create a simple API route to serve the product data.
-
-<code language="typescript">
-// src/app/api/products/route.ts
-import { NextResponse } from "next/server";
-
-export async function GET() {
-  // Simulate a database delay
-  await new Promise(resolve => setTimeout(resolve, 500)); 
-
-  const products = Array.from({ length: 100 }, (_, i) => ({
-    id: i + 1,
-    name: `Product ${i + 1}`,
-  }));
-
-  return NextResponse.json(products);
-}
-```
-
-Now, let's modify the `ProductsPage` to fetch from this endpoint using the classic `useEffect` pattern. This requires converting it to a Client Component.
-
-```tsx
-// src/app/products/page.tsx - Version 1 (Problematic)
-"use client";
-
-import { useState, useEffect } from "react";
-
-interface Product {
-  id: number;
-  name: string;
-}
-
-export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/products')
-      .then(res => res.json())
-      .then(data => {
-        setProducts(data);
-        setIsLoading(false);
-      });
-  }, []);
-
-  if (isLoading) {
-    return <p>Loading products...</p>;
+async function fetchAPIMethods() {
+  const response = await fetch('/api/methods');
+  if (!response.ok) {
+    throw new Error('Failed to load API methods');
   }
-
-  return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Products</h1>
-      <ul className="space-y-2">
-        {products.map((product) => (
-          <li key={product.id} className="p-2 border rounded">
-            {product.name}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-```
-
-This code works, but it introduces a subtle performance issue known as a "request waterfall." Let's diagnose it.
-
-### Diagnostic Analysis: Reading the Failure
-
-**Browser Behavior**:
-When the user navigates to `/products`, they first see "Loading products...". After a noticeable delay, the loading text is replaced by the actual product list. This flash of loading content can be jarring and contributes to Content Layout Shift (CLS).
-
-**Browser DevTools - Network Tab** (Navigate from `/` to `/products`):
-
-You will see a sequence like this:
-
-1.  **Request 1**: `products-page-....js` (The JavaScript for the page component)
-2.  **Request 2**: `products` (The XHR/fetch request to `/api/products`)
-
-This is a waterfall: the browser can't even *start* fetching the data until *after* it has downloaded, parsed, and executed the JavaScript for the `ProductsPage` component.
-
-```
-Request Timeline:
-|--------------------|  products-page-....js (200ms)
-                     |----------------|  /api/products (500ms)
-                     ^                ^
-                     |                Content appears here
-                     Page navigation starts
-```
-
-**Performance Metrics**:
-- **Time to Contentful Data**: ~700ms (200ms for JS + 500ms for API) + rendering time.
-- **Content Layout Shift (CLS)**: A non-zero value, as the loading indicator is replaced by the list.
-
-**Let's parse this evidence**:
-
-1.  **What the user experiences**: A loading spinner followed by the content popping in. The page feels slow to load its essential data.
-
-    -   **Expected**: The page should load with its data already present, or at least start loading the data and the page code in parallel.
-    -   **Actual**: A sequential load: Page Code -> Data Fetch -> Render.
-
-2.  **What the Network tab reveals**: A clear waterfall pattern. The data fetch depends on the component code fetch.
-
-    -   **Key indicator**: The `fetch('/api/products')` request starts *after* the component's JavaScript chunk finishes downloading.
-
-3.  **Root cause identified**: Client-side data fetching (`useEffect`) can only run after the component has mounted in the browser. This inherently creates a waterfall, delaying the presentation of meaningful content to the user.
-
-4.  **Why the current approach can't solve this**: The `useEffect` hook is fundamentally a client-side browser mechanism. It cannot run on the server. This forces the data fetching to happen late in the rendering lifecycle.
-
-5.  **What we need**: A way to fetch data *on the server* before the page is even sent to the client. The server should handle the data fetching, render the complete HTML with the data included, and stream it to the browser.
-
-### Iteration 3: Server Components for Route-Based Data Loading
-
-The App Router in Next.js solves this problem elegantly with React Server Components (RSCs). By making our page component `async`, we can fetch data directly within it. This code runs exclusively on the server.
-
-**Before** (Iteration 2): A Client Component with `useEffect`.
-
-```tsx
-// src/app/products/page.tsx - Version 1 (Problematic)
-"use client";
-
-import { useState, useEffect } from "react";
-// ... (rest of the client-side code)
-```
-
-**After** (Iteration 3): A Server Component that fetches data directly.
-
-```tsx
-// src/app/products/page.tsx - Version 2 (Optimized)
-
-interface Product {
-  id: number;
-  name: string;
+  return response.json();
 }
 
-async function getProducts(): Promise<Product[]> {
-  // In a real app, you'd fetch from your database or an external API.
-  // We fetch from our own route handler for this example.
-  // The `cache: 'no-store'` option ensures fresh data on every request.
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`, {
-    cache: 'no-store' 
+export async function apiReferenceLoader({ params }: LoaderFunctionArgs) {
+  // Ensure data is in React Query cache
+  const methods = await queryClient.ensureQueryData({
+    queryKey: ['api-methods'],
+    queryFn: fetchAPIMethods,
+    staleTime: 5 * 60 * 1000 // 5 minutes
   });
   
-  if (!res.ok) {
-    throw new Error('Failed to fetch products');
-  }
+  return { methods };
+}
+```
 
-  return res.json();
+```tsx
+// src/pages/APIReference.tsx - Iteration 2: React Query in Component
+import { useQuery } from '@tanstack/react-query';
+
+async function fetchAPIMethods() {
+  const response = await fetch('/api/methods');
+  if (!response.ok) {
+    throw new Error('Failed to load API methods');
+  }
+  return response.json();
 }
 
-// The page component is now an async function!
-export default async function ProductsPage() {
-  const products = await getProducts();
+export default function APIReference() {
+  // Data is already in cache from loader
+  const { data: methods } = useQuery({
+    queryKey: ['api-methods'],
+    queryFn: fetchAPIMethods,
+    staleTime: 5 * 60 * 1000
+  });
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Products</h1>
-      <ul className="space-y-2">
-        {products.map((product) => (
-          <li key={product.id} className="p-2 border rounded">
-            {product.name}
-          </li>
-        ))}
-      </ul>
+    <div className="api-reference">
+      <h1>API Reference</h1>
+      {methods?.map(method => (
+        <div key={method.id} className="method">
+          <h2>{method.name}</h2>
+          <p>{method.description}</p>
+        </div>
+      ))}
     </div>
   );
 }
 ```
-*Note: You'll need to set `NEXT_PUBLIC_API_URL=http://localhost:3000` in a `.env.local` file for this to work.*
 
-### Verification: A Waterfall-Free World
+**Benefits of React Query + Loaders**:
+1. Loader ensures data is available before render
+2. React Query provides caching, revalidation, and refetching
+3. Subsequent navigations to the same route are instant (cached)
+4. Data stays fresh with automatic background refetching
 
-Let's navigate to the `/products` page again and inspect the Network tab.
-
-**Browser Behavior**:
-The page loads, and the product list is immediately visible. There is no "Loading products..." flash. The transition feels much smoother.
-
-**Browser DevTools - Network Tab**:
-When you navigate to `/products`, you will see the request for the page's HTML. You will **not** see a separate client-side `fetch` request to `/api/products`. The data is already embedded in the HTML streamed from the server.
-
-**Performance Metrics**:
-- **Time to Contentful Data**: The time it takes for the server to respond with the initial HTML chunk, which already contains the data. This is much faster from a user's perspective.
-- **Content Layout Shift (CLS)**: 0. The page renders in its final state, eliminating layout shifts from loading indicators.
-
-**Improvement**: We have eliminated the client-side request waterfall. The server does the work, leading to a faster perceived load time, better SEO, and a superior user experience.
-
-**Limitation preview**: Our app is now fast and efficient. But what about the user's context? When they scroll down a long list, navigate away, and come back, they lose their place. In the next section, we'll tackle scroll restoration and focus management to perfect the navigation experience.
+**This solves the data loading problem, but we still need to handle scroll position...**
 
 ## Scroll restoration and focus management
 
-## The Amnesiac App: Forgetting the User's Context
+## The Problem: Lost Scroll Position and Focus
 
-Our dashboard is now performant, with code-split pages and server-rendered data. But a great user experience is about more than just speed; it's about feeling intuitive and seamless. One common UX failure is losing the user's scroll position after navigation.
+Our routes load fast, data loads in parallel, but there's a subtle UX problem. Let's see what happens when users navigate:
 
-### Iteration 2 Recap
+**User Journey**:
+1. User visits home page
+2. Scrolls down to read content (scroll position: 800px)
+3. Clicks "API Reference" link
+4. Reads API docs, scrolls down (scroll position: 1200px)
+5. Clicks browser back button
+6. **Expected**: Returns to home page at scroll position 800px
+7. **Actual**: Returns to home page at scroll position 0px (top)
 
-Our `ProductsPage` renders a list of 100 items. It's fast and data is loaded on the server.
+**Browser Console**:
+```
+[React Router] Navigating to /api
+[Window] Scroll position: 800px
+[React Router] Navigation complete
+[Window] Scroll position: 0px (reset!)
+```
+
+### Diagnostic Analysis: The Scroll Position Failure
+
+**Browser Behavior**:
+User navigates back to a page they were reading. They expect to return to where they left off. Instead, they're scrolled to the top. They must scroll down again to find their place. Frustrating.
+
+**React DevTools Evidence**:
+- Component unmounts on navigation
+- New component mounts
+- Scroll position resets to 0
+
+**Root cause identified**: React Router doesn't restore scroll position by default. When a route changes, the browser scrolls to the top (default behavior). The previous scroll position is lost.
+
+**Why the current approach can't solve this**: React Router has no built-in scroll restoration. The browser's native scroll restoration is disabled in single-page applications. We must implement it ourselves.
+
+**What we need**: A way to:
+1. Save scroll position before navigation
+2. Restore scroll position after navigation
+3. Handle edge cases (scroll to top for new pages, restore for back/forward)
+
+### Solution: Scroll Restoration
+
+React Router provides `ScrollRestoration` component for this:
 
 ```tsx
-// src/app/products/page.tsx - Version 2
-export default async function ProductsPage() {
-  const products = await getProducts();
-  // ... renders a long list of products
+// src/App.tsx - Iteration 7: Adding Scroll Restoration
+import { 
+  createBrowserRouter, 
+  RouterProvider,
+  ScrollRestoration
+} from 'react-router-dom';
+import Layout from './components/Layout';
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: (
+      <>
+        <ScrollRestoration /> {/* ← Handles scroll restoration */}
+        <Layout />
+      </>
+    ),
+    children: [
+      // ... routes
+    ]
+  }
+]);
+
+function App() {
+  return <RouterProvider router={router} />;
 }
+
+export default App;
 ```
 
-### The Problem: Lost Scroll Position
+**Browser Behavior** (after adding ScrollRestoration):
+1. User scrolls to 800px on home page
+2. Navigates to API Reference
+3. Scrolls to 1200px
+4. Clicks back button
+5. **Result**: Returns to home page at scroll position 800px ✓
 
-Let's demonstrate the problem. To do this, we need a page to navigate *to*.
+**How it works**:
+- `ScrollRestoration` saves scroll position in `sessionStorage` before navigation
+- After navigation, it restores the saved position
+- For forward navigation (clicking links), it scrolls to top
+- For back/forward navigation (browser buttons), it restores position
 
-<code language="tsx">
-// src/app/products/[id]/page.tsx
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
-  return (
-    <div>
-      <h1 className="text-3xl font-bold">Product Detail: {params.id}</h1>
-      <p>Details about product {params.id} would go here.</p>
-    </div>
-  );
-}
+### Customizing Scroll Behavior
+
+Sometimes you want different behavior:
+
+```tsx
+// src/App.tsx - Iteration 8: Custom Scroll Behavior
+import { 
+  createBrowserRouter, 
+  RouterProvider,
+  ScrollRestoration
+} from 'react-router-dom';
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: (
+      <>
+        <ScrollRestoration 
+          getKey={(location, matches) => {
+            // Custom key for scroll position storage
+            // Same key = restore position, different key = scroll to top
+            
+            // For API Reference, restore position even on forward navigation
+            if (location.pathname === '/api') {
+              return location.pathname;
+            }
+            
+            // For other routes, use default behavior
+            return location.key;
+          }}
+        />
+        <Layout />
+      </>
+    ),
+    children: [
+      // ... routes
+    ]
+  }
+]);
 ```
 
-And let's update our product list to link to this new detail page.
+### Scrolling to Top on Route Change
 
-<code language="tsx">
-// src/app/products/page.tsx - Version 2.1 (for demonstration)
-import Link from 'next/link';
+For some routes, you always want to scroll to top:
 
-// ... (getProducts function is the same)
+```tsx
+// src/hooks/useScrollToTop.ts
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
-export default async function ProductsPage() {
-  const products = await getProducts();
-
-  return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Products</h1>
-      <ul className="space-y-2">
-        {products.map((product) => (
-          <li key={product.id} className="p-2 border rounded">
-            <Link href={`/products/${product.id}`} className="block">
-              {product.name}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-```
-
-**Failure Scenario**:
-1.  Navigate to the `/products` page.
-2.  Scroll down to "Product 75".
-3.  Click on the link for "Product 75". You are now on `/products/75`.
-4.  Click the browser's "Back" button.
-
-### Diagnostic Analysis: Reading the Failure
-
-**Browser Behavior**:
-When you return to the `/products` page, you are at the **top of the page**, not back at "Product 75". You have lost your context. This is incredibly frustrating for users navigating long lists or feeds.
-
-**Let's parse this evidence**:
-
-1.  **What the user experiences**: Disorientation and frustration. They have to perform extra work (scrolling) to get back to where they were.
-
-    -   **Expected**: The browser should remember my scroll position and restore it when I navigate back.
-    -   **Actual**: The page loads at the top, as if visited for the first time.
-
-2.  **Root cause identified**: By default, the Next.js App Router *does* attempt to restore scroll position. However, this behavior can sometimes be misconfigured or disabled. The key is to understand how it works and how to ensure it functions correctly.
-
-### Solution: Understanding and Ensuring Scroll Restoration
-
-In the Next.js App Router, scroll restoration is **enabled by default**. The behavior we just described is what you'd expect in older frameworks or if the feature were disabled. The App Router's router maintains a history of scroll positions and automatically restores them on back/forward navigation.
-
-So, why might it fail?
-*   **Custom Layouts**: Complex layouts with internal scroll containers (`overflow: scroll`) might not be tracked automatically. The router tracks the `window` scroll position.
-*   **Disabling the Feature**: You can explicitly disable it on a `<Link>` component with `scroll={false}`. This is useful for links that only update a small part of the page (like a tab) where you *don't* want the page to scroll to the top.
-
-Let's demonstrate the `scroll={false}` prop. If we wanted a link to *not* scroll to the top on navigation, we would do this:
-
-<code language="tsx">
-// Example of disabling scroll behavior
-<Link href="/some-other-page" scroll={false}>
-  This link won't scroll the page to the top.
-</Link>
-```
-
-Since the default behavior is what we want, there's no code to "fix". The important lesson is that Next.js handles this for us, and we should be careful not to break it.
-
-### The Next Frontier: Accessibility and Focus Management
-
-While scroll position is handled, a related and often overlooked issue is **focus management**. After navigating to a new page, where is the browser's focus?
-
-**Failure Scenario**:
-1.  Use your keyboard's `Tab` key to navigate through the links on the `/` page.
-2.  Press `Enter` on the "Products" link.
-3.  The `/products` page loads.
-4.  Now, press the `Tab` key again. Where does the focus go?
-
-**Browser Behavior**:
-The focus is often lost or unpredictable. It might jump to the browser's URL bar or remain "in limbo". For users relying on screen readers or keyboard navigation, this is a major accessibility failure. The context is lost.
-
-**What we need**: A system that, upon every route change, programmatically moves the browser's focus to a logical starting point on the new page, typically the main heading (`<h1>`).
-
-### Iteration 4: Implementing a Focus Manager
-
-We can solve this with a small, reusable client component that listens for route changes and manages focus.
-
-**Project Structure**:
-```
-src/
-└── components/
-    ├── RouteFocusManager.tsx  # New component
-    └── ...
-```
-
-<code language="tsx">
-// src/components/RouteFocusManager.tsx
-"use client";
-
-import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
-
-export function RouteFocusManager() {
-  const pathname = usePathname();
-  const mainContentRef = useRef<HTMLElement | null>(null);
+export function useScrollToTop() {
+  const { pathname } = useLocation();
 
   useEffect(() => {
-    // Find the main content area. We'll add an id="main-content" to it.
-    mainContentRef.current = document.getElementById("main-content");
-
-    // On route change, focus the main content area.
-    if (mainContentRef.current) {
-      mainContentRef.current.focus();
-    }
+    window.scrollTo(0, 0);
   }, [pathname]);
-
-  return null; // This component renders nothing.
 }
 ```
 
-Now, we need to integrate this into our root layout and add the corresponding `id` and `tabIndex` to our main content element.
+```tsx
+// src/pages/Examples.tsx - Using useScrollToTop
+import { useScrollToTop } from '../hooks/useScrollToTop';
 
-<code language="tsx">
-// src/app/layout.tsx - Version 2
-import Nav from "@/components/Nav";
-import { RouteFocusManager } from "@/components/RouteFocusManager"; // Import
-import "./globals.css";
+export default function Examples() {
+  useScrollToTop(); // ← Always scroll to top when this route renders
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
   return (
-    <html lang="en">
-      <body>
-        {/* This component is a client component that will run in the browser */}
-        <RouteFocusManager /> 
-        <Nav />
-        {/* Add id and tabIndex to the main element */}
-        <main id="main-content" tabIndex={-1} className="p-8 outline-none">
-          {children}
-        </main>
-      </body>
-    </html>
+    <div className="examples">
+      <h1>Code Examples</h1>
+      {/* Content */}
+    </div>
   );
 }
 ```
 
-**Why `tabIndex={-1}`?** This makes an element programmatically focusable (via `element.focus()`) without adding it to the natural tab order. This is exactly what we want.
+### The Focus Management Problem
 
-### Verification: Accessible Navigation
+Scroll position is only half the story. Let's see what happens with keyboard navigation:
 
-1.  Navigate the site using your keyboard.
-2.  Click `Enter` on a link in the navigation.
-3.  As soon as the new page loads, press `Tab`.
+**User Journey** (keyboard user):
+1. User tabs through navigation links
+2. Presses Enter on "API Reference" (focus on link)
+3. Page changes to API Reference
+4. **Expected**: Focus moves to main content (for screen reader announcement)
+5. **Actual**: Focus stays on navigation link (now invisible/wrong page)
+
+**Browser Console**:
+```
+[Focus] Active element: <a href="/api">API Reference</a>
+[React Router] Navigating to /api
+[Focus] Active element: <a href="/api">API Reference</a> (still!)
+```
+
+### Diagnostic Analysis: The Focus Management Failure
 
 **Browser Behavior**:
-The focus now correctly starts from the top of the main content area. The first press of `Tab` will focus the first focusable element *within* the new page's content (e.g., the first product link), not the browser chrome or some other random element. Screen readers will announce the new page's main heading, giving users immediate context.
+Keyboard user navigates to a new page. Focus remains on the navigation link. Screen reader doesn't announce the new page. User must tab through navigation again to reach content. Poor accessibility.
 
-**Improvement**: Our application is now significantly more accessible. We provide a predictable and seamless experience for all users, including those who rely on assistive technologies.
+**Accessibility Audit** (Lighthouse):
+```
+[Accessibility] Focus not managed on route change
+[Accessibility] Screen reader users may not know page changed
+Score: 78/100 (down from 95)
+```
 
-**Limitation preview**: Our app feels great to use. But can we make it feel *instantaneous*? The final piece of the puzzle is to load the code for the next page *before* the user even clicks the link. This is called prefetching.
+**Root cause identified**: React Router doesn't manage focus on route changes. The browser keeps focus on the element that triggered navigation (the link). This breaks keyboard navigation and screen reader experience.
+
+**Why the current approach can't solve this**: Focus management requires explicit code. We must programmatically move focus to the new content.
+
+**What we need**: A way to move focus to the main content area when the route changes, so screen readers announce the new page and keyboard users can immediately interact with content.
+
+### Solution: Focus Management
+
+```tsx
+// src/components/Layout.tsx - Iteration 9: Focus Management
+import { Outlet, useLocation } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import Navigation from './Navigation';
+
+export default function Layout() {
+  const location = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Move focus to main content on route change
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.focus();
+    }
+  }, [location.pathname]);
+
+  return (
+    <div className="layout">
+      <Navigation />
+      
+      <main 
+        ref={mainRef}
+        tabIndex={-1} // ← Makes element focusable
+        className="main-content"
+      >
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+```
+
+**Browser Behavior** (after adding focus management):
+1. User presses Enter on "API Reference" link
+2. Page changes
+3. Focus moves to `<main>` element
+4. Screen reader announces: "API Reference, main content"
+5. User can immediately interact with content
+
+**Accessibility Audit** (after fix):
+```
+[Accessibility] Focus managed correctly on route change
+[Accessibility] Screen reader announces page changes
+Score: 95/100 ✓
+```
+
+### Skip Links for Keyboard Users
+
+For even better accessibility, add a skip link:
+
+```tsx
+// src/components/Layout.tsx - Iteration 10: Skip Link
+import { Outlet, useLocation } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import Navigation from './Navigation';
+
+export default function Layout() {
+  const location = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.focus();
+    }
+  }, [location.pathname]);
+
+  return (
+    <div className="layout">
+      {/* Skip link - visible only on keyboard focus */}
+      <a 
+        href="#main-content" 
+        className="skip-link"
+        onClick={(e) => {
+          e.preventDefault();
+          mainRef.current?.focus();
+        }}
+      >
+        Skip to main content
+      </a>
+      
+      <Navigation />
+      
+      <main 
+        id="main-content"
+        ref={mainRef}
+        tabIndex={-1}
+        className="main-content"
+      >
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+```
+
+```css
+/* src/styles/layout.css */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #000;
+  color: #fff;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  top: 0; /* Becomes visible when focused */
+}
+```
+
+**User Experience**:
+Keyboard user presses Tab on page load. Skip link appears at top of page. User presses Enter. Focus jumps directly to main content, bypassing navigation. Saves time and keystrokes.
+
+### Announcing Route Changes to Screen Readers
+
+For screen reader users, we can add live region announcements:
+
+```tsx
+// src/components/RouteAnnouncer.tsx
+import { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+
+export default function RouteAnnouncer() {
+  const location = useLocation();
+  const announceRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Extract page title from pathname
+    const pageName = location.pathname
+      .split('/')
+      .filter(Boolean)
+      .join(' ')
+      .replace(/-/g, ' ') || 'home';
+    
+    // Announce to screen readers
+    if (announceRef.current) {
+      announceRef.current.textContent = `Navigated to ${pageName} page`;
+    }
+  }, [location.pathname]);
+
+  return (
+    <div
+      ref={announceRef}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      className="sr-only" // Visually hidden, but announced
+    />
+  );
+}
+```
+
+```tsx
+// src/App.tsx - Adding Route Announcer
+import RouteAnnouncer from './components/RouteAnnouncer';
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: (
+      <>
+        <ScrollRestoration />
+        <RouteAnnouncer /> {/* ← Announces route changes */}
+        <Layout />
+      </>
+    ),
+    children: [
+      // ... routes
+    ]
+  }
+]);
+```
+
+```css
+/* src/styles/accessibility.css */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+```
+
+**Screen Reader Experience**:
+User navigates to API Reference page. Screen reader announces: "Navigated to API Reference page." User knows the navigation succeeded without visual confirmation.
+
+### When to Apply Scroll and Focus Management
+
+**What it optimizes for**:
+- User experience (returning to where they left off)
+- Accessibility (keyboard and screen reader users)
+- Professional polish (attention to detail)
+
+**What it sacrifices**:
+- Slightly more complex code
+- Need to test with keyboard and screen readers
+
+**When to apply**:
+- All production applications (accessibility is not optional)
+- Long-form content (articles, documentation)
+- Applications with deep navigation hierarchies
+- Any application used by keyboard or screen reader users
+
+**When NOT to apply**:
+- Never. Always implement scroll restoration and focus management.
+
+**Code characteristics**:
+- Setup complexity: Low (built-in components + a few hooks)
+- Maintenance burden: Very low (set it and forget it)
+- Accessibility impact: Critical (makes app usable for all users)
+
+**This solves scroll and focus, but we still need to optimize navigation performance...**
 
 ## When to prefetch
 
-## Predicting the Future: Making Navigation Instantaneous
+## The Problem: Slow Navigation on Slow Connections
 
-We've optimized our bundle size, data loading, and navigation context. The final step in mastering routing is to make navigation feel truly instantaneous. Even with code splitting, there's a small delay when a user clicks a link while the browser fetches the necessary JavaScript for the new page. Prefetching solves this by loading resources ahead of time.
+Our application loads efficiently, but on slow connections, navigation still feels sluggish. Let's see what happens when a user on 3G tries to navigate:
 
-### Iteration 3 Recap
+**Browser DevTools - Network Tab** (throttled to 3G):
+```
+Timeline:
+0.0s: User clicks "Examples" link
+0.0s: Request for Examples-d3e4f5g6.js starts
+2.1s: Examples-d3e4f5g6.js finishes downloading
+2.1s: Content appears
+```
 
-Our application is well-structured. When a user clicks the "Orders" link, the browser requests the JavaScript chunk for the orders page and then renders it.
+**User Experience**:
+User clicks link. Loading indicator appears. They wait 2.1 seconds. Content appears. On fast connections, this is fine. On slow connections, it feels broken.
 
-### The Problem: Network Latency on Navigation
-
-Let's simulate a user on a slightly slower network to see the problem clearly.
-
-**Failure Scenario**:
-1.  Open Browser DevTools and go to the Network tab.
-2.  Select a "Fast 3G" or similar network throttling profile.
-3.  Load the homepage (`/`).
-4.  Click the "Orders" link.
-
-### Diagnostic Analysis: Reading the Failure
+### Diagnostic Analysis: The Slow Navigation Problem
 
 **Browser Behavior**:
-There is a noticeable pause—perhaps 1-2 seconds—between clicking the "Orders" link and seeing the "Loading chart..." message appear. The UI feels sluggish.
+User on mobile 3G connection clicks a link. They see a loading indicator for 2+ seconds. The wait feels long. They wonder if the click registered. They might click again (double navigation).
 
-**Browser DevTools - Network Tab**:
-You can see the exact cause of the delay. The request for the `orders-page-....js` chunk only begins *after* the user clicks the link. The navigation is blocked on this network request.
+**Network Tab Evidence**:
+- 3G connection: 750 Kbps download speed
+- Examples chunk: 312 KB (105 KB gzipped)
+- Download time: 2.1 seconds
+- Parse/compile time: 0.3 seconds
+- Total: 2.4 seconds to interactive
 
-```
-User Action: Click "Orders" Link
-|
-|--- Network Request for orders-page-....js (e.g., 800ms on Fast 3G) ---|
-                                                                         |
-                                                                         Page Renders
-```
+**Performance Metrics**:
+- Time to Interactive: 2.4s (poor on 3G)
+- User frustration: High
+- Perceived performance: Slow
 
 **Let's parse this evidence**:
 
-1.  **What the user experiences**: A laggy interface. The app doesn't feel responsive.
+1. **What the user experiences**:
+   - Expected: Instant or near-instant navigation
+   - Actual: 2+ second wait on slow connections
 
-    -   **Expected**: Clicking a link should feel like an instant transition.
-    -   **Actual**: The transition is gated by the time it takes to download the next page's code.
+2. **What the Network tab reveals**:
+   - Key indicator: Large chunk size + slow connection = long wait
+   - Download time dominates (2.1s of 2.4s total)
 
-2.  **What the Network tab reveals**: The code for the destination route is fetched on-demand, triggered by the click event.
+3. **Root cause identified**: Code splitting creates on-demand loading. On slow connections, "on-demand" means "wait 2+ seconds." The user must wait for the chunk to download before seeing content.
 
-    -   **Key indicator**: The waterfall shows the JS chunk download starting at the moment of the click.
+4. **Why the current approach can't solve this**: Lazy loading is reactive. It starts loading when the user clicks. On slow connections, this creates noticeable delay.
 
-3.  **Root cause identified**: We are loading the code *reactively* (in response to a click) instead of *proactively* (in anticipation of a click).
+5. **What we need**: Proactive loading. Start downloading chunks before the user clicks, so they're ready when needed.
 
-4.  **What we need**: A way to tell Next.js, "I think the user might click this link soon, so please download the code for it in the background *before* they click."
+### Solution: Link Prefetching
 
-### Solution: Automatic Prefetching with `<Link>`
+Prefetching loads resources before they're needed. There are several strategies:
 
-This is another area where Next.js provides a powerful, built-in solution. The `<Link>` component automatically handles this for us.
+### Strategy 1: Prefetch on Hover
 
-**By default, `<Link>` prefetches the code for the linked route when the link enters the user's viewport.**
+Load the chunk when the user hovers over a link:
 
-This means that for our `Nav` component, as soon as it's visible on the screen, Next.js will start downloading the JavaScript chunks for the `/orders` and `/products` pages in the background with a low priority.
+```tsx
+// src/components/PrefetchLink.tsx
+import { Link, LinkProps } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
 
-### Verification: Prefetching in Action
+interface PrefetchLinkProps extends LinkProps {
+  prefetch?: 'hover' | 'intent' | 'render' | 'none';
+}
 
-1.  Disable network throttling.
-2.  Go to the Network tab in DevTools and clear it.
-3.  Reload the homepage (`/`).
+export default function PrefetchLink({ 
+  prefetch = 'hover',
+  to,
+  children,
+  ...props 
+}: PrefetchLinkProps) {
+  const [isPrefetched, setIsPrefetched] = useState(false);
+  const timeoutRef = useRef<number>();
 
-**Browser DevTools - Network Tab**:
-Almost immediately after the page loads, you will see new, low-priority requests for the JavaScript associated with the other pages.
+  const handleMouseEnter = () => {
+    if (isPrefetched || prefetch === 'none') return;
 
-```
-Name                         Status  Type      Initiator
-----------------------------------------------------------
-... initial page chunks ...
-orders-page-....js           200     script    Link (prefetch)
-products-page-....js         200     script    Link (prefetch)
-```
-
-The "Initiator" column often indicates that the prefetch was triggered by the `<Link>` component. Now, when you click the "Orders" or "Products" link, the browser doesn't need to fetch the code from the network; it's already in the browser's cache. The navigation is instant.
-
-### When to Prefetch, and When Not To
-
-Automatic prefetching is a fantastic default, but it's not always the right choice. You need to make conscious decisions based on the user experience and performance trade-offs.
-
-#### When to use default prefetching (the happy path)
-This is ideal for primary navigation and any high-likelihood next steps. The "Orders" and "Products" links in our nav bar are perfect candidates. The cost of a small background download is well worth the benefit of instant navigation.
-
-#### When to disable prefetching
-You can disable this behavior with the `prefetch={false}` prop.
-
-<code language="tsx">
-<Link href="/rarely-visited-page" prefetch={false}>
-  Annual Report Generator
-</Link>
-```
-
-**Use cases for disabling prefetching**:
--   **Very Large, Rarely-Visited Pages**: If our "Orders" page included a 5MB mapping library and was only visited by 1% of users, prefetching it for everyone would be a waste of bandwidth.
--   **Pages with Frequently Changing Data**: Prefetching only fetches the *code*, not the *data*. But in some edge cases with rapidly changing UIs, you might want to avoid it.
--   **UI with Hundreds of Links**: Imagine a dashboard with a table of 500 orders, each linking to its detail page. Prefetching all 500 would clog the user's network connection. In this case, Next.js is smart enough to not prefetch them all, but it's a scenario to be mindful of.
-
-#### When to prefetch programmatically
-Sometimes, the best time to prefetch isn't when a link is in the viewport, but in response to another user action. For this, we can use the `router.prefetch()` method from the `useRouter` hook.
-
-**Use Case**: Imagine a "Create Product" wizard with multiple steps. When the user successfully completes Step 1, we have very high confidence they will proceed to Step 2. This is the perfect moment to programmatically prefetch the code for Step 2.
-
-<code language="tsx">
-// src/components/Step1Form.tsx
-"use client";
-
-import { useRouter } from "next/navigation";
-
-export default function Step1Form() {
-  const router = useRouter();
-
-  // Prefetch Step 2 when the user starts interacting with the form
-  const handleFocus = () => {
-    router.prefetch('/products/create/step-2');
+    // Wait 100ms before prefetching (user might just be passing through)
+    timeoutRef.current = window.setTimeout(() => {
+      prefetchRoute(to.toString());
+      setIsPrefetched(true);
+    }, 100);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // ... submit form data
-    router.push('/products/create/step-2');
+  const handleMouseLeave = () => {
+    // Cancel prefetch if user moves away quickly
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
   };
+
+  useEffect(() => {
+    // Prefetch on render if specified
+    if (prefetch === 'render') {
+      prefetchRoute(to.toString());
+      setIsPrefetched(true);
+    }
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [prefetch, to]);
 
   return (
-    <form onSubmit={handleSubmit} onFocus={handleFocus}>
-      {/* Form fields for step 1 */}
-      <button type="submit">Next Step</button>
-    </form>
+    <Link
+      to={to}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      {...props}
+    >
+      {children}
+    </Link>
+  );
+}
+
+// Prefetch route chunk
+function prefetchRoute(path: string) {
+  // This is a simplified version - in production, you'd use React Router's
+  // internal prefetching or a more sophisticated approach
+  const routeMap: Record<string, () => Promise<any>> = {
+    '/examples': () => import('../pages/Examples'),
+    '/api': () => import('../pages/APIReference'),
+    '/changelog': () => import('../pages/Changelog')
+  };
+
+  const prefetchFn = routeMap[path];
+  if (prefetchFn) {
+    prefetchFn().catch(() => {
+      // Silently fail - user will load on click if prefetch fails
+    });
+  }
+}
+```
+
+```tsx
+// src/components/Navigation.tsx - Using PrefetchLink
+import PrefetchLink from './PrefetchLink';
+
+export default function Navigation() {
+  return (
+    <nav>
+      <PrefetchLink to="/">Home</PrefetchLink>
+      <PrefetchLink to="/getting-started">Getting Started</PrefetchLink>
+      <PrefetchLink to="/api" prefetch="hover">
+        API Reference
+      </PrefetchLink>
+      <PrefetchLink to="/examples" prefetch="hover">
+        Examples
+      </PrefetchLink>
+      <PrefetchLink to="/changelog">Changelog</PrefetchLink>
+    </nav>
   );
 }
 ```
 
-### Decision Framework: Which Prefetching Strategy to Use?
+**Browser DevTools - Network Tab** (with hover prefetch):
+```
+Timeline:
+0.0s: User hovers over "Examples" link
+0.1s: Request for Examples-d3e4f5g6.js starts (prefetch)
+0.5s: User clicks link
+2.2s: Examples-d3e4f5g6.js finishes downloading
+2.2s: Content appears (chunk already loaded!)
+```
 
-| Scenario                               | Default `<Link>` (in viewport) | `<Link prefetch={false}>` | `router.prefetch()` (programmatic) |
-| -------------------------------------- | ------------------------------ | ------------------------- | ---------------------------------- |
-| **Main site navigation**               | ✅ **Best Choice**             | ❌ Slower navigation      | Overkill                           |
-| **Link to a heavy, optional tool**     | ❌ Wastes bandwidth            | ✅ **Best Choice**        | Unnecessary                        |
-| **Table with 100s of links to items**  | ⚠️ Okay, but be aware          | ✅ **Safe Choice**        | Too complex                        |
-| **High-confidence next action (wizard)** | ✅ Works fine                  | ❌ Slower navigation      | ✅ **Optimal Choice**              |
-| **Link in a page footer**              | ✅ Fine, low priority          | ❌ Unnecessary optimization | Overkill                           |
+**Expected vs. Actual Improvement**:
 
-By understanding and applying these prefetching strategies, you gain fine-grained control over your application's network behavior, ensuring a user experience that feels incredibly fast and responsive.
+| Metric | No Prefetch | Hover Prefetch | Improvement |
+|--------|-------------|----------------|-------------|
+| Time to Interactive (3G) | 2.4s | 0.2s | 92% faster |
+| Perceived speed | Slow | Instant | Feels immediate |
+| Wasted bandwidth | 0 KB | ~10 KB (hover without click) | Minimal |
 
-## Synthesis - The Complete Journey
+**How it works**:
+1. User hovers over link
+2. After 100ms delay (to avoid prefetching on accidental hovers), prefetch starts
+3. Chunk downloads in background
+4. When user clicks, chunk is already loaded
+5. Navigation feels instant
 
-## The Journey: From Problem to Solution
+### Strategy 2: Prefetch on Viewport Visibility
 
-We have taken our simple E-commerce Admin Dashboard through a series of transformations, with each step addressing a specific performance or user experience failure. This journey reflects the real-world process of building and optimizing a modern web application.
+Load chunks when links become visible:
 
-| Iteration | Failure Mode                               | Technique Applied                        | Result                                        | Performance Impact                               |
-| :-------- | :----------------------------------------- | :--------------------------------------- | :-------------------------------------------- | :----------------------------------------------- |
-| **0**     | **Monolithic Bundle**                      | None (Naive Implementation)              | Slow initial load, all code sent at once.     | High LCP, large initial JS bundle (~525KB).      |
-| **1**     | **Slow Initial Load**                      | Code Splitting with `next/dynamic`       | Drastically smaller initial bundle.           | 95% reduction in initial bundle size, faster LCP. |
-| **2**     | **Client-Side Data Waterfall**             | Server Component Data Fetching (`async`) | Data is fetched on the server, no spinners.   | Eliminated client-side waterfall, CLS is 0.      |
-| **3**     | **Lost User Context** (Scroll & Focus)     | Focus Management Component               | Scroll position restored, focus is managed.   | Improved accessibility (a11y) and UX.            |
-| **4**     | **Laggy Navigation**                       | `<Link>` Prefetching (default)           | Code for next pages is loaded in background.  | Perceived navigation becomes instantaneous.      |
+```tsx
+// src/hooks/useIntersectionPrefetch.ts
+import { useEffect, useRef } from 'react';
+
+export function useIntersectionPrefetch(
+  prefetchFn: () => void,
+  enabled: boolean = true
+) {
+  const ref = useRef<HTMLElement>(null);
+  const hasPrefetched = useRef(false);
+
+  useEffect(() => {
+    if (!enabled || hasPrefetched.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasPrefetched.current) {
+            prefetchFn();
+            hasPrefetched.current = true;
+          }
+        });
+      },
+      {
+        rootMargin: '50px' // Start prefetching 50px before element is visible
+      }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [prefetchFn, enabled]);
+
+  return ref;
+}
+```
+
+```tsx
+// src/components/Navigation.tsx - Using Intersection Prefetch
+import { useIntersectionPrefetch } from '../hooks/useIntersectionPrefetch';
+
+export default function Navigation() {
+  const examplesLinkRef = useIntersectionPrefetch(
+    () => import('../pages/Examples'),
+    true
+  );
+
+  return (
+    <nav>
+      <Link to="/">Home</Link>
+      <Link to="/getting-started">Getting Started</Link>
+      <Link to="/api">API Reference</Link>
+      <Link 
+        to="/examples" 
+        ref={examplesLinkRef as any}
+      >
+        Examples
+      </Link>
+      <Link to="/changelog">Changelog</Link>
+    </nav>
+  );
+}
+```
+
+**When to use viewport prefetching**:
+- Links in footer or below the fold
+- Long pages with navigation at bottom
+- Mobile layouts where navigation is collapsed
+
+### Strategy 3: Prefetch on Idle
+
+Load chunks when the browser is idle:
+
+```tsx
+// src/hooks/useIdlePrefetch.ts
+import { useEffect } from 'react';
+
+export function useIdlePrefetch(
+  prefetchFn: () => void,
+  enabled: boolean = true
+) {
+  useEffect(() => {
+    if (!enabled) return;
+
+    // Use requestIdleCallback if available, otherwise setTimeout
+    const idleCallback = 'requestIdleCallback' in window
+      ? window.requestIdleCallback
+      : (cb: () => void) => setTimeout(cb, 1);
+
+    const handle = idleCallback(() => {
+      prefetchFn();
+    });
+
+    return () => {
+      if ('cancelIdleCallback' in window) {
+        window.cancelIdleCallback(handle as number);
+      } else {
+        clearTimeout(handle as number);
+      }
+    };
+  }, [prefetchFn, enabled]);
+}
+```
+
+```tsx
+// src/App.tsx - Prefetch Heavy Routes on Idle
+import { useIdlePrefetch } from './hooks/useIdlePrefetch';
+
+function App() {
+  // Prefetch heavy routes when browser is idle
+  useIdlePrefetch(() => {
+    import('./pages/APIReference');
+    import('./pages/Examples');
+  });
+
+  return <RouterProvider router={router} />;
+}
+```
+
+**When to use idle prefetching**:
+- Heavy routes that most users will visit
+- After initial page load completes
+- When you want to optimize for subsequent navigation
+- Desktop users with fast connections
+
+### Strategy 4: Prefetch on Intent (Advanced)
+
+Predict user intent and prefetch accordingly:
+
+```tsx
+// src/hooks/useIntentPrefetch.ts
+import { useEffect, useRef } from 'react';
+
+interface IntentPrefetchOptions {
+  prefetchFn: () => void;
+  enabled?: boolean;
+  threshold?: number; // Mouse movement threshold in pixels
+}
+
+export function useIntentPrefetch({
+  prefetchFn,
+  enabled = true,
+  threshold = 20
+}: IntentPrefetchOptions) {
+  const ref = useRef<HTMLElement>(null);
+  const hasPrefetched = useRef(false);
+  const mousePosition = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (!enabled || hasPrefetched.current) return;
+
+    const element = ref.current;
+    if (!element) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = element.getBoundingClientRect();
+      const dx = e.clientX - mousePosition.current.x;
+      const dy = e.clientY - mousePosition.current.y;
+      
+      mousePosition.current = { x: e.clientX, y: e.clientY };
+
+      // Check if mouse is moving toward the element
+      const isMovingToward = 
+        e.clientX >= rect.left - threshold &&
+        e.clientX <= rect.right + threshold &&
+        e.clientY >= rect.top - threshold &&
+        e.clientY <= rect.bottom + threshold &&
+        (dx > 0 || dy > 0); // Moving right or down
+
+      if (isMovingToward && !hasPrefetched.current) {
+        prefetchFn();
+        hasPrefetched.current = true;
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [prefetchFn, enabled, threshold]);
+
+  return ref;
+}
+```
+
+**When to use intent prefetching**:
+- High-value routes (checkout, dashboard)
+- When hover prefetching is too aggressive
+- Desktop applications with mouse interaction
+- When you want to minimize wasted bandwidth
+
+### The Failure: Prefetching Everything
+
+Let's see what happens when we prefetch too aggressively:
+
+```tsx
+// src/App.tsx - ANTI-PATTERN: Prefetch Everything
+import { useEffect } from 'react';
+
+function App() {
+  useEffect(() => {
+    // Prefetch all routes immediately
+    import('./pages/GettingStarted');
+    import('./pages/APIReference');
+    import('./pages/Examples');
+    import('./pages/Changelog');
+  }, []);
+
+  return <RouterProvider router={router} />;
+}
+```
+
+**Browser DevTools - Network Tab**:
+```
+Timeline:
+0.0s: Page loads
+0.0s: Initial bundle loads (187 KB)
+0.7s: Initial bundle finishes
+0.7s: Prefetch requests start (all at once)
+0.7s: GettingStarted-b1c2d3e4.js (46 KB)
+0.7s: APIReference-c2d3e4f5.js (523 KB)
+0.7s: Examples-d3e4f5g6.js (313 KB)
+0.7s: Changelog-e4f5g6h7.js (79 KB)
+3.9s: All prefetch requests complete
+```
+
+**Browser Console**:
+```
+[Network] Downloading 961 KB of prefetch data
+[Performance] Main thread blocked for 1.2s parsing prefetched code
+[Memory] Heap size increased by 45 MB
+```
+
+### Diagnostic Analysis: The Over-Prefetching Failure
+
+**Browser Behavior**:
+User loads the home page. It appears quickly (0.7s). But then the browser starts downloading 961 KB of additional JavaScript. The page feels sluggish. Scrolling is janky. Interactions are delayed.
+
+**Network Tab Evidence**:
+- 4 simultaneous prefetch requests
+- Total: 961 KB (328 KB gzipped)
+- On 3G: 3.2 seconds additional download time
+- Blocks bandwidth for other resources (images, fonts)
+
+**Performance Metrics**:
+- Time to Interactive: 3.9s (worse than no prefetching!)
+- Main thread blocked: 1.2s (parsing prefetched code)
+- Memory usage: +45 MB
+- User experience: Janky, slow
+
+**Let's parse this evidence**:
+
+1. **What the user experiences**:
+   - Expected: Fast initial load, instant navigation
+   - Actual: Fast initial load, then sluggish page, then fast navigation
+
+2. **What the Network tab reveals**:
+   - Key indicator: 961 KB downloaded immediately
+   - Bandwidth saturated with prefetch requests
+   - Other resources (images, fonts) delayed
+
+3. **Root cause identified**: Prefetching everything defeats the purpose of code splitting. We split the code to reduce initial load, then immediately download it all anyway. The user pays the cost upfront, making the initial experience worse.
+
+4. **Why this approach fails**: Prefetching has costs:
+   - Bandwidth (downloads data user may not need)
+   - CPU (parsing and compiling prefetched code)
+   - Memory (storing prefetched modules)
+   - Battery (mobile devices)
+
+5. **What we need**: Strategic prefetching. Prefetch only what's likely to be used, when the browser has spare resources.
+
+### The Goldilocks Principle: Strategic Prefetching
+
+**Good prefetching strategy**:
+1. Prefetch high-probability routes (> 50% of users visit)
+2. Prefetch on user intent (hover, viewport visibility)
+3. Prefetch during idle time (after initial load completes)
+4. Respect user preferences (prefers-reduced-data, save-data)
+5. Monitor and adjust based on analytics
+
+**Our final, balanced approach**:
+
+```tsx
+// src/hooks/useStrategicPrefetch.ts
+import { useEffect, useRef } from 'react';
+
+interface PrefetchStrategy {
+  route: string;
+  priority: 'high' | 'medium' | 'low';
+  condition: 'idle' | 'hover' | 'viewport' | 'immediate';
+  probability?: number; // 0-1, likelihood user will visit
+}
+
+const strategies: PrefetchStrategy[] = [
+  {
+    route: '/getting-started',
+    priority: 'high',
+    condition: 'immediate', // Most users visit this
+    probability: 0.85
+  },
+  {
+    route: '/api',
+    priority: 'medium',
+    condition: 'hover', // Large chunk, prefetch on intent
+    probability: 0.45
+  },
+  {
+    route: '/examples',
+    priority: 'medium',
+    condition: 'hover',
+    probability: 0.40
+  },
+  {
+    route: '/changelog',
+    priority: 'low',
+    condition: 'idle', // Rarely visited, prefetch when idle
+    probability: 0.15
+  }
+];
+
+export function useStrategicPrefetch() {
+  const prefetchedRoutes = useRef(new Set<string>());
+
+  useEffect(() => {
+    // Check if user prefers reduced data
+    const prefersReducedData = 
+      'connection' in navigator &&
+      (navigator as any).connection?.saveData === true;
+
+    if (prefersReducedData) {
+      // Don't prefetch on metered connections
+      return;
+    }
+
+    // Prefetch immediate priority routes
+    strategies
+      .filter(s => s.condition === 'immediate')
+      .forEach(strategy => {
+        prefetchRoute(strategy.route);
+      });
+
+    // Prefetch idle priority routes when browser is idle
+    const idleCallback = 'requestIdleCallback' in window
+      ? window.requestIdleCallback
+      : (cb: () => void) => setTimeout(cb, 1000);
+
+    const handle = idleCallback(() => {
+      strategies
+        .filter(s => s.condition === 'idle')
+        .forEach(strategy => {
+          prefetchRoute(strategy.route);
+        });
+    });
+
+    return () => {
+      if ('cancelIdleCallback' in window) {
+        window.cancelIdleCallback(handle as number);
+      } else {
+        clearTimeout(handle as number);
+      }
+    };
+  }, []);
+
+  const prefetchRoute = (route: string) => {
+    if (prefetchedRoutes.current.has(route)) return;
+
+    const routeMap: Record<string, () => Promise<any>> = {
+      '/getting-started': () => import('../pages/GettingStarted'),
+      '/api': () => import('../pages/APIReference'),
+      '/examples': () => import('../pages/Examples'),
+      '/changelog': () => import('../pages/Changelog')
+    };
+
+    const prefetchFn = routeMap[route];
+    if (prefetchFn) {
+      prefetchFn()
+        .then(() => {
+          prefetchedRoutes.current.add(route);
+        })
+        .catch(() => {
+          // Silently fail
+        });
+    }
+  };
+}
+```
+
+```tsx
+// src/App.tsx - Final: Strategic Prefetching
+import { useStrategicPrefetch } from './hooks/useStrategicPrefetch';
+
+function App() {
+  useStrategicPrefetch();
+
+  return <RouterProvider router={router} />;
+}
+```
+
+**Browser DevTools - Network Tab** (with strategic prefetching):
+```
+Timeline:
+0.0s: Page loads
+0.7s: Initial bundle finishes
+0.7s: GettingStarted-b1c2d3e4.js prefetches (immediate, high probability)
+1.2s: GettingStarted finishes
+2.0s: Browser idle, Changelog-e4f5g6h7.js prefetches (low priority)
+2.5s: Changelog finishes
+[User hovers over "API Reference"]
+3.0s: APIReference-c2d3e4f5.js prefetches (on hover)
+```
+
+**Expected vs. Actual Improvement**:
+
+| Metric | No Prefetch | Prefetch All | Strategic Prefetch |
+|--------|-------------|--------------|-------------------|
+| Initial load | 0.7s | 0.7s | 0.7s |
+| Time to Interactive | 0.9s | 3.9s | 0.9s |
+| Bandwidth used (first 5s) | 187 KB | 1,148 KB | 233 KB |
+| Navigation to /getting-started | 0.8s | 0.1s | 0.1s |
+| Navigation to /api (after hover) | 2.1s | 0.1s | 0.2s |
+| Navigation to /changelog | 1.5s | 0.1s | 0.1s |
+
+### When to Apply Prefetching
+
+**What it optimizes for**:
+- Perceived performance (navigation feels instant)
+- User experience on fast connections
+- Frequently accessed routes
+
+**What it sacrifices**:
+- Bandwidth (may download unused code)
+- Battery life (mobile devices)
+- Initial page performance (if too aggressive)
+
+**When to prefetch**:
+
+**Immediate prefetch**:
+- Routes with > 70% visit probability
+- Small chunks (< 50 KB)
+- Critical user flows (onboarding, checkout)
+
+**Hover prefetch**:
+- Routes with 30-70% visit probability
+- Medium chunks (50-200 KB)
+- Desktop users (mouse interaction)
+
+**Idle prefetch**:
+- Routes with < 30% visit probability
+- Large chunks (> 200 KB)
+- After initial page load completes
+
+**Viewport prefetch**:
+- Links below the fold
+- Footer navigation
+- Mobile layouts
+
+**When NOT to prefetch**:
+- User on metered connection (save-data header)
+- User on slow connection (< 2G)
+- Routes with < 10% visit probability
+- Very large chunks (> 500 KB)
+- Routes with personalized content (may be stale)
+
+**Code characteristics**:
+- Setup complexity: Medium (need analytics to determine probabilities)
+- Maintenance burden: Medium (adjust based on user behavior)
+- Performance impact: High (when done right), Negative (when done wrong)
+
+### Respecting User Preferences
+
+Always check for user preferences before prefetching:
+
+```typescript
+// src/utils/shouldPrefetch.ts
+export function shouldPrefetch(): boolean {
+  // Check for Save-Data header
+  if ('connection' in navigator) {
+    const connection = (navigator as any).connection;
+    if (connection?.saveData === true) {
+      return false;
+    }
+
+    // Check for slow connection
+    const effectiveType = connection?.effectiveType;
+    if (effectiveType === 'slow-2g' || effectiveType === '2g') {
+      return false;
+    }
+  }
+
+  // Check for reduced motion preference (may indicate low-power mode)
+  const prefersReducedMotion = window.matchMedia(
+    '(prefers-reduced-motion: reduce)'
+  ).matches;
+  
+  if (prefersReducedMotion) {
+    return false;
+  }
+
+  // Check battery status (if available)
+  if ('getBattery' in navigator) {
+    (navigator as any).getBattery().then((battery: any) => {
+      if (battery.level < 0.2 || battery.charging === false) {
+        return false;
+      }
+    });
+  }
+
+  return true;
+}
+```
+
+**Ethical prefetching**: Respect user constraints. Don't waste bandwidth on metered connections. Don't drain battery on mobile devices. Prefetching is an optimization, not a requirement.
+
+## The Journey: From Basic Routing to Optimized Navigation
+
+## The Complete Journey
+
+Let's trace the evolution of our documentation site from basic routing to a fully optimized navigation experience:
+
+### The Journey: From Problem to Solution
+
+| Iteration | Problem | Technique Applied | Result | Performance Impact |
+|-----------|---------|-------------------|--------|-------------------|
+| 0 | All code loads upfront | None | 1.25 MB initial bundle | 2.8s load on 3G |
+| 1 | Bundle too large | Route-based code splitting | 187 KB initial bundle | 0.7s load on 3G (75% faster) |
+| 2 | Data fetching waterfall | Loader functions | Parallel loading | 1.9s to content (41% faster) |
+| 3 | Lost scroll position | ScrollRestoration | Position restored | Better UX |
+| 4 | Poor keyboard navigation | Focus management | Focus moves to content | Accessible |
+| 5 | Slow navigation on 3G | Strategic prefetching | Instant navigation | Feels immediate |
 
 ### Final Implementation
 
-Here is the final, optimized code for our `products` page, incorporating the lessons learned. It's a Server Component that fetches its own data, and its route is automatically code-split and prefetched by the `Nav` component.
+Here's our complete, production-ready routing setup:
 
-<code language="tsx">
-// src/app/products/page.tsx (Final Version)
-import Link from 'next/link';
+```tsx
+// src/App.tsx - Production-Ready Routing
+import { 
+  createBrowserRouter, 
+  RouterProvider,
+  ScrollRestoration
+} from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import Layout from './components/Layout';
+import RouteAnnouncer from './components/RouteAnnouncer';
+import ErrorBoundary from './components/ErrorBoundary';
+import { useStrategicPrefetch } from './hooks/useStrategicPrefetch';
 
-interface Product {
-  id: number;
-  name: string;
+// Loaders
+import { apiReferenceLoader } from './loaders/apiReferenceLoader';
+
+// Critical path: load immediately
+import Home from './pages/Home';
+import GettingStarted from './pages/GettingStarted';
+
+// Heavy routes: lazy load
+const APIReference = lazy(() => import('./pages/APIReference'));
+const Examples = lazy(() => import('./pages/Examples'));
+const Changelog = lazy(() => import('./pages/Changelog'));
+
+function RouteLoadingFallback() {
+  return (
+    <div className="route-loading">
+      <div className="spinner" />
+      <p>Loading page...</p>
+    </div>
+  );
 }
 
-async function getProducts(): Promise<Product[]> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`, {
-    cache: 'no-store' 
-  });
-  
-  if (!res.ok) {
-    throw new Error('Failed to fetch products');
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: (
+      <>
+        <ScrollRestoration 
+          getKey={(location) => {
+            // Restore scroll position for API Reference
+            if (location.pathname === '/api') {
+              return location.pathname;
+            }
+            return location.key;
+          }}
+        />
+        <RouteAnnouncer />
+        <Layout />
+      </>
+    ),
+    errorElement: <ErrorBoundary />,
+    children: [
+      {
+        index: true,
+        element: <Home />
+      },
+      {
+        path: 'getting-started',
+        element: <GettingStarted />
+      },
+      {
+        path: 'api',
+        element: (
+          <Suspense fallback={<RouteLoadingFallback />}>
+            <APIReference />
+          </Suspense>
+        ),
+        loader: apiReferenceLoader
+      },
+      {
+        path: 'examples',
+        element: (
+          <Suspense fallback={<RouteLoadingFallback />}>
+            <Examples />
+          </Suspense>
+        )
+      },
+      {
+        path: 'changelog',
+        element: (
+          <Suspense fallback={<RouteLoadingFallback />}>
+            <Changelog />
+          </Suspense>
+        )
+      }
+    ]
   }
+]);
 
-  return res.json();
+function App() {
+  useStrategicPrefetch();
+  return <RouterProvider router={router} />;
 }
 
-export default async function ProductsPage() {
-  const products = await getProducts();
+export default App;
+```
+
+```tsx
+// src/components/Layout.tsx - Production-Ready Layout
+import { Outlet, useLocation, useNavigation } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import Navigation from './Navigation';
+
+export default function Layout() {
+  const location = useLocation();
+  const navigation = useNavigation();
+  const mainRef = useRef<HTMLElement>(null);
+  const isLoading = navigation.state === 'loading';
+
+  // Focus management
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.focus();
+    }
+  }, [location.pathname]);
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Products</h1>
-      <ul className="space-y-2">
-        {products.map((product) => (
-          <li key={product.id} className="p-2 border rounded">
-            {/* 
-              - This link will be prefetched if it enters the viewport.
-              - Navigation will not cause a page refresh.
-              - Scroll position will be restored on back/forward navigation.
-            */}
-            <Link href={`/products/${product.id}`} className="block">
-              {product.name}
-            </Link>
-          </li>
-        ))}
-      </ul>
+    <div className="layout">
+      {/* Skip link for keyboard users */}
+      <a 
+        href="#main-content" 
+        className="skip-link"
+        onClick={(e) => {
+          e.preventDefault();
+          mainRef.current?.focus();
+        }}
+      >
+        Skip to main content
+      </a>
+
+      <Navigation />
+      
+      {/* Loading indicator */}
+      {isLoading && (
+        <div className="loading-bar">
+          <div className="loading-bar-progress" />
+        </div>
+      )}
+      
+      <main 
+        id="main-content"
+        ref={mainRef}
+        tabIndex={-1}
+        className="main-content"
+      >
+        <Outlet />
+      </main>
     </div>
   );
 }
 ```
 
-And our root layout ensures an accessible experience for all users.
+### Decision Framework: Routing Optimization Strategies
 
-<code language="tsx">
-// src/app/layout.tsx (Final Version)
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import Nav from "@/components/Nav";
-import { RouteFocusManager } from "@/components/RouteFocusManager";
+When building a React application with routing, use this framework to decide which optimizations to apply:
 
-const inter = Inter({ subsets: ["latin"] });
+#### Code Splitting Decision Tree
 
-export const metadata: Metadata = {
-  title: "Admin Dashboard",
-  description: "E-commerce Admin",
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="en">
-      <body className={inter.className}>
-        <RouteFocusManager />
-        <Nav />
-        <main id="main-content" tabIndex={-1} className="p-8 outline-none">
-          {children}
-        </main>
-      </body>
-    </html>
-  );
-}
 ```
+Is the route > 50 KB?
+├─ Yes → Split it
+│  └─ Is it visited by > 70% of users?
+│     ├─ Yes → Keep in initial bundle OR prefetch immediately
+│     └─ No → Lazy load
+└─ No → Keep in initial bundle
+```
+
+#### Data Loading Decision Tree
+
+```
+Does the route need data?
+├─ Yes → Use loader function
+│  └─ Is the data slow to load (> 500ms)?
+│     ├─ Yes → Show loading state + consider prefetching
+│     └─ No → Loader is sufficient
+└─ No → No loader needed
+```
+
+#### Prefetching Decision Tree
+
+```
+What's the visit probability?
+├─ > 70% → Prefetch immediately (or include in initial bundle)
+├─ 30-70% → Prefetch on hover/intent
+├─ 10-30% → Prefetch on idle
+└─ < 10% → Don't prefetch
+
+AND
+
+Is the user on a fast connection?
+├─ Yes → Prefetch according to probability
+└─ No → Only prefetch high-probability routes (> 70%)
+
+AND
+
+Does the user prefer reduced data?
+├─ Yes → Don't prefetch
+└─ No → Prefetch according to strategy
+```
+
+### Performance Metrics: Before and After
+
+**Initial State** (no optimizations):
+- Initial bundle: 1.25 MB (412 KB gzipped)
+- Time to Interactive: 3.2s on 3G
+- Navigation time: 0s (all code loaded)
+- Lighthouse Score: 72
+- Accessibility Score: 78
+
+**Final State** (all optimizations):
+- Initial bundle: 187 KB (64 KB gzipped)
+- Time to Interactive: 0.9s on 3G
+- Navigation time: 0.2s average (with prefetching)
+- Lighthouse Score: 94
+- Accessibility Score: 95
+
+**Improvements**:
+- 85% smaller initial bundle
+- 72% faster Time to Interactive
+- 22 point Lighthouse improvement
+- 17 point Accessibility improvement
+- Navigation feels instant for most routes
 
 ### Lessons Learned
 
-1.  **Code-Split by Default**: Structure your application around routes. Next.js's file-system based router automatically code-splits your pages. Use `next/dynamic` for large components *within* a page that are conditionally rendered.
-2.  **Fetch Data on the Server**: Embrace Server Components. Co-locating your data fetching with your components eliminates client-side waterfalls, improves performance, and simplifies your code. Avoid `useEffect` for data fetching unless you specifically need client-side interactivity with that data.
-3.  **Trust the Platform, but Verify**: Next.js provides excellent defaults for routing, like scroll restoration and prefetching. Understand how they work so you can leverage them effectively and know when to opt-out for specific use cases.
-4.  **Accessibility is Not an Afterthought**: A performant app that is unusable by a portion of your audience is a failed app. Implement focus management from the start to ensure a robust experience for keyboard and screen reader users.
-5.  **Think Proactively, Not Reactively**: Prefetching embodies this principle. By anticipating the user's next move, you can create an experience that feels faster than it has any right to be.
+#### 1. Code Splitting is Essential, But Strategic
 
-By mastering these advanced routing patterns, you move beyond simply building applications that *work* to crafting experiences that are fast, resilient, and a joy to use.
+Don't split everything. Split large, rarely-used routes. Keep small, frequently-used code together. The goal is to optimize initial load without making navigation slow.
+
+#### 2. Data Loading Waterfalls Kill Performance
+
+Use loader functions to fetch data in parallel with component code. Don't wait for the component to mount before fetching data.
+
+#### 3. Accessibility is Not Optional
+
+Scroll restoration and focus management are not "nice to have" features. They're essential for keyboard and screen reader users. Implement them from the start.
+
+#### 4. Prefetching is Powerful, But Respect User Constraints
+
+Prefetch strategically based on visit probability and user intent. Always check for metered connections and user preferences. Don't waste bandwidth or battery.
+
+#### 5. Measure, Don't Guess
+
+Use analytics to determine which routes to prefetch. Use React DevTools Profiler to find performance bottlenecks. Use Lighthouse to validate improvements. Data beats intuition.
+
+### Common Failure Modes and Their Signatures
+
+#### Symptom: Navigation feels slow despite code splitting
+
+**Browser behavior**: User clicks link, waits 2+ seconds, content appears
+
+**Console pattern**: No errors, just slow network requests
+
+**DevTools clues**:
+- Network tab shows large chunks downloading
+- No prefetching happening
+- Sequential requests (waterfall)
+
+**Root cause**: No prefetching strategy, or chunks are too large
+
+**Solution**: Implement strategic prefetching based on user intent and visit probability
+
+#### Symptom: Initial page load is slow despite code splitting
+
+**Browser behavior**: Blank screen for 2+ seconds on initial load
+
+**Console pattern**: Multiple chunk requests immediately after initial bundle
+
+**DevTools clues**:
+- Network tab shows many simultaneous requests
+- Coverage tab shows low code usage
+- Performance tab shows long parse time
+
+**Root cause**: Over-aggressive prefetching or too many immediate imports
+
+**Solution**: Reduce prefetching, increase code splitting granularity, defer non-critical code
+
+#### Symptom: User loses scroll position on back navigation
+
+**Browser behavior**: User navigates back, page scrolls to top
+
+**Console pattern**: No errors
+
+**DevTools clues**:
+- React Router navigation events fire
+- Scroll position resets to 0
+
+**Root cause**: Missing ScrollRestoration component
+
+**Solution**: Add `<ScrollRestoration />` to router configuration
+
+#### Symptom: Keyboard users can't navigate efficiently
+
+**Browser behavior**: Focus stays on navigation link after route change
+
+**Console pattern**: No errors
+
+**DevTools clues**:
+- Active element doesn't change on navigation
+- Screen reader doesn't announce page change
+
+**Root cause**: Missing focus management
+
+**Solution**: Implement focus management with `useEffect` and `ref.current.focus()`
+
+### When to Apply These Patterns
+
+**Always apply**:
+- Route-based code splitting (for routes > 50 KB)
+- Scroll restoration
+- Focus management
+- Error boundaries
+
+**Apply when appropriate**:
+- Loader functions (when routes need data)
+- Prefetching (based on visit probability and user constraints)
+- Component-level code splitting (for heavy components)
+
+**Rarely apply**:
+- Aggressive prefetching (only for high-probability routes)
+- Complex prefetching strategies (only when analytics justify it)
+
+### The Professional React Developer's Routing Checklist
+
+Before deploying a React application with routing:
+
+✅ **Code Splitting**
+- [ ] Routes > 50 KB are lazy loaded
+- [ ] Initial bundle < 200 KB (gzipped)
+- [ ] Suspense boundaries provide loading feedback
+
+✅ **Data Loading**
+- [ ] Loader functions fetch data in parallel with code
+- [ ] Loading states are visible to users
+- [ ] Error boundaries catch loader failures
+
+✅ **Accessibility**
+- [ ] ScrollRestoration restores scroll position
+- [ ] Focus moves to main content on navigation
+- [ ] Skip link allows keyboard users to bypass navigation
+- [ ] Route changes are announced to screen readers
+
+✅ **Performance**
+- [ ] Prefetching strategy based on analytics
+- [ ] User preferences respected (save-data, slow connection)
+- [ ] Lighthouse score > 90
+- [ ] Time to Interactive < 2s on 3G
+
+✅ **User Experience**
+- [ ] Navigation feels instant (< 300ms perceived delay)
+- [ ] Loading states are clear and consistent
+- [ ] Error states are user-friendly
+- [ ] Back/forward navigation works correctly
+
+This is the foundation of professional React routing. Master these patterns, and your applications will feel fast, accessible, and polished.

@@ -1,0 +1,2332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appendix A Essential VS Code Setup</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --accent: #06b6d4;
+            --success: #10b981;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.7; 
+            color: var(--text-primary); 
+            background: var(--bg-main);
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        .home-btn { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: var(--accent);
+            color: white; 
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-decoration: none; 
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-btn:hover { 
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.5);
+        }
+        
+        .breadcrumb { 
+            background: var(--bg-card);
+            padding: 12px 0; 
+            margin-bottom: 24px; 
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .breadcrumb a { 
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb a:hover { 
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        
+        .content { 
+            background: var(--bg-card);
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .file-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        
+        .file-item { 
+            padding: 1.5rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px; 
+            background: var(--bg-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .file-item:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary);
+        }
+        
+        .file-item:hover::before {
+            opacity: 1;
+        }
+        
+        .file-item a { 
+            color: var(--text-primary);
+            text-decoration: none; 
+            font-weight: 600; 
+            display: block;
+            font-size: 1.1rem;
+        }
+        
+        .file-item a:hover { 
+            color: var(--primary);
+        }
+        
+        .file-type { 
+            font-size: 13px; 
+            color: var(--text-secondary);
+            margin-top: 8px; 
+            font-weight: 500;
+        }
+        
+        /* Code Blocks */
+        pre { 
+            background: var(--bg-code);
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        pre code { 
+            background: none;
+            padding: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.7;
+            z-index: 10;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: var(--success);
+        }
+        
+        pre:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        /* Inline Code */
+        code { 
+            background: var(--bg-code);
+            color: #8b5cf6;
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 1.1em;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid var(--border);
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 { 
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 { 
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        h2 { 
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 { 
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        /* Links */
+        a { 
+            color: var(--accent);
+            transition: color 0.2s;
+        }
+        
+        a:hover { 
+            color: var(--primary);
+        }
+        
+        /* Paragraphs */
+        p {
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        /* Tables */
+        table { 
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        th, td { 
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        th { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: var(--bg-card);
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            background: var(--bg-main);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 2rem; 
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem; 
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .file-list { grid-template-columns: 1fr; }
+            .content { padding: 1.5rem; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="home-btn">🏠</a>
+    <div class="container">
+        <div class="breadcrumb">
+            <div style="padding: 0 20px;">
+                <a href="../index.html">🏠 Home</a> <span style="color: #64748b;">/</span> <a href="index.html">APPENDICES</a>
+            </div>
+        </div>
+        <div class="content">
+            <h1 id="chapter-appendix-a-essential-vs-code-setup">Chapter Appendix A: Essential VS Code Setup</h1>
+<h2 id="the-editor-as-diagnostic-partner">The Editor as Diagnostic Partner</h2>
+<h2 id="the-editor-as-diagnostic-partner_1">The Editor as Diagnostic Partner</h2>
+<p>Your code editor is not just a text input device—it's your first line of defense against bugs, your performance monitor, and your documentation assistant. A properly configured VS Code setup catches errors before they reach the browser, suggests fixes before you ask, and surfaces problems the moment they're introduced.</p>
+<p>This appendix establishes a reference VS Code configuration that evolves through progressive enhancement. We'll start with a minimal setup that works, expose its limitations through concrete failures, and systematically add tooling that solves each problem.</p>
+<h3 id="the-reference-implementation-a-reactnextjs-project">The Reference Implementation: A React/Next.js Project</h3>
+<p>Throughout this appendix, we'll configure VS Code for a realistic Next.js project structure:</p>
+<p><strong>Project Structure</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="nx">my</span><span class="o">-</span><span class="nx">app</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="nx">src</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="nx">app</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="nx">page</span><span class="p">.</span><span class="nx">tsx</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="nx">layout</span><span class="p">.</span><span class="nx">tsx</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="nx">components</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">.</span><span class="nx">tsx</span>
+<span class="err">│</span><span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="nx">ProductCard</span><span class="p">.</span><span class="nx">tsx</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="nx">lib</span><span class="o">/</span>
+<span class="err">│</span><span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="nx">utils</span><span class="p">.</span><span class="nx">ts</span>
+<span class="err">├──</span><span class="w"> </span><span class="nx">public</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="kn">package</span><span class="p">.</span><span class="nx">json</span>
+<span class="err">├──</span><span class="w"> </span><span class="nx">tsconfig</span><span class="p">.</span><span class="nx">json</span>
+<span class="err">└──</span><span class="w"> </span><span class="nx">next</span><span class="p">.</span><span class="nx">config</span><span class="p">.</span><span class="nx">js</span>
+</code></pre></div>
+
+<p>This structure will serve as our testing ground for each configuration improvement.</p>
+<h2 id="phase-1-the-baseline-vanilla-vs-code">Phase 1: The Baseline - Vanilla VS Code</h2>
+<h2 id="phase-1-the-baseline-vanilla-vs-code_1">Phase 1: The Baseline - Vanilla VS Code</h2>
+<h3 id="iteration-0-fresh-vs-code-installation">Iteration 0: Fresh VS Code Installation</h3>
+<p>Let's start with a completely fresh VS Code installation and a simple React component to see what problems emerge.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfile.tsx</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">();</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/users/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">res</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="nx">data</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">));</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;profile&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="the-failure-silent-problems-everywhere">The Failure: Silent Problems Everywhere</h3>
+<p><strong>VS Code Behavior</strong>:
+- No red squiggles under any code
+- No warnings in the Problems panel
+- File saves successfully
+- No indication anything is wrong</p>
+<p><strong>Browser Console Output</strong> (after running the app):</p>
+<div class="codehilite"><pre><span></span><code>Uncaught ReferenceError: useState is not defined
+    at UserProfile (UserProfile.tsx:2)
+
+Warning: React Hook useEffect is called in a function that is neither a React function component nor a custom React Hook function.
+
+Uncaught TypeError: Cannot read properties of undefined (reading &#39;name&#39;)
+    at UserProfile (UserProfile.tsx:13)
+</code></pre></div>
+
+<p><strong>Terminal Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code>Type<span class="w"> </span>error:<span class="w"> </span>Parameter<span class="w"> </span><span class="s1">&#39;userId&#39;</span><span class="w"> </span>implicitly<span class="w"> </span>has<span class="w"> </span>an<span class="w"> </span><span class="s1">&#39;any&#39;</span><span class="w"> </span>type.
+
+Type<span class="w"> </span>error:<span class="w"> </span>Cannot<span class="w"> </span>find<span class="w"> </span>name<span class="w"> </span><span class="s1">&#39;useState&#39;</span>.
+
+Type<span class="w"> </span>error:<span class="w"> </span>Cannot<span class="w"> </span>find<span class="w"> </span>name<span class="w"> </span><span class="s1">&#39;useEffect&#39;</span>.
+</code></pre></div>
+
+<h3 id="diagnostic-analysis-reading-the-silence">Diagnostic Analysis: Reading the Silence</h3>
+<p><strong>What the editor shows</strong>: Nothing. The code looks fine in VS Code.</p>
+<p><strong>What the browser reveals</strong>: Multiple runtime errors that should have been caught during development.</p>
+<p><strong>What the terminal reveals</strong>: TypeScript compilation fails, but only when you try to build.</p>
+<p><strong>Root cause identified</strong>: VS Code has no understanding of:
+1. React imports (missing <code>import</code> statements)
+2. TypeScript types (no type checking active)
+3. React-specific patterns (hooks, JSX)</p>
+<p><strong>Why vanilla VS Code can't solve this</strong>: Without extensions and configuration, VS Code treats <code>.tsx</code> files as plain text with syntax highlighting. It has no semantic understanding of React or TypeScript.</p>
+<p><strong>What we need</strong>: Extensions that provide language intelligence, type checking, and React-specific linting.</p>
+<h2 id="phase-2-essential-extensions">Phase 2: Essential Extensions</h2>
+<h2 id="phase-2-essential-extensions_1">Phase 2: Essential Extensions</h2>
+<h3 id="iteration-1-installing-core-extensions">Iteration 1: Installing Core Extensions</h3>
+<p>The following extensions transform VS Code from a text editor into a React development environment.</p>
+<h3 id="extension-1-eslint-the-error-detector">Extension 1: ESLint - The Error Detector</h3>
+<p><strong>What it does</strong>: Analyzes your code for problems in real-time, enforcing code quality rules and catching common mistakes.</p>
+<p><strong>Installation</strong>:
+1. Open VS Code Extensions panel (<code>Cmd/Ctrl + Shift + X</code>)
+2. Search for "ESLint" (by Microsoft)
+3. Click Install
+4. Reload VS Code</p>
+<p><strong>Project Setup</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Install ESLint and React-specific plugins</span>
+npm<span class="w"> </span>install<span class="w"> </span>--save-dev<span class="w"> </span>eslint<span class="w"> </span>@typescript-eslint/parser<span class="w"> </span>@typescript-eslint/eslint-plugin
+npm<span class="w"> </span>install<span class="w"> </span>--save-dev<span class="w"> </span>eslint-plugin-react<span class="w"> </span>eslint-plugin-react-hooks
+npm<span class="w"> </span>install<span class="w"> </span>--save-dev<span class="w"> </span>eslint-config-next<span class="w">  </span><span class="c1"># For Next.js projects</span>
+</code></pre></div>
+
+<p><strong>Configuration File</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// .eslintrc.json</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;extends&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;next/core-web-vitals&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;plugin:@typescript-eslint/recommended&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;plugin:react-hooks/recommended&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;parser&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;@typescript-eslint/parser&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;parserOptions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;ecmaVersion&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;latest&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sourceType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;module&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ecmaFeatures&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;jsx&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;rules&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;react-hooks/rules-of-hooks&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;error&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;react-hooks/exhaustive-deps&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;warn&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;@typescript-eslint/no-unused-vars&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;warn&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;@typescript-eslint/no-explicit-any&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;warn&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>VS Code Settings</strong> (add to <code>.vscode/settings.json</code>):</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;eslint.validate&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;javascript&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;javascriptreact&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;typescript&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;typescriptreact&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;eslint.run&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;onType&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="the-improvement-immediate-error-detection">The Improvement: Immediate Error Detection</h3>
+<p>Now when we open <code>UserProfile.tsx</code>:</p>
+<p><strong>VS Code Behavior</strong>:
+- Red squiggles appear under <code>useState</code> and <code>useEffect</code>
+- Problems panel shows: <code>'useState' is not defined. eslint(no-undef)</code>
+- Hover over <code>userId</code> shows: <code>Parameter 'userId' implicitly has an 'any' type.</code>
+- Red squiggles under <code>user.name</code> and <code>user.email</code></p>
+<p><strong>Expected vs. Actual</strong>:
+- <strong>Before</strong>: No indication of problems until runtime
+- <strong>After</strong>: 6 errors highlighted immediately in the editor</p>
+<p>The editor now catches the missing imports and type errors before we even save the file.</p>
+<h3 id="extension-2-prettier-the-formatter">Extension 2: Prettier - The Formatter</h3>
+<p><strong>What it does</strong>: Automatically formats code on save, eliminating formatting debates and ensuring consistency.</p>
+<p><strong>Installation</strong>:</p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>--save-dev<span class="w"> </span>prettier<span class="w"> </span>eslint-config-prettier
+</code></pre></div>
+
+<p><strong>Configuration File</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// .prettierrc</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;semi&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;trailingComma&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;es5&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;singleQuote&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;printWidth&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">80</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;tabWidth&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;useTabs&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>VS Code Settings</strong> (add to <code>.vscode/settings.json</code>):</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;editor.defaultFormatter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;esbenp.prettier-vscode&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;editor.formatOnSave&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;[typescriptreact]&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;editor.defaultFormatter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;esbenp.prettier-vscode&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;[typescript]&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;editor.defaultFormatter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;esbenp.prettier-vscode&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Update ESLint config</strong> to prevent conflicts:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// .eslintrc.json</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;extends&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;next/core-web-vitals&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;plugin:@typescript-eslint/recommended&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;plugin:react-hooks/recommended&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;prettier&quot;</span><span class="w">  </span><span class="c1">// ← Add this last to disable conflicting rules</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="the-improvement-consistent-formatting">The Improvement: Consistent Formatting</h3>
+<p><strong>Before</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Inconsistent formatting</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="nx">userId</span><span class="p">}</span><span class="o">:</span><span class="p">{</span><span class="nx">userId</span><span class="o">:</span><span class="kt">string</span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="nx">setUser</span><span class="p">]</span><span class="o">=</span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="err">|</span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">)</span>
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()=&gt;{</span>
+<span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/users/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">).</span><span class="nx">then</span><span class="p">(</span><span class="nx">res</span><span class="p">=&gt;</span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">()).</span><span class="nx">then</span><span class="p">(</span><span class="nx">data</span><span class="p">=&gt;</span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">))</span>
+<span class="p">},[</span><span class="nx">userId</span><span class="p">])</span>
+<span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;profile&quot;</span><span class="p">&gt;&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">user</span><span class="o">?</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>After</strong> (automatic on save):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Consistently formatted</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">userId</span><span class="p">,</span>
+<span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/users/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">res</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">data</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">));</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="w"> </span><span class="na">className</span><span class="o">=</span><span class="s">&quot;profile&quot;</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">user</span><span class="o">?</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="extension-3-es7-reactreduxreact-native-snippets">Extension 3: ES7+ React/Redux/React-Native Snippets</h3>
+<p><strong>What it does</strong>: Provides shortcuts for common React patterns, reducing boilerplate typing.</p>
+<p><strong>Installation</strong>: Search for "ES7+ React/Redux/React-Native snippets" in Extensions panel.</p>
+<p><strong>Key Snippets</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Trigger</th>
+<th>Expands To</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rafce</code></td>
+<td>React Arrow Function Component Export</td>
+</tr>
+<tr>
+<td><code>useState</code></td>
+<td><code>const [state, setState] = useState(initialValue)</code></td>
+</tr>
+<tr>
+<td><code>useEffect</code></td>
+<td><code>useEffect(() =&gt; { }, [])</code></td>
+</tr>
+<tr>
+<td><code>useMemo</code></td>
+<td><code>useMemo(() =&gt; { }, [])</code></td>
+</tr>
+<tr>
+<td><code>useCallback</code></td>
+<td><code>useCallback(() =&gt; { }, [])</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example Usage</strong>:</p>
+<p>Type <code>rafce</code> and press Tab:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Expands to:</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">React</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;react&quot;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">ComponentName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span><span class="nx">ComponentName</span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">};</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="nx">ComponentName</span><span class="p">;</span>
+</code></pre></div>
+
+<h3 id="extension-4-error-lens-inline-error-display">Extension 4: Error Lens - Inline Error Display</h3>
+<p><strong>What it does</strong>: Shows error messages directly in the editor line, not just in the Problems panel.</p>
+<p><strong>Installation</strong>: Search for "Error Lens" in Extensions panel.</p>
+<p><strong>VS Code Settings</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;errorLens.enabledDiagnosticLevels&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;error&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;warning&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;errorLens.fontSize&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.9em&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;errorLens.fontWeight&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;normal&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="the-improvement-errors-you-cant-miss">The Improvement: Errors You Can't Miss</h3>
+<p><strong>Before</strong> (standard VS Code):
+- Red squiggle under <code>user.name</code>
+- Must hover to see: "Object is possibly 'undefined'"</p>
+<p><strong>After</strong> (with Error Lens):
+- Red squiggle under <code>user.name</code>
+- Error message displayed inline: <code>Object is possibly 'undefined'. ts(2532)</code>
+- No hovering required</p>
+<h3 id="extension-5-auto-rename-tag">Extension 5: Auto Rename Tag</h3>
+<p><strong>What it does</strong>: Automatically renames paired HTML/JSX tags when you edit one.</p>
+<p><strong>Installation</strong>: Search for "Auto Rename Tag" in Extensions panel.</p>
+<p><strong>Demonstration</strong>:</p>
+<p>Change <code>&lt;div&gt;</code> to <code>&lt;section&gt;</code>:</p>
+<h2 id="phase-3-typescript-configuration">Phase 3: TypeScript Configuration</h2>
+<h2 id="phase-3-typescript-configuration_1">Phase 3: TypeScript Configuration</h2>
+<h3 id="iteration-2-enabling-strict-type-checking">Iteration 2: Enabling Strict Type Checking</h3>
+<p>With extensions installed, let's configure TypeScript for maximum safety.</p>
+<h3 id="the-failure-loose-type-checking-misses-bugs">The Failure: Loose Type Checking Misses Bugs</h3>
+<p><strong>Current tsconfig.json</strong> (Next.js default):</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;compilerOptions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;target&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ES2017&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;lib&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;dom&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;dom.iterable&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;esnext&quot;</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;allowJs&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;skipLibCheck&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;strict&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">  </span><span class="c1">// ← Problem: too permissive</span>
+<span class="w">    </span><span class="nt">&quot;noEmit&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;esModuleInterop&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;module&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;esnext&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;moduleResolution&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bundler&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;resolveJsonModule&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;isolatedModules&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;jsx&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;preserve&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;incremental&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;plugins&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;next&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;paths&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@/*&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;./src/*&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;include&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;next-env.d.ts&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;**/*.ts&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;**/*.tsx&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;.next/types/**/*.ts&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;exclude&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;node_modules&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Problem Code</strong> (compiles without errors):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/ProductCard.tsx</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductCard</span><span class="p">({</span><span class="w"> </span><span class="nx">product</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span><span class="w">  </span><span class="c1">// ← No type error</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">$</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">price</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">addToCart</span><span class="p">(</span><span class="nx">product</span><span class="p">.</span><span class="nx">id</span><span class="p">)}&gt;</span><span class="nx">Add</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">Cart</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">addToCart</span><span class="p">(</span><span class="nx">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">  </span><span class="c1">// ← No type error</span>
+<span class="w">  </span><span class="c1">// Implementation</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Browser Console Output</strong>:</p>
+<div class="codehilite"><pre><span></span><code>Uncaught TypeError: Cannot read properties of undefined (reading &#39;name&#39;)
+    at ProductCard (ProductCard.tsx:4)
+</code></pre></div>
+
+<p><strong>Diagnostic Analysis</strong>:</p>
+<p><strong>What TypeScript shows</strong>: No errors. Code compiles successfully.</p>
+<p><strong>What the browser reveals</strong>: Runtime error when <code>product</code> is undefined.</p>
+<p><strong>Root cause</strong>: <code>strict: false</code> allows implicit <code>any</code> types, defeating TypeScript's purpose.</p>
+<p><strong>Why loose checking can't solve this</strong>: Without strict mode, TypeScript can't enforce type safety on function parameters, return values, or null checks.</p>
+<p><strong>What we need</strong>: Strict TypeScript configuration that catches these issues at compile time.</p>
+<h3 id="the-solution-strict-typescript-configuration">The Solution: Strict TypeScript Configuration</h3>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;compilerOptions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;target&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ES2017&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;lib&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;dom&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;dom.iterable&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;esnext&quot;</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;allowJs&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;skipLibCheck&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;strict&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">  </span><span class="c1">// ← Enable all strict checks</span>
+<span class="w">    </span><span class="nt">&quot;noEmit&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;esModuleInterop&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;module&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;esnext&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;moduleResolution&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bundler&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;resolveJsonModule&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;isolatedModules&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;jsx&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;preserve&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;incremental&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+
+<span class="w">    </span><span class="c1">// Additional strict checks</span>
+<span class="w">    </span><span class="nt">&quot;noUncheckedIndexedAccess&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">  </span><span class="c1">// Array access returns T | undefined</span>
+<span class="w">    </span><span class="nt">&quot;noImplicitReturns&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">  </span><span class="c1">// All code paths must return a value</span>
+<span class="w">    </span><span class="nt">&quot;noFallthroughCasesInSwitch&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">  </span><span class="c1">// Switch cases must break/return</span>
+<span class="w">    </span><span class="nt">&quot;forceConsistentCasingInFileNames&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">  </span><span class="c1">// Prevent import casing issues</span>
+
+<span class="w">    </span><span class="nt">&quot;plugins&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;next&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;paths&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@/*&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;./src/*&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;include&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;next-env.d.ts&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;**/*.ts&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;**/*.tsx&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;.next/types/**/*.ts&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;exclude&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;node_modules&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="the-improvement-compile-time-error-detection">The Improvement: Compile-Time Error Detection</h3>
+<p><strong>VS Code Behavior</strong> (after saving tsconfig.json):
+- Red squiggle under <code>product</code> parameter: <code>Parameter 'product' implicitly has an 'any' type.</code>
+- Red squiggle under <code>id</code> parameter: <code>Parameter 'id' implicitly has an 'any' type.</code>
+- Red squiggle under <code>product.name</code>: <code>'product' is of type 'unknown'.</code></p>
+<p><strong>Fixed Code</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/ProductCard.tsx</span>
+<span class="kd">interface</span><span class="w"> </span><span class="nx">Product</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">price</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nx">ProductCardProps</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">product</span><span class="o">:</span><span class="w"> </span><span class="kt">Product</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ProductCard</span><span class="p">({</span><span class="w"> </span><span class="nx">product</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">ProductCardProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;{</span><span class="nx">product</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span><span class="nx">$</span><span class="p">{</span><span class="nx">product</span><span class="p">.</span><span class="nx">price</span><span class="p">}&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">button</span><span class="w"> </span><span class="na">onClick</span><span class="o">=</span><span class="p">{()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">addToCart</span><span class="p">(</span><span class="nx">product</span><span class="p">.</span><span class="nx">id</span><span class="p">)}&gt;</span><span class="nx">Add</span><span class="w"> </span><span class="nx">to</span><span class="w"> </span><span class="nx">Cart</span><span class="p">&lt;/</span><span class="nt">button</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">addToCart</span><span class="p">(</span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="ow">void</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Implementation</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Expected vs. Actual</strong>:
+- <strong>Before</strong>: Runtime error when product is undefined
+- <strong>After</strong>: Compile-time error prevents the bug from reaching the browser</p>
+<h3 id="vs-code-typescript-settings">VS Code TypeScript Settings</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1">// .vscode/settings.json</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;typescript.tsdk&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;node_modules/typescript/lib&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;typescript.enablePromptUseWorkspaceTsdk&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;typescript.preferences.importModuleSpecifier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;relative&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;typescript.updateImportsOnFileMove.enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;always&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;typescript.suggest.autoImports&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;typescript.preferences.includePackageJsonAutoImports&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;on&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="when-to-apply-strict-typescript">When to Apply Strict TypeScript</h3>
+<p><strong>What it optimizes for</strong>:
+- Compile-time error detection
+- Refactoring safety
+- Self-documenting code</p>
+<p><strong>What it sacrifices</strong>:
+- Initial development speed (must write types)
+- Flexibility with dynamic data</p>
+<p><strong>When to choose this approach</strong>:
+- New projects (start strict from day one)
+- Production applications
+- Team environments (prevents type-related bugs)</p>
+<p><strong>When to avoid this approach</strong>:
+- Rapid prototyping (use <code>strict: false</code> temporarily)
+- Migrating large JavaScript codebases (enable gradually)</p>
+<h2 id="phase-4-workspace-settings">Phase 4: Workspace Settings</h2>
+<h2 id="phase-4-workspace-settings_1">Phase 4: Workspace Settings</h2>
+<h3 id="iteration-3-project-specific-configuration">Iteration 3: Project-Specific Configuration</h3>
+<p>Create a <code>.vscode/settings.json</code> file in your project root to ensure consistent settings across your team.</p>
+<h3 id="the-complete-vs-code-settings-file">The Complete VS Code Settings File</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1">// .vscode/settings.json</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="c1">// Editor Behavior</span>
+<span class="w">  </span><span class="nt">&quot;editor.formatOnSave&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;editor.defaultFormatter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;esbenp.prettier-vscode&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;editor.codeActionsOnSave&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;source.fixAll.eslint&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;explicit&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;source.organizeImports&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;explicit&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;editor.tabSize&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;editor.insertSpaces&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;editor.detectIndentation&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+
+<span class="w">  </span><span class="c1">// File Management</span>
+<span class="w">  </span><span class="nt">&quot;files.autoSave&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;onFocusChange&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;files.trimTrailingWhitespace&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;files.insertFinalNewline&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;files.exclude&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;**/.next&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;**/node_modules&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;**/.git&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">  </span><span class="p">},</span>
+
+<span class="w">  </span><span class="c1">// TypeScript</span>
+<span class="w">  </span><span class="nt">&quot;typescript.tsdk&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;node_modules/typescript/lib&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;typescript.enablePromptUseWorkspaceTsdk&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;typescript.preferences.importModuleSpecifier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;relative&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;typescript.updateImportsOnFileMove.enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;always&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;typescript.suggest.autoImports&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;typescript.preferences.includePackageJsonAutoImports&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;on&quot;</span><span class="p">,</span>
+
+<span class="w">  </span><span class="c1">// ESLint</span>
+<span class="w">  </span><span class="nt">&quot;eslint.validate&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;javascript&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;javascriptreact&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;typescript&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;typescriptreact&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;eslint.run&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;onType&quot;</span><span class="p">,</span>
+
+<span class="w">  </span><span class="c1">// Language-Specific Formatting</span>
+<span class="w">  </span><span class="nt">&quot;[typescriptreact]&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;editor.defaultFormatter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;esbenp.prettier-vscode&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;[typescript]&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;editor.defaultFormatter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;esbenp.prettier-vscode&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;[json]&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;editor.defaultFormatter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;esbenp.prettier-vscode&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;[jsonc]&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;editor.defaultFormatter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;esbenp.prettier-vscode&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+
+<span class="w">  </span><span class="c1">// Tailwind CSS (if using)</span>
+<span class="w">  </span><span class="nt">&quot;tailwindCSS.experimental.classRegex&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">[</span><span class="s2">&quot;cva\\(([^)]*)\\)&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;[\&quot;&#39;`]([^\&quot;&#39;`]*).*?[\&quot;&#39;`]&quot;</span><span class="p">],</span>
+<span class="w">    </span><span class="p">[</span><span class="s2">&quot;cn\\(([^)]*)\\)&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;(?:&#39;|\&quot;|`)([^&#39;]*)(?:&#39;|\&quot;|`)&quot;</span><span class="p">]</span>
+<span class="w">  </span><span class="p">],</span>
+
+<span class="w">  </span><span class="c1">// Error Lens</span>
+<span class="w">  </span><span class="nt">&quot;errorLens.enabledDiagnosticLevels&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;error&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;warning&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;errorLens.fontSize&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.9em&quot;</span><span class="p">,</span>
+
+<span class="w">  </span><span class="c1">// Search</span>
+<span class="w">  </span><span class="nt">&quot;search.exclude&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;**/node_modules&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;**/.next&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;**/dist&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;**/build&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="the-improvement-consistent-team-experience">The Improvement: Consistent Team Experience</h3>
+<p><strong>Before</strong>:
+- Developer A uses tabs, Developer B uses spaces
+- Developer C's editor doesn't auto-format
+- Import organization differs between developers</p>
+<p><strong>After</strong>:
+- All developers use the same formatting
+- Code is auto-formatted on save
+- Imports are automatically organized
+- ESLint errors are fixed automatically when possible</p>
+<h3 id="recommended-extensions-file">Recommended Extensions File</h3>
+<p>Create <code>.vscode/extensions.json</code> to suggest extensions to team members:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// .vscode/extensions.json</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;recommendations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;dbaeumer.vscode-eslint&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;esbenp.prettier-vscode&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;dsznajder.es7-react-js-snippets&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;usernamehw.errorlens&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;formulahendry.auto-rename-tag&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;bradlc.vscode-tailwindcss&quot;</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>When a team member opens the project, VS Code will prompt them to install the recommended extensions.</p>
+<h2 id="phase-5-keyboard-shortcuts-and-productivity">Phase 5: Keyboard Shortcuts and Productivity</h2>
+<h2 id="phase-5-keyboard-shortcuts-and-productivity_1">Phase 5: Keyboard Shortcuts and Productivity</h2>
+<h3 id="essential-keyboard-shortcuts">Essential Keyboard Shortcuts</h3>
+<p>Master these shortcuts to dramatically increase development speed:</p>
+<h3 id="navigation">Navigation</h3>
+<table>
+<thead>
+<tr>
+<th>Shortcut</th>
+<th>Action</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Cmd/Ctrl + P</code></td>
+<td>Quick Open</td>
+<td>Jump to any file by name</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + Shift + O</code></td>
+<td>Go to Symbol</td>
+<td>Jump to function/component in current file</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + T</code></td>
+<td>Go to Symbol in Workspace</td>
+<td>Find any function across all files</td>
+</tr>
+<tr>
+<td><code>F12</code></td>
+<td>Go to Definition</td>
+<td>Jump to where a function/component is defined</td>
+</tr>
+<tr>
+<td><code>Shift + F12</code></td>
+<td>Find All References</td>
+<td>See everywhere a function is used</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + Click</code></td>
+<td>Go to Definition</td>
+<td>Alternative to F12</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + -</code></td>
+<td>Go Back</td>
+<td>Return to previous cursor position</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + Shift + -</code></td>
+<td>Go Forward</td>
+<td>Opposite of Go Back</td>
+</tr>
+</tbody>
+</table>
+<h3 id="editing">Editing</h3>
+<table>
+<thead>
+<tr>
+<th>Shortcut</th>
+<th>Action</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Cmd/Ctrl + D</code></td>
+<td>Select Next Occurrence</td>
+<td>Multi-cursor editing</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + Shift + L</code></td>
+<td>Select All Occurrences</td>
+<td>Select all instances of current word</td>
+</tr>
+<tr>
+<td><code>Alt + Click</code></td>
+<td>Add Cursor</td>
+<td>Multiple cursors at arbitrary positions</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + /</code></td>
+<td>Toggle Line Comment</td>
+<td>Comment/uncomment code</td>
+</tr>
+<tr>
+<td><code>Shift + Alt + A</code></td>
+<td>Toggle Block Comment</td>
+<td>Multi-line comment</td>
+</tr>
+<tr>
+<td><code>Alt + Up/Down</code></td>
+<td>Move Line Up/Down</td>
+<td>Reorder code</td>
+</tr>
+<tr>
+<td><code>Shift + Alt + Up/Down</code></td>
+<td>Copy Line Up/Down</td>
+<td>Duplicate lines</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + Shift + K</code></td>
+<td>Delete Line</td>
+<td>Remove entire line</td>
+</tr>
+</tbody>
+</table>
+<h3 id="code-actions">Code Actions</h3>
+<table>
+<thead>
+<tr>
+<th>Shortcut</th>
+<th>Action</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Cmd/Ctrl + .</code></td>
+<td>Quick Fix</td>
+<td>Show available fixes for errors</td>
+</tr>
+<tr>
+<td><code>F2</code></td>
+<td>Rename Symbol</td>
+<td>Rename variable/function everywhere</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + Shift + R</code></td>
+<td>Refactor</td>
+<td>Show refactoring options</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + Space</code></td>
+<td>Trigger Suggest</td>
+<td>Show autocomplete</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + Shift + Space</code></td>
+<td>Trigger Parameter Hints</td>
+<td>Show function signature</td>
+</tr>
+</tbody>
+</table>
+<h3 id="search-and-replace">Search and Replace</h3>
+<table>
+<thead>
+<tr>
+<th>Shortcut</th>
+<th>Action</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Cmd/Ctrl + F</code></td>
+<td>Find</td>
+<td>Search in current file</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + H</code></td>
+<td>Replace</td>
+<td>Find and replace in current file</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + Shift + F</code></td>
+<td>Find in Files</td>
+<td>Search across entire project</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + Shift + H</code></td>
+<td>Replace in Files</td>
+<td>Replace across entire project</td>
+</tr>
+</tbody>
+</table>
+<h3 id="panel-management">Panel Management</h3>
+<table>
+<thead>
+<tr>
+<th>Shortcut</th>
+<th>Action</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Cmd/Ctrl + B</code></td>
+<td>Toggle Sidebar</td>
+<td>Show/hide file explorer</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + J</code></td>
+<td>Toggle Panel</td>
+<td>Show/hide terminal/problems/output</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + `</code></td>
+<td>Toggle Terminal</td>
+<td>Quick terminal access</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + Shift + E</code></td>
+<td>Focus Explorer</td>
+<td>Jump to file explorer</td>
+</tr>
+<tr>
+<td><code>Cmd/Ctrl + Shift + M</code></td>
+<td>Focus Problems</td>
+<td>Jump to problems panel</td>
+</tr>
+</tbody>
+</table>
+<h3 id="custom-keybindings">Custom Keybindings</h3>
+<p>Add these to your <code>keybindings.json</code> (Cmd/Ctrl + K, Cmd/Ctrl + S):</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// keybindings.json</span>
+<span class="p">[</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cmd+shift+7&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;editor.action.commentLine&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;when&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;editorTextFocus &amp;&amp; !editorReadonly&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cmd+k cmd+c&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;editor.action.addCommentLine&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;when&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;editorTextFocus &amp;&amp; !editorReadonly&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cmd+k cmd+u&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;editor.action.removeCommentLine&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;when&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;editorTextFocus &amp;&amp; !editorReadonly&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">]</span>
+</code></pre></div>
+
+<h2 id="phase-6-debugging-configuration">Phase 6: Debugging Configuration</h2>
+<h2 id="phase-6-debugging-configuration_1">Phase 6: Debugging Configuration</h2>
+<h3 id="iteration-4-setting-up-the-debugger">Iteration 4: Setting Up the Debugger</h3>
+<p>VS Code's built-in debugger is more powerful than <code>console.log</code> debugging. Let's configure it for Next.js.</p>
+<h3 id="the-failure-consolelog-debugging-at-scale">The Failure: Console.log Debugging at Scale</h3>
+<p><strong>Current Debugging Approach</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfile.tsx</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;UserProfile rendered, userId:&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">userId</span><span class="p">);</span><span class="w">  </span><span class="c1">// ← Manual logging</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Effect running, fetching user:&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">userId</span><span class="p">);</span><span class="w">  </span><span class="c1">// ← Manual logging</span>
+
+<span class="w">    </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/users/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">res</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Response received:&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">res</span><span class="p">);</span><span class="w">  </span><span class="c1">// ← Manual logging</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">();</span>
+<span class="w">      </span><span class="p">})</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">data</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Data parsed:&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="p">);</span><span class="w">  </span><span class="c1">// ← Manual logging</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">      </span><span class="p">});</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Current user state:&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">user</span><span class="p">);</span><span class="w">  </span><span class="c1">// ← Manual logging</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">user</span><span class="o">?</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Problems</strong>:
+1. Must manually add/remove console.log statements
+2. Console output becomes cluttered with multiple components
+3. Can't inspect variable state at arbitrary points
+4. Must rebuild to see changes
+5. Console.log statements often left in production code</p>
+<h3 id="the-solution-vs-code-debugger-configuration">The Solution: VS Code Debugger Configuration</h3>
+<p>Create <code>.vscode/launch.json</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// .vscode/launch.json</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.2.0&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;configurations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Next.js: debug server-side&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;node-terminal&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;request&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;launch&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;npm run dev&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Next.js: debug client-side&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chrome&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;request&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;launch&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:3000&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;webRoot&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;${workspaceFolder}&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Next.js: debug full stack&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;node-terminal&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;request&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;launch&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;npm run dev&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;serverReadyAction&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;pattern&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;- Local:.+(https?://.+)&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;uriFormat&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;%s&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;debugWithChrome&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="using-the-debugger">Using the Debugger</h3>
+<p><strong>Step 1: Set Breakpoints</strong></p>
+<p>Click in the gutter (left of line numbers) to set a breakpoint:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// src/components/UserProfile.tsx</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">UserProfile</span><span class="p">({</span><span class="w"> </span><span class="nx">userId</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">user</span><span class="p">,</span><span class="w"> </span><span class="nx">setUser</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">User</span><span class="w"> </span><span class="err">|</span><span class="w"> </span><span class="na">null</span><span class="p">&gt;(</span><span class="kc">null</span><span class="p">);</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// ← Click here to set breakpoint (red dot appears)</span>
+<span class="w">    </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/users/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">res</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
+<span class="w">      </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">data</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// ← Click here to set another breakpoint</span>
+<span class="w">        </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+<span class="w">      </span><span class="p">});</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;{</span><span class="nx">user</span><span class="o">?</span><span class="p">.</span><span class="nx">name</span><span class="p">}&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Step 2: Start Debugging</strong></p>
+<ol>
+<li>Press <code>F5</code> or click "Run and Debug" in sidebar</li>
+<li>Select "Next.js: debug full stack"</li>
+<li>Browser opens automatically</li>
+<li>Navigate to page with UserProfile component</li>
+</ol>
+<p><strong>Step 3: Inspect Variables</strong></p>
+<p>When breakpoint hits:
+- <strong>Variables panel</strong>: Shows all local variables and their values
+- <strong>Watch panel</strong>: Add expressions to monitor (e.g., <code>user?.name</code>)
+- <strong>Call Stack panel</strong>: Shows function call hierarchy
+- <strong>Debug Console</strong>: Execute arbitrary code in current context</p>
+<p><strong>Step 4: Control Execution</strong></p>
+<table>
+<thead>
+<tr>
+<th>Button</th>
+<th>Shortcut</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Continue</td>
+<td><code>F5</code></td>
+<td>Resume execution until next breakpoint</td>
+</tr>
+<tr>
+<td>Step Over</td>
+<td><code>F10</code></td>
+<td>Execute current line, don't enter functions</td>
+</tr>
+<tr>
+<td>Step Into</td>
+<td><code>F11</code></td>
+<td>Enter function calls</td>
+</tr>
+<tr>
+<td>Step Out</td>
+<td><code>Shift + F11</code></td>
+<td>Exit current function</td>
+</tr>
+<tr>
+<td>Restart</td>
+<td><code>Cmd/Ctrl + Shift + F5</code></td>
+<td>Restart debugging session</td>
+</tr>
+<tr>
+<td>Stop</td>
+<td><code>Shift + F5</code></td>
+<td>Stop debugging</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-improvement-precise-debugging">The Improvement: Precise Debugging</h3>
+<p><strong>Before</strong> (console.log):</p>
+<div class="codehilite"><pre><span></span><code><span class="n">UserProfile</span><span class="w"> </span><span class="n">rendered</span><span class="p">,</span><span class="w"> </span><span class="nl">userId</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span>
+<span class="n">Effect</span><span class="w"> </span><span class="n">running</span><span class="p">,</span><span class="w"> </span><span class="n">fetching</span><span class="w"> </span><span class="k">user</span><span class="err">:</span><span class="w"> </span><span class="mi">123</span>
+<span class="n">Response</span><span class="w"> </span><span class="nl">received</span><span class="p">:</span><span class="w"> </span><span class="n">Response</span><span class="w"> </span><span class="err">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="err">}</span>
+<span class="k">Data</span><span class="w"> </span><span class="nl">parsed</span><span class="p">:</span><span class="w"> </span><span class="err">{</span><span class="w"> </span><span class="nl">id</span><span class="p">:</span><span class="w"> </span><span class="ss">&quot;123&quot;</span><span class="p">,</span><span class="w"> </span><span class="nl">name</span><span class="p">:</span><span class="w"> </span><span class="ss">&quot;John&quot;</span><span class="p">,</span><span class="w"> </span><span class="nl">email</span><span class="p">:</span><span class="w"> </span><span class="ss">&quot;john@example.com&quot;</span><span class="w"> </span><span class="err">}</span>
+<span class="k">Current</span><span class="w"> </span><span class="k">user</span><span class="w"> </span><span class="k">state</span><span class="err">:</span><span class="w"> </span><span class="err">{</span><span class="w"> </span><span class="nl">id</span><span class="p">:</span><span class="w"> </span><span class="ss">&quot;123&quot;</span><span class="p">,</span><span class="w"> </span><span class="nl">name</span><span class="p">:</span><span class="w"> </span><span class="ss">&quot;John&quot;</span><span class="p">,</span><span class="w"> </span><span class="nl">email</span><span class="p">:</span><span class="w"> </span><span class="ss">&quot;john@example.com&quot;</span><span class="w"> </span><span class="err">}</span>
+</code></pre></div>
+
+<p><strong>After</strong> (debugger):
+- Execution pauses at exact line
+- Inspect <code>userId</code>, <code>res</code>, <code>data</code>, <code>user</code> in Variables panel
+- Evaluate expressions in Debug Console: <code>data.name.toUpperCase()</code>
+- See call stack: <code>UserProfile → useEffect → fetch.then</code>
+- No console clutter
+- No manual logging code</p>
+<h3 id="conditional-breakpoints">Conditional Breakpoints</h3>
+<p>Right-click on a breakpoint to add a condition:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Only break when userId is &quot;123&quot;</span>
+<span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Breakpoint condition: userId === &quot;123&quot;</span>
+<span class="w">  </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/users/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">res</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
+<span class="w">    </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">data</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">));</span>
+<span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span>
+</code></pre></div>
+
+<h3 id="logpoints-non-breaking-logging">Logpoints (Non-Breaking Logging)</h3>
+<p>Right-click in gutter → "Add Logpoint":</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Logpoint: &quot;Fetching user {userId}&quot;</span>
+<span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">fetch</span><span class="p">(</span><span class="sb">`/api/users/</span><span class="si">${</span><span class="nx">userId</span><span class="si">}</span><span class="sb">`</span><span class="p">)</span><span class="w">  </span><span class="c1">// ← Logpoint here</span>
+<span class="w">    </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">res</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">())</span>
+<span class="w">    </span><span class="p">.</span><span class="nx">then</span><span class="p">((</span><span class="nx">data</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">setUser</span><span class="p">(</span><span class="nx">data</span><span class="p">));</span>
+<span class="p">},</span><span class="w"> </span><span class="p">[</span><span class="nx">userId</span><span class="p">]);</span>
+</code></pre></div>
+
+<p><strong>Output</strong> (in Debug Console):</p>
+<div class="codehilite"><pre><span></span><code>Fetching user 123
+Fetching user 456
+</code></pre></div>
+
+<p>No code changes required. Logpoints don't pause execution.</p>
+<h2 id="phase-7-snippets-and-code-generation">Phase 7: Snippets and Code Generation</h2>
+<h2 id="phase-7-snippets-and-code-generation_1">Phase 7: Snippets and Code Generation</h2>
+<h3 id="iteration-5-custom-snippets-for-react-patterns">Iteration 5: Custom Snippets for React Patterns</h3>
+<p>Create custom snippets for patterns you use frequently.</p>
+<h3 id="creating-custom-snippets">Creating Custom Snippets</h3>
+<ol>
+<li>Open Command Palette (<code>Cmd/Ctrl + Shift + P</code>)</li>
+<li>Type "Configure User Snippets"</li>
+<li>Select "typescriptreact.json"</li>
+</ol>
+<h3 id="essential-react-snippets">Essential React Snippets</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1">// typescriptreact.json</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;React Function Component with TypeScript&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;prefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;rfc&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;body&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;interface ${1:ComponentName}Props {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  $2&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;}&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;export default function ${1:ComponentName}({ $3 }: ${1:ComponentName}Props) {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  return (&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    &lt;div&gt;&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;      $0&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    &lt;/div&gt;&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  );&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;}&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;React Function Component with TypeScript&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+
+<span class="w">  </span><span class="nt">&quot;useState Hook&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;prefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;us&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;body&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;const [${1:state}, set${1/(.*)/${1:/capitalize}/}] = useState&lt;${2:type}&gt;(${3:initialValue});&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;useState hook with TypeScript&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+
+<span class="w">  </span><span class="nt">&quot;useEffect Hook&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;prefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ue&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;body&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;useEffect(() =&gt; {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  $1&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  &quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  return () =&gt; {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    $2&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  };&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;}, [$3]);&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;useEffect with cleanup&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+
+<span class="w">  </span><span class="nt">&quot;React Query useQuery&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;prefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uq&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;body&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;const { data: ${1:data}, isLoading, error } = useQuery({&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  queryKey: [${2:&#39;key&#39;}],&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  queryFn: async () =&gt; {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    const res = await fetch(${3:url});&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    if (!res.ok) throw new Error(&#39;Failed to fetch&#39;);&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    return res.json();&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  },&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;});&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;React Query useQuery hook&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+
+<span class="w">  </span><span class="nt">&quot;React Query useMutation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;prefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;um&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;body&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;const ${1:mutation} = useMutation({&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  mutationFn: async (${2:data}: ${3:Type}) =&gt; {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    const res = await fetch(${4:url}, {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;      method: &#39;POST&#39;,&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;      headers: { &#39;Content-Type&#39;: &#39;application/json&#39; },&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;      body: JSON.stringify(${2:data}),&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    });&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    if (!res.ok) throw new Error(&#39;Failed to mutate&#39;);&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    return res.json();&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  },&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  onSuccess: () =&gt; {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    $5&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  },&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;});&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;React Query useMutation hook&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+
+<span class="w">  </span><span class="nt">&quot;Zustand Store&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;prefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;zstore&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;body&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;interface ${1:Store}State {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  ${2:value}: ${3:type};&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  set${2/(.*)/${1:/capitalize}/}: (${2:value}: ${3:type}) =&gt; void;&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;}&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;export const use${1:Store} = create&lt;${1:Store}State&gt;((set) =&gt; ({&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  ${2:value}: ${4:initialValue},&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  set${2/(.*)/${1:/capitalize}/}: (${2:value}) =&gt; set({ ${2:value} }),&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;}));&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Zustand store with TypeScript&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+
+<span class="w">  </span><span class="nt">&quot;Next.js Server Component&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;prefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;nsc&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;body&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;interface ${1:ComponentName}Props {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  $2&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;}&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;export default async function ${1:ComponentName}({ $3 }: ${1:ComponentName}Props) {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  const data = await fetch(${4:url}).then(res =&gt; res.json());&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  &quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  return (&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    &lt;div&gt;&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;      $0&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    &lt;/div&gt;&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  );&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;}&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Next.js Server Component&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+
+<span class="w">  </span><span class="nt">&quot;Next.js API Route&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;prefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;napi&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;body&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;import { NextRequest, NextResponse } from &#39;next/server&#39;;&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;export async function ${1|GET,POST,PUT,DELETE,PATCH|}(request: NextRequest) {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  try {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    $2&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    &quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    return NextResponse.json({ $3 });&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  } catch (error) {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    return NextResponse.json(&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;      { error: &#39;Internal Server Error&#39; },&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;      { status: 500 }&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;    );&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  }&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;}&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Next.js API Route Handler&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+
+<span class="w">  </span><span class="nt">&quot;Try-Catch Block&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;prefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tryc&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;body&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;try {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  $1&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;} catch (error) {&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  console.error(&#39;${2:Error message}:&#39;, error);&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;  $3&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;}&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Try-catch block&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+
+<span class="w">  </span><span class="nt">&quot;Console Log&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;prefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cl&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;body&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;console.log(&#39;${1:label}:&#39;, $2);&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Console log with label&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="using-snippets">Using Snippets</h3>
+<p>Type the prefix and press <code>Tab</code>:</p>
+<p><strong>Example 1: Create a component</strong></p>
+<div class="codehilite"><pre><span></span><code>rfc&lt;Tab&gt;
+</code></pre></div>
+
+<p>Expands to:</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">interface</span><span class="w"> </span><span class="nx">ComponentNameProps</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// cursor here</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">ComponentName</span><span class="p">({</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">ComponentNameProps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">      </span><span class="c1">// cursor moves here after Tab</span>
+<span class="w">    </span><span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Example 2: Add useState</strong></p>
+<div class="codehilite"><pre><span></span><code>us&lt;Tab&gt;
+</code></pre></div>
+
+<p>Expands to:</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">state</span><span class="p">,</span><span class="w"> </span><span class="nx">setState</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">&lt;</span><span class="nt">type</span><span class="p">&gt;(</span><span class="nx">initialValue</span><span class="p">);</span>
+<span class="c1">//     ^cursor here, type name, press Tab to move to next placeholder</span>
+</code></pre></div>
+
+<h3 id="snippet-variables">Snippet Variables</h3>
+<p>Snippets support dynamic variables:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$1</code>, <code>$2</code>, <code>$3</code></td>
+<td>Tab stops (cursor positions)</td>
+</tr>
+<tr>
+<td><code>$0</code></td>
+<td>Final cursor position</td>
+</tr>
+<tr>
+<td><code>${1:placeholder}</code></td>
+<td>Tab stop with default text</td>
+</tr>
+<tr>
+<td><code>${1\|option1,option2\|}</code></td>
+<td>Dropdown selection</td>
+</tr>
+<tr>
+<td><code>${1/(.*)/${1:/capitalize}/}</code></td>
+<td>Transform text (capitalize, etc.)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-improvement-faster-boilerplate">The Improvement: Faster Boilerplate</h3>
+<p><strong>Before</strong> (manual typing):
+- Type entire component structure
+- Remember TypeScript interface syntax
+- Type prop destructuring
+- 2-3 minutes per component</p>
+<p><strong>After</strong> (with snippets):
+- Type <code>rfc&lt;Tab&gt;</code>
+- Fill in component name
+- Fill in props
+- 10-15 seconds per component</p>
+<p><strong>Time saved</strong>: ~80% reduction in boilerplate typing</p>
+<h2 id="phase-8-git-integration">Phase 8: Git Integration</h2>
+<h2 id="phase-8-git-integration_1">Phase 8: Git Integration</h2>
+<h3 id="built-in-git-features">Built-in Git Features</h3>
+<p>VS Code has excellent Git integration without additional extensions.</p>
+<h3 id="source-control-panel">Source Control Panel</h3>
+<p><strong>Access</strong>: Click Source Control icon in sidebar or press <code>Cmd/Ctrl + Shift + G</code></p>
+<p><strong>Features</strong>:
+- View changed files
+- Stage/unstage changes
+- Commit with message
+- Push/pull
+- View diff inline</p>
+<h3 id="git-commands-in-command-palette">Git Commands in Command Palette</h3>
+<p>Press <code>Cmd/Ctrl + Shift + P</code> and type "Git":</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Git: Commit</code></td>
+<td>Commit staged changes</td>
+</tr>
+<tr>
+<td><code>Git: Push</code></td>
+<td>Push to remote</td>
+</tr>
+<tr>
+<td><code>Git: Pull</code></td>
+<td>Pull from remote</td>
+</tr>
+<tr>
+<td><code>Git: Checkout to...</code></td>
+<td>Switch branches</td>
+</tr>
+<tr>
+<td><code>Git: Create Branch...</code></td>
+<td>Create new branch</td>
+</tr>
+<tr>
+<td><code>Git: Merge Branch...</code></td>
+<td>Merge another branch</td>
+</tr>
+<tr>
+<td><code>Git: Stash</code></td>
+<td>Stash changes</td>
+</tr>
+<tr>
+<td><code>Git: Unstash</code></td>
+<td>Apply stashed changes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="inline-git-blame-optional-gitlens-extension">Inline Git Blame (Optional: GitLens Extension)</h3>
+<p>If you want to see who changed each line:</p>
+<p><strong>Installation</strong>: Search for "GitLens" in Extensions panel.</p>
+<p><strong>Features</strong>:
+- Inline blame annotations
+- File history
+- Line history
+- Compare branches
+- Rich commit details</p>
+<p><strong>VS Code Settings</strong> (to reduce clutter):</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;gitlens.currentLine.enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;gitlens.hovers.currentLine.over&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;line&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;gitlens.codeLens.enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="git-ignore">Git Ignore</h3>
+<p>Create <code>.gitignore</code> in project root:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># .gitignore</span>
+<span class="c1"># Dependencies</span>
+node_modules/
+.pnp
+.pnp.js
+
+<span class="c1"># Next.js</span>
+.next/
+out/
+build/
+dist/
+
+<span class="c1"># Environment variables</span>
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+<span class="c1"># Debug</span>
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+<span class="c1"># IDE</span>
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+<span class="c1"># OS</span>
+.DS_Store
+Thumbs.db
+
+<span class="c1"># Testing</span>
+coverage/
+.nyc_output/
+
+<span class="c1"># Misc</span>
+*.log
+.cache/
+</code></pre></div>
+
+<p><strong>Note</strong>: We include <code>.vscode/settings.json</code> in Git so team members share the same configuration, but exclude personal settings like window state.</p>
+<h2 id="phase-9-performance-and-bundle-analysis">Phase 9: Performance and Bundle Analysis</h2>
+<h2 id="phase-9-performance-and-bundle-analysis_1">Phase 9: Performance and Bundle Analysis</h2>
+<h3 id="extension-import-cost">Extension: Import Cost</h3>
+<p><strong>What it does</strong>: Shows the size of imported packages inline.</p>
+<p><strong>Installation</strong>: Search for "Import Cost" in Extensions panel.</p>
+<p><strong>Example</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Shows size next to import</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">format</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;date-fns&quot;</span><span class="p">;</span><span class="w">  </span><span class="c1">// 📦 12.5 KB (gzipped: 4.2 KB)</span>
+<span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Button</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@/components/ui/button&quot;</span><span class="p">;</span><span class="w">  </span><span class="c1">// 📦 2.1 KB (gzipped: 0.8 KB)</span>
+<span class="k">import</span><span class="w"> </span><span class="nx">_</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;lodash&quot;</span><span class="p">;</span><span class="w">  </span><span class="c1">// 📦 72.4 KB (gzipped: 24.8 KB) ⚠️</span>
+</code></pre></div>
+
+<p><strong>Diagnostic Value</strong>: Immediately see when you're importing a large library. In the example above, the full lodash import is a red flag—use <code>lodash-es</code> or import specific functions instead.</p>
+<h3 id="bundle-analysis">Bundle Analysis</h3>
+<p>Add to <code>package.json</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;scripts&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;analyze&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ANALYZE=true next build&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;devDependencies&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;@next/bundle-analyzer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^14.0.0&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Create <code>next.config.js</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// next.config.js</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">withBundleAnalyzer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s2">&quot;@next/bundle-analyzer&quot;</span><span class="p">)({</span>
+<span class="w">  </span><span class="nx">enabled</span><span class="o">:</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">ANALYZE</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s2">&quot;true&quot;</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">withBundleAnalyzer</span><span class="p">({</span>
+<span class="w">  </span><span class="c1">// Your Next.js config</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p><strong>Run analysis</strong>:</p>
+<div class="codehilite"><pre><span></span><code>npm<span class="w"> </span>run<span class="w"> </span>analyze
+</code></pre></div>
+
+<p>Opens interactive treemap showing bundle composition. Use this to identify:
+- Large dependencies that could be replaced
+- Duplicate packages
+- Unused code that should be removed</p>
+<h2 id="the-complete-setup-checklist">The Complete Setup Checklist</h2>
+<h2 id="the-complete-setup-checklist_1">The Complete Setup Checklist</h2>
+<h3 id="initial-setup-one-time">Initial Setup (One-Time)</h3>
+<p><strong>Extensions</strong> (install these):
+- [ ] ESLint (Microsoft)
+- [ ] Prettier - Code formatter (Prettier)
+- [ ] ES7+ React/Redux/React-Native snippets (dsznajder)
+- [ ] Error Lens (Alexander)
+- [ ] Auto Rename Tag (Jun Han)
+- [ ] Tailwind CSS IntelliSense (Tailwind Labs) - if using Tailwind
+- [ ] Import Cost (Wix) - optional but recommended
+- [ ] GitLens (GitKraken) - optional</p>
+<p><strong>Project Files</strong> (create these):
+- [ ] <code>.vscode/settings.json</code> - Workspace settings
+- [ ] <code>.vscode/extensions.json</code> - Recommended extensions
+- [ ] <code>.vscode/launch.json</code> - Debugger configuration
+- [ ] <code>.eslintrc.json</code> - ESLint configuration
+- [ ] <code>.prettierrc</code> - Prettier configuration
+- [ ] <code>tsconfig.json</code> - TypeScript configuration (strict mode)
+- [ ] <code>.gitignore</code> - Git ignore rules</p>
+<p><strong>VS Code Settings</strong> (configure these):
+- [ ] Format on save enabled
+- [ ] ESLint auto-fix on save enabled
+- [ ] TypeScript strict mode enabled
+- [ ] Auto-import enabled
+- [ ] Organize imports on save enabled</p>
+<p><strong>Custom Snippets</strong> (create these):
+- [ ] React component snippet (<code>rfc</code>)
+- [ ] useState snippet (<code>us</code>)
+- [ ] useEffect snippet (<code>ue</code>)
+- [ ] React Query snippets (<code>uq</code>, <code>um</code>)
+- [ ] Zustand store snippet (<code>zstore</code>)</p>
+<h3 id="per-project-setup-each-new-project">Per-Project Setup (Each New Project)</h3>
+<ul>
+<li>[ ] Copy <code>.vscode/</code> folder from template</li>
+<li>[ ] Install dependencies: <code>npm install</code></li>
+<li>[ ] Verify ESLint works: Open a <code>.tsx</code> file, introduce an error, see red squiggle</li>
+<li>[ ] Verify Prettier works: Save a file, see it auto-format</li>
+<li>[ ] Verify TypeScript works: Remove a type, see error</li>
+<li>[ ] Set up debugger: Press F5, verify it launches</li>
+<li>[ ] Test snippets: Type <code>rfc&lt;Tab&gt;</code>, verify it expands</li>
+</ul>
+<h3 id="verification-tests">Verification Tests</h3>
+<p><strong>Test 1: ESLint Detection</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Create this file and verify you see errors</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Test</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">count</span><span class="p">,</span><span class="w"> </span><span class="nx">setCount</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="mf">0</span><span class="p">);</span><span class="w">  </span><span class="c1">// ← Should show error: useState not imported</span>
+
+<span class="w">  </span><span class="nx">useEffect</span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">count</span><span class="p">);</span>
+<span class="w">  </span><span class="p">});</span><span class="w">  </span><span class="c1">// ← Should show warning: missing dependency array</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;{</span><span class="nx">count</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Expected</strong>: 2 errors/warnings visible immediately.</p>
+<p><strong>Test 2: Auto-Format</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Type this messily and save</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Test</span><span class="p">(){</span><span class="kd">const</span><span class="w"> </span><span class="nx">x</span><span class="o">=</span><span class="mf">1</span><span class="p">;</span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;{</span><span class="nx">x</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;}</span>
+</code></pre></div>
+
+<p><strong>Expected</strong>: Auto-formats to:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Test</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1</span><span class="p">;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;{</span><span class="nx">x</span><span class="p">}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Test 3: TypeScript Checking</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Create this and verify you see type error</span>
+<span class="kd">interface</span><span class="w"> </span><span class="nx">Props</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">Test</span><span class="p">({</span><span class="w"> </span><span class="nx">name</span><span class="w"> </span><span class="p">}</span><span class="o">:</span><span class="w"> </span><span class="nx">Props</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;{</span><span class="nx">name</span><span class="p">.</span><span class="nx">toUpperCase</span><span class="p">()}&lt;/</span><span class="nt">div</span><span class="p">&gt;;</span>
+<span class="p">}</span>
+
+<span class="c1">// Usage - should show error</span>
+<span class="p">&lt;</span><span class="nt">Test</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="p">{</span><span class="mf">123</span><span class="p">}</span><span class="w"> </span><span class="p">/&gt;</span><span class="w">  </span><span class="c1">// ← Type error: number not assignable to string</span>
+</code></pre></div>
+
+<p><strong>Expected</strong>: Red squiggle under <code>name={123}</code>.</p>
+<p><strong>Test 4: Debugger</strong></p>
+<ol>
+<li>Set breakpoint in any component</li>
+<li>Press F5</li>
+<li>Navigate to that component in browser</li>
+<li>Verify execution pauses at breakpoint</li>
+</ol>
+<p><strong>Expected</strong>: Debugger pauses, Variables panel shows component state.</p>
+<h2 id="troubleshooting-common-issues">Troubleshooting Common Issues</h2>
+<h2 id="troubleshooting-common-issues_1">Troubleshooting Common Issues</h2>
+<h3 id="issue-1-eslint-not-working">Issue 1: ESLint Not Working</h3>
+<p><strong>Symptoms</strong>:
+- No red squiggles on obvious errors
+- Problems panel is empty
+- ESLint extension shows "ESLint is disabled"</p>
+<p><strong>Diagnostic Steps</strong>:</p>
+<ol>
+<li>Check ESLint extension is installed and enabled</li>
+<li>Open Output panel (<code>Cmd/Ctrl + Shift + U</code>)</li>
+<li>Select "ESLint" from dropdown</li>
+<li>Look for error messages</li>
+</ol>
+<p><strong>Common Causes</strong>:</p>
+<p><strong>Cause 1: ESLint not installed in project</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Solution: Install ESLint</span>
+npm<span class="w"> </span>install<span class="w"> </span>--save-dev<span class="w"> </span>eslint
+</code></pre></div>
+
+<p><strong>Cause 2: No ESLint config file</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Solution: Create .eslintrc.json</span>
+npx<span class="w"> </span>eslint<span class="w"> </span>--init
+</code></pre></div>
+
+<p><strong>Cause 3: ESLint disabled in VS Code settings</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Check .vscode/settings.json - should NOT have:</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;eslint.enable&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">  </span><span class="c1">// ← Remove this line</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Cause 4: Wrong working directory</strong></p>
+<p>ESLint looks for config in workspace root. If you opened a parent folder, ESLint won't find the config.</p>
+<p><strong>Solution</strong>: Open the project folder directly in VS Code, not a parent folder.</p>
+<h3 id="issue-2-prettier-not-formatting">Issue 2: Prettier Not Formatting</h3>
+<p><strong>Symptoms</strong>:
+- Code doesn't format on save
+- Manual format command does nothing</p>
+<p><strong>Diagnostic Steps</strong>:</p>
+<ol>
+<li>Open Command Palette (<code>Cmd/Ctrl + Shift + P</code>)</li>
+<li>Type "Format Document"</li>
+<li>If prompted, select "Prettier" as formatter</li>
+</ol>
+<p><strong>Common Causes</strong>:</p>
+<p><strong>Cause 1: Prettier not set as default formatter</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Solution: Add to .vscode/settings.json</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;editor.defaultFormatter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;esbenp.prettier-vscode&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;[typescriptreact]&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;editor.defaultFormatter&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;esbenp.prettier-vscode&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Cause 2: Format on save not enabled</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Solution: Add to .vscode/settings.json</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;editor.formatOnSave&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Cause 3: Conflicting formatters</strong></p>
+<p>If you have multiple formatter extensions installed (e.g., Beautify, Prettier, ESLint), they may conflict.</p>
+<p><strong>Solution</strong>: Disable or uninstall other formatters, keep only Prettier.</p>
+<h3 id="issue-3-typescript-errors-not-showing">Issue 3: TypeScript Errors Not Showing</h3>
+<p><strong>Symptoms</strong>:
+- Type errors in terminal but not in editor
+- Red squiggles missing on obvious type errors</p>
+<p><strong>Diagnostic Steps</strong>:</p>
+<ol>
+<li>Check bottom-right corner of VS Code</li>
+<li>Look for TypeScript version indicator</li>
+<li>Click it to see if TypeScript is active</li>
+</ol>
+<p><strong>Common Causes</strong>:</p>
+<p><strong>Cause 1: Using wrong TypeScript version</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Solution: Add to .vscode/settings.json</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;typescript.tsdk&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;node_modules/typescript/lib&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;typescript.enablePromptUseWorkspaceTsdk&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Cause 2: TypeScript server crashed</strong></p>
+<p><strong>Solution</strong>: 
+1. Open Command Palette
+2. Type "TypeScript: Restart TS Server"
+3. Press Enter</p>
+<p><strong>Cause 3: File not included in tsconfig.json</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Check tsconfig.json includes your files</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;include&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;**/*.ts&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;**/*.tsx&quot;</span><span class="p">],</span><span class="w">  </span><span class="c1">// ← Should include your file patterns</span>
+<span class="w">  </span><span class="nt">&quot;exclude&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;node_modules&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="issue-4-debugger-not-hitting-breakpoints">Issue 4: Debugger Not Hitting Breakpoints</h3>
+<p><strong>Symptoms</strong>:
+- Breakpoints show gray circle instead of red
+- Debugger runs but never pauses
+- "Breakpoint ignored because generated code not found" message</p>
+<p><strong>Common Causes</strong>:</p>
+<p><strong>Cause 1: Source maps not enabled</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Solution: Check next.config.js</span>
+<span class="err">module.expor</span><span class="kc">ts</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Ensure source maps are enabled in development</span>
+<span class="w">  </span><span class="err">produc</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="err">BrowserSourceMaps</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">  </span><span class="c1">// Keep false for production</span>
+<span class="w">  </span><span class="c1">// No need to explicitly enable for dev - enabled by default</span>
+<span class="p">}</span><span class="err">;</span>
+</code></pre></div>
+
+<p><strong>Cause 2: Wrong URL in launch.json</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Check .vscode/launch.json</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;configurations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chrome&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:3000&quot;</span><span class="p">,</span><span class="w">  </span><span class="c1">// ← Must match your dev server port</span>
+<span class="w">      </span><span class="nt">&quot;webRoot&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;${workspaceFolder}&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Cause 3: Breakpoint in Server Component</strong></p>
+<p>Server Components run on the server, not in the browser. Use the "debug server-side" configuration instead.</p>
+<p><strong>Solution</strong>: Use the correct debug configuration:
+- Client Components: "Next.js: debug client-side"
+- Server Components: "Next.js: debug server-side"
+- Both: "Next.js: debug full stack"</p>
+<h3 id="issue-5-import-auto-complete-not-working">Issue 5: Import Auto-Complete Not Working</h3>
+<p><strong>Symptoms</strong>:
+- Typing component name doesn't suggest import
+- Must manually type import statements</p>
+<p><strong>Solution</strong>:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Add to .vscode/settings.json</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;typescript.suggest.autoImports&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;typescript.preferences.includePackageJsonAutoImports&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;on&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;javascript.suggest.autoImports&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="issue-6-slow-performance">Issue 6: Slow Performance</h3>
+<p><strong>Symptoms</strong>:
+- VS Code feels sluggish
+- High CPU usage
+- Typing has noticeable lag</p>
+<p><strong>Diagnostic Steps</strong>:</p>
+<ol>
+<li>Open Command Palette</li>
+<li>Type "Developer: Show Running Extensions"</li>
+<li>Look for extensions with high CPU/memory usage</li>
+</ol>
+<p><strong>Common Causes</strong>:</p>
+<p><strong>Cause 1: Too many extensions</strong></p>
+<p><strong>Solution</strong>: Disable extensions you don't actively use. Keep only essential ones.</p>
+<p><strong>Cause 2: Large node_modules folder</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Solution: Exclude from file watching</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;files.watcherExclude&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;**/node_modules/**&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;**/.next/**&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;**/dist/**&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Cause 3: TypeScript checking large files</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Solution: Exclude generated files from TypeScript</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;typescript.tsdk&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;node_modules/typescript/lib&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;typescript.disableAutomaticTypeAcquisition&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>And in <code>tsconfig.json</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;exclude&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;node_modules&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;.next&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;out&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;dist&quot;</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h2 id="the-journey-from-default-to-optimized">The Journey: From Default to Optimized</h2>
+<h2 id="the-journey-from-default-to-optimized_1">The Journey: From Default to Optimized</h2>
+<h3 id="the-setup-evolution-table">The Setup Evolution Table</h3>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Configuration</th>
+<th>Problems Solved</th>
+<th>Time Investment</th>
+<th>Productivity Gain</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Vanilla VS Code</td>
+<td>None</td>
+<td>0 min</td>
+<td>Baseline</td>
+</tr>
+<tr>
+<td>1</td>
+<td>+ ESLint</td>
+<td>Catches syntax errors, React mistakes</td>
+<td>10 min</td>
+<td>+30% (fewer runtime errors)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>+ Prettier</td>
+<td>Consistent formatting</td>
+<td>5 min</td>
+<td>+10% (no formatting debates)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>+ TypeScript strict</td>
+<td>Type safety, refactoring confidence</td>
+<td>15 min</td>
+<td>+40% (catch bugs at compile time)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>+ Debugger</td>
+<td>Precise debugging vs. console.log</td>
+<td>10 min</td>
+<td>+25% (faster bug diagnosis)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>+ Custom snippets</td>
+<td>Fast boilerplate generation</td>
+<td>20 min</td>
+<td>+15% (less typing)</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>Complete setup</strong></td>
+<td><strong>All of the above</strong></td>
+<td><strong>60 min</strong></td>
+<td><strong>~120% productivity increase</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="final-configuration-summary">Final Configuration Summary</h3>
+<p><strong>Extensions Installed</strong> (7 essential):
+1. ESLint - Error detection
+2. Prettier - Code formatting
+3. ES7+ React snippets - Fast boilerplate
+4. Error Lens - Inline errors
+5. Auto Rename Tag - Paired tag editing
+6. Tailwind CSS IntelliSense - Tailwind autocomplete (if using)
+7. Import Cost - Bundle size awareness</p>
+<p><strong>Configuration Files Created</strong> (7 files):
+1. <code>.vscode/settings.json</code> - Editor behavior
+2. <code>.vscode/extensions.json</code> - Recommended extensions
+3. <code>.vscode/launch.json</code> - Debugger setup
+4. <code>.eslintrc.json</code> - Linting rules
+5. <code>.prettierrc</code> - Formatting rules
+6. <code>tsconfig.json</code> - TypeScript strict mode
+7. <code>.gitignore</code> - Version control exclusions</p>
+<p><strong>Custom Snippets Added</strong> (8 snippets):
+1. <code>rfc</code> - React Function Component
+2. <code>us</code> - useState hook
+3. <code>ue</code> - useEffect hook
+4. <code>uq</code> - React Query useQuery
+5. <code>um</code> - React Query useMutation
+6. <code>zstore</code> - Zustand store
+7. <code>nsc</code> - Next.js Server Component
+8. <code>napi</code> - Next.js API Route</p>
+<h3 id="decision-framework-when-to-customize-further">Decision Framework: When to Customize Further</h3>
+<p><strong>Add more extensions when</strong>:
+- You use a specific library frequently (e.g., Prisma extension for Prisma ORM)
+- You need specialized tooling (e.g., Docker extension for containerization)
+- Team agrees on additional tooling</p>
+<p><strong>Avoid adding extensions when</strong>:
+- Functionality is already built into VS Code
+- Extension duplicates another extension's features
+- Extension significantly impacts performance
+- You don't use the feature weekly</p>
+<p><strong>Create custom snippets when</strong>:
+- You type the same boilerplate 5+ times per week
+- Pattern is team-specific (not covered by existing snippets)
+- Snippet saves 30+ seconds per use</p>
+<p><strong>Avoid custom snippets when</strong>:
+- Pattern varies too much to template
+- Existing snippet is "close enough"
+- You'd spend more time maintaining the snippet than typing manually</p>
+<h3 id="lessons-learned">Lessons Learned</h3>
+<p><strong>1. Configuration is a force multiplier</strong></p>
+<p>One hour of setup saves hours of debugging and formatting debates. The ROI is immediate and compounds over time.</p>
+<p><strong>2. Less is more with extensions</strong></p>
+<p>10 well-chosen extensions beat 50 random ones. Each extension adds cognitive load and potential conflicts.</p>
+<p><strong>3. Team consistency matters more than personal preference</strong></p>
+<p>Shared <code>.vscode/settings.json</code> ensures everyone sees the same errors, uses the same formatting, and has the same debugging setup. This eliminates "works on my machine" problems.</p>
+<p><strong>4. The editor should catch errors before the browser</strong></p>
+<p>If you're discovering bugs in the browser that TypeScript or ESLint could have caught, your configuration is too loose. Tighten it.</p>
+<p><strong>5. Debugger &gt; console.log</strong></p>
+<p>Learning the debugger takes 30 minutes. It saves hours over the lifetime of a project. Make the investment.</p>
+<p><strong>6. Snippets are personal productivity tools</strong></p>
+<p>Create snippets for patterns YOU type frequently. Don't cargo-cult someone else's snippet collection.</p>
+<p><strong>7. Configuration evolves with the project</strong></p>
+<p>Start with the essentials. Add tooling as needs emerge. Don't over-configure on day one.</p>
+<h2 id="quick-reference">Quick Reference</h2>
+<h2 id="quick-reference_1">Quick Reference</h2>
+<h3 id="essential-keyboard-shortcuts_1">Essential Keyboard Shortcuts</h3>
+<p><strong>Navigation</strong>:
+- <code>Cmd/Ctrl + P</code> - Quick Open (jump to file)
+- <code>Cmd/Ctrl + Shift + O</code> - Go to Symbol (jump to function)
+- <code>F12</code> - Go to Definition
+- <code>Shift + F12</code> - Find All References</p>
+<p><strong>Editing</strong>:
+- <code>Cmd/Ctrl + D</code> - Select Next Occurrence
+- <code>Cmd/Ctrl + /</code> - Toggle Comment
+- <code>Alt + Up/Down</code> - Move Line
+- <code>Shift + Alt + Up/Down</code> - Copy Line</p>
+<p><strong>Code Actions</strong>:
+- <code>Cmd/Ctrl + .</code> - Quick Fix
+- <code>F2</code> - Rename Symbol
+- <code>Cmd/Ctrl + Space</code> - Trigger Autocomplete</p>
+<p><strong>Debugging</strong>:
+- <code>F5</code> - Start Debugging
+- <code>F9</code> - Toggle Breakpoint
+- <code>F10</code> - Step Over
+- <code>F11</code> - Step Into</p>
+<h3 id="essential-commands">Essential Commands</h3>
+<p><strong>Format</strong>:
+- <code>Shift + Alt + F</code> - Format Document
+- <code>Cmd/Ctrl + K, Cmd/Ctrl + F</code> - Format Selection</p>
+<p><strong>Search</strong>:
+- <code>Cmd/Ctrl + F</code> - Find in File
+- <code>Cmd/Ctrl + Shift + F</code> - Find in Files
+- <code>Cmd/Ctrl + H</code> - Replace in File</p>
+<p><strong>Terminal</strong>:
+- <code>Cmd/Ctrl + `</code> - Toggle Terminal
+- <code>Cmd/Ctrl + Shift +</code> ` - New Terminal</p>
+<h3 id="configuration-file-locations">Configuration File Locations</h3>
+<div class="codehilite"><pre><span></span><code>project-root/
+├── .vscode/
+│   ├── settings.json       ← Workspace settings
+│   ├── extensions.json     ← Recommended extensions
+│   └── launch.json         ← Debugger configuration
+├── .eslintrc.json          ← ESLint rules
+├── .prettierrc             ← Prettier rules
+├── tsconfig.json           ← TypeScript configuration
+└── .gitignore              ← Git exclusions
+</code></pre></div>
+
+<h3 id="snippet-triggers">Snippet Triggers</h3>
+<table>
+<thead>
+<tr>
+<th>Trigger</th>
+<th>Expands To</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rfc</code></td>
+<td>React Function Component</td>
+</tr>
+<tr>
+<td><code>us</code></td>
+<td>useState hook</td>
+</tr>
+<tr>
+<td><code>ue</code></td>
+<td>useEffect hook</td>
+</tr>
+<tr>
+<td><code>uq</code></td>
+<td>React Query useQuery</td>
+</tr>
+<tr>
+<td><code>um</code></td>
+<td>React Query useMutation</td>
+</tr>
+<tr>
+<td><code>zstore</code></td>
+<td>Zustand store</td>
+</tr>
+<tr>
+<td><code>nsc</code></td>
+<td>Next.js Server Component</td>
+</tr>
+<tr>
+<td><code>napi</code></td>
+<td>Next.js API Route</td>
+</tr>
+</tbody>
+</table>
+<h3 id="troubleshooting-quick-checks">Troubleshooting Quick Checks</h3>
+<p><strong>ESLint not working?</strong>
+1. Check extension installed
+2. Check <code>.eslintrc.json</code> exists
+3. Check Output panel → ESLint</p>
+<p><strong>Prettier not formatting?</strong>
+1. Check extension installed
+2. Check <code>editor.formatOnSave: true</code>
+3. Check <code>editor.defaultFormatter: "esbenp.prettier-vscode"</code></p>
+<p><strong>TypeScript errors not showing?</strong>
+1. Check bottom-right corner for TS version
+2. Restart TS Server (Command Palette)
+3. Check <code>tsconfig.json</code> includes your files</p>
+<p><strong>Debugger not working?</strong>
+1. Check <code>.vscode/launch.json</code> exists
+2. Check URL matches dev server
+3. Check source maps enabled</p>
+<h3 id="performance-optimization">Performance Optimization</h3>
+<p><strong>If VS Code is slow</strong>:
+1. Disable unused extensions
+2. Exclude large folders from file watching
+3. Exclude generated files from TypeScript checking
+4. Close unused editor tabs</p>
+<h3 id="getting-help">Getting Help</h3>
+<p><strong>VS Code Documentation</strong>: https://code.visualstudio.com/docs
+<strong>React DevTools</strong>: https://react.dev/learn/react-developer-tools
+<strong>TypeScript Handbook</strong>: https://www.typescriptlang.org/docs/handbook/intro.html
+<strong>ESLint Rules</strong>: https://eslint.org/docs/rules/
+<strong>Prettier Options</strong>: https://prettier.io/docs/en/options.html</p>
+        </div>
+        <div class="footer">
+            Generated on 2025-12-03 12:33:33 | Made with ❤️ by GitHub Pages Generator
+        </div>
+    </div>
+    <script>
+        // Syntax highlighting for code blocks
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Highlight code blocks
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+            
+            // Add copy buttons to code blocks
+            document.querySelectorAll('pre').forEach((pre) => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.textContent = 'Copy';
+                
+                button.addEventListener('click', () => {
+                    const code = pre.querySelector('code').textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        button.textContent = 'Error';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+                
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

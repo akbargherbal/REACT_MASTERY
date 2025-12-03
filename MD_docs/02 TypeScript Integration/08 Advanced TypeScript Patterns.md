@@ -1,845 +1,2707 @@
 # Chapter 8: Advanced TypeScript Patterns
 
-## Discriminated Unions for Component Variants
+## Discriminated unions for component variants
 
-## The Challenge of Conditional Props
+## Discriminated unions for component variants
 
-As React components grow in complexity, they often need to render different UI based on a specific state or variant. A common example is a component that displays loading, success, or error states. The naive approach to typing such a component often involves a collection of optional props, which creates a hidden minefield of impossible and invalid prop combinations.
+In Chapter 7, we built a type-safe User Profile Dashboard. It worked well for simple cases, but as our application grew, we encountered a common problem: components that need to behave differently based on their configuration.
 
-TypeScript gives us a powerful pattern to solve this elegantly: **Discriminated Unions**. This pattern allows us to link the value of one prop (the "discriminant") to the shape of all other allowed props, making invalid states a compile-time error.
-
-### Phase 1: Establish the Reference Implementation
-
-Let's build our anchor example for this chapter: a `StatusIndicator` component. Its job is to display a message to the user reflecting the status of some operation.
-
-It needs to handle three states:
-1.  `loading`: Displays a simple loading message.
-2.  `success`: Displays a success title and an optional message.
-3.  `error`: Displays an error title and a required error message.
-
-Here is our initial, naive implementation. It "works," but it's hiding a serious type safety issue.
-
-**Project Structure**:
-```
-src/
-└── components/
-    └── StatusIndicator.tsx   ← Our reference implementation
-```
-
-```tsx
-// src/components/StatusIndicator.tsx
-
-import React from 'react';
-
-// Naive props with optional everything
-type StatusIndicatorProps = {
-  status: 'loading' | 'success' | 'error';
-  successTitle?: string;
-  successMessage?: string;
-  errorTitle?: string;
-  errorMessage?: string;
-};
-
-export const StatusIndicator = ({
-  status,
-  successTitle,
-  successMessage,
-  errorTitle,
-  errorMessage,
-}: StatusIndicatorProps) => {
-  if (status === 'loading') {
-    return <div>Loading...</div>;
-  }
-
-  if (status === 'success') {
-    return (
-      <div>
-        <h2>{successTitle || 'Success!'}</h2>
-        {successMessage && <p>{successMessage}</p>}
-      </div>
-    );
-  }
-
-  if (status === 'error') {
-    return (
-      <div>
-        <h2>{errorTitle || 'Error'}</h2>
-        <p>{errorMessage}</p>
-      </div>
-    );
-  }
-
-  return null;
-};
-```
-
-This component seems fine on the surface. We can use it like this:
-
-```tsx
-// Example usage in another component
-import { StatusIndicator } from './components/StatusIndicator';
-
-function App() {
-  return (
-    <div>
-      <StatusIndicator status="loading" />
-      <StatusIndicator status="success" successTitle="Profile Updated" />
-      <StatusIndicator status="error" errorMessage="Password is too short." />
-    </div>
-  );
-}
-```
-
-### Iteration 1: The Impossible State Failure
-
-**Current state recap**: Our component renders correctly for valid prop combinations.
-
-**Current limitation**: The `StatusIndicatorProps` type allows developers to pass nonsensical and contradictory props. TypeScript offers no protection because all conditional props are optional (`?`).
-
-**New scenario introduction**: What happens if a developer accidentally provides an `errorMessage` when the `status` is `'success'`? Or a `successTitle` when the `status` is `'loading'`?
-
-Let's demonstrate this failure.
-
-```tsx
-// This code compiles without any TypeScript errors!
-function AppWithImpossibleState() {
-  return (
-    <StatusIndicator
-      status="success"
-      successTitle="Payment Sent"
-      // This prop is completely irrelevant and nonsensical for a 'success' status
-      errorMessage="Your credit card was declined."
-    />
-  );
-}
-```
-
-### Diagnostic Analysis: Reading the Failure
-
-**Browser Behavior**:
-The component renders the "success" UI. The `errorMessage` prop is passed but ignored by the component's rendering logic. The bug isn't a crash; it's silent data inconsistency. A developer reading the code would be incredibly confused by this component's usage.
-
-**Browser Console Output**:
-```
-(No errors or warnings)
-```
-
-**React DevTools Evidence**:
-- **Component tree state**: `StatusIndicator` is rendered.
-- **Props/State values**:
-  - `status`: "success"
-  - `successTitle`: "Payment Sent"
-  - `errorMessage`: "Your credit card was declined."
-  - The other props are `undefined`.
-- **Render count**: Normal.
-
-**Let's parse this evidence**:
-
-1.  **What the user experiences**: The UI looks correct for a success state, but the underlying props are a lie.
-    -   Expected: The type system should prevent a developer from passing an `errorMessage` when `status` is `'success'`.
-    -   Actual: TypeScript allows this impossible combination, leading to confusing code and potential bugs if the logic ever changes to use `errorMessage` unexpectedly.
-
-2.  **What the console reveals**: Nothing. This is a silent failure, the most dangerous kind. The problem lies in the type definition, not the runtime logic.
-
-3.  **What DevTools shows**: DevTools confirms that the contradictory props are being passed down to the component, even though they are not used.
-
-4.  **Root cause identified**: The `StatusIndicatorProps` type uses optional properties (`?`) for all variants, creating a single, loose "bag" of props. It fails to create a link between the `status` prop and the other props that are valid *for that specific status*.
-
-5.  **Why the current approach can't solve this**: We could add more runtime checks inside the component to warn about extraneous props, but that's defensive coding for a problem that should be solved at the type level. The goal is to make invalid states *unrepresentable*.
-
-6.  **What we need**: We need a way to define `StatusIndicatorProps` as a union of more specific types. We need to tell TypeScript: "If `status` is `'success'`, then `successTitle` is a valid prop, but `errorMessage` is not." This is precisely what Discriminated Unions are for.
-
-### Technique Introduced: Discriminated Unions
-
-A discriminated union is a pattern built on three components:
-1.  **The Discriminant**: A shared property with a literal type (e.g., `status: 'success'`). This is the property TypeScript will use to "discriminate" between the different types in the union.
-2.  **The Union**: A set of different object types joined together with the `|` operator.
-3.  **Specific Properties**: Each object type in the union defines the unique properties for that specific variant.
-
-By combining these, we can refactor our props.
-
-### Solution Implementation: Refactoring to a Discriminated Union
-
-Let's fix `StatusIndicatorProps`.
-
-**Before** (Iteration 0):
-
-```typescript
-// src/components/StatusIndicator.tsx - Before
-type StatusIndicatorProps = {
-  status: 'loading' | 'success' | 'error';
-  successTitle?: string;
-  successMessage?: string;
-  errorTitle?: string;
-  errorMessage?: string;
-};
-```
-
-**After** (Iteration 1):
-
-```typescript
-// src/components/StatusIndicator.tsx - After
-
-type LoadingState = {
-  status: 'loading';
-};
-
-type SuccessState = {
-  status: 'success';
-  successTitle: string;
-  successMessage?: string; // Still optional within the success state
-};
-
-type ErrorState = {
-  status: 'error';
-  errorTitle?: string;
-  errorMessage: string; // Required for the error state
-};
-
-// The discriminated union!
-type StatusIndicatorProps = LoadingState | SuccessState | ErrorState;
-```
-
-Notice how we've created three distinct, unambiguous types. Now, `StatusIndicatorProps` can be *one of* these three shapes, but never a mix-and-match combination.
-
-The component's implementation remains almost the same, but inside, TypeScript is now much smarter. When we check `props.status`, TypeScript will narrow the type of `props` to the corresponding state type.
-
-```tsx
-// src/components/StatusIndicator.tsx - Updated Component Logic
-
-// ... (type definitions from above)
-
-export const StatusIndicator = (props: StatusIndicatorProps) => {
-  // We can use a switch statement, which works beautifully with discriminated unions
-  switch (props.status) {
-    case 'loading':
-      return <div>Loading...</div>;
-
-    case 'success':
-      // Inside this block, TS knows `props` is of type `SuccessState`.
-      // `props.successTitle` is available and is a string.
-      // `props.errorMessage` would cause a compile error here.
-      return (
-        <div>
-          <h2>{props.successTitle}</h2>
-          {props.successMessage && <p>{props.successMessage}</p>}
-        </div>
-      );
-
-    case 'error':
-      // Inside this block, TS knows `props` is of type `ErrorState`.
-      // `props.errorMessage` is available and is a string.
-      return (
-        <div>
-          <h2>{props.errorTitle || 'Error'}</h2>
-          <p>{props.errorMessage}</p>
-        </div>
-      );
-    
-    default:
-      // This helps with exhaustiveness checking. If we add a new status
-      // to the union but forget a case, TypeScript will error here.
-      const _exhaustiveCheck: never = props;
-      return _exhaustiveCheck;
-  }
-};
-```
-
-### Verification
-
-Now, let's try to create our "impossible state" component again.
-
-```tsx
-// This code now causes a compile-time error!
-function AppWithImpossibleState() {
-  return (
-    <StatusIndicator
-      status="success"
-      successTitle="Payment Sent"
-      errorMessage="Your credit card was declined." // <-- ERROR!
-    />
-  );
-}
-```
-
-**Terminal Output**:
-```bash
-src/App.tsx:10:7 - error TS2322: Type '{ status: "success"; successTitle: string; errorMessage: string; }' is not assignable to type 'IntrinsicAttributes & (LoadingState | SuccessState | ErrorState)'.
-  Type '{ status: "success"; successTitle: string; errorMessage: string; }' is not assignable to type 'SuccessState'.
-    Object literal may only specify known properties, and 'errorMessage' does not exist in type 'SuccessState'.
-
-10       errorMessage="Your credit card was declined."
-         ~~~~~~~~~~~~
-
-Found 1 error.
-```
-
-**Expected vs. Actual Improvement**:
-- **Expected**: TypeScript should prevent us from mixing props from different states.
-- **Actual**: TypeScript now produces a clear error, explaining that `errorMessage` is not a valid property for a component whose `status` is `'success'`. We have made the invalid state unrepresentable.
-
-**Limitation preview**: Our types are now robust and safe. But what if we need to create new types based on these? For example, a type for just the success data, or props for a different component that omits the `status` field? Manually copying and editing types is brittle. We need a way to transform existing types.
-
-## Utility Types That Actually Matter
-
-## Don't Repeat Yourself: Transforming Types
-
-**Current state recap**: We have a strongly-typed `StatusIndicator` component using a discriminated union for its props. This prevents impossible prop combinations at compile time.
-
-**Current limitation**: Our type definitions (`LoadingState`, `SuccessState`, `ErrorState`, and `StatusIndicatorProps`) are great, but they are static. What if we need to derive a new type from them? For example:
-- We want to create a `LogEntry` type that includes all props from `SuccessState` but omits the `status` field.
-- We want to create a `DisplayMessage` component that only needs the `successTitle` and `successMessage` from `SuccessState`.
-
-The naive approach is to copy-paste the properties into a new type definition.
-
-### Failure Demonstration: Type Duplication
-
-Let's say we need a type for logging successful events. We could copy the fields from `SuccessState`.
-
-```typescript
-// Manually copying properties from SuccessState
-type SuccessLog = {
-  successTitle: string;
-  successMessage?: string;
-};
-
-// Later, we decide to add a transaction ID to the success state
-type SuccessState = {
-  status: 'success';
-  successTitle: string;
-  successMessage?: string;
-  transactionId: string; // <-- New property!
-};
-
-// Oh no! Our SuccessLog type is now out of sync.
-// It's missing `transactionId`, and we have to remember to update it manually.
-const log: SuccessLog = {
-  successTitle: 'Payment Received',
-  // transactionId is missing, but no error is thrown here.
-};
-```
-
-### Diagnostic Analysis: A Maintenance Failure
-
-This isn't a runtime error, but a critical failure of maintainability and the DRY (Don't Repeat Yourself) principle.
-
-1.  **What the developer experiences**: Codebases become littered with slightly different, manually synchronized types. When one type changes, a cascade of other types must be manually updated. It's easy to forget one, leading to stale types and subtle bugs.
-2.  **Root cause identified**: Manual duplication of type information. We are not treating our types as a single source of truth.
-3.  **Why the current approach can't solve this**: Manual copying is inherently error-prone. There is no link between the original type and the copied one.
-4.  **What we need**: A set of tools to create new types by transforming existing ones programmatically.
-
-### Technique Introduced: TypeScript Utility Types
-
-TypeScript provides a global set of utility types that act like functions for your types. They take one or more types as input and produce a new type as output. For React development, a few are indispensable.
-
-Let's explore the most important ones using our `StatusIndicatorProps` as the source.
-
-### Solution Implementation: Applying Utility Types
-
-#### `Pick<Type, Keys>`
-Constructs a type by picking a set of properties `Keys` from `Type`.
-
-**Use Case**: Create a component that only displays the success message.
-
-```typescript
-import { StatusIndicatorProps } from './components/StatusIndicator';
-
-// First, let's get just the SuccessState type from our union
-type SuccessState = Extract<StatusIndicatorProps, { status: 'success' }>;
-// We'll cover Extract next! For now, assume SuccessState is available.
-
-// Now, pick only the properties we need for a display component.
-type SuccessDisplayProps = Pick<SuccessState, 'successTitle' | 'successMessage'>;
-
-// This is equivalent to:
-// type SuccessDisplayProps = {
-//   successTitle: string;
-//   successMessage?: string;
-// };
-
-const SuccessDisplay = ({ successTitle, successMessage }: SuccessDisplayProps) => {
-  return (
-    <div>
-      <h3>{successTitle}</h3>
-      {successMessage && <p>{successMessage}</p>}
-    </div>
-  );
-};
-```
-
-#### `Omit<Type, Keys>`
-Constructs a type by picking all properties from `Type` and then removing `Keys`.
-
-**Use Case**: Create a type for logging success data, without the component-specific `status` property.
-
-```typescript
-type SuccessState = Extract<StatusIndicatorProps, { status: 'success' }>;
-
-// Create a new type by removing 'status' from SuccessState
-type SuccessLog = Omit<SuccessState, 'status'>;
-
-// This is equivalent to:
-// type SuccessLog = {
-//   successTitle: string;
-//   successMessage?: string;
-// };
-// If we add `transactionId` to SuccessState, SuccessLog will get it automatically!
-
-function logSuccess(data: SuccessLog) {
-  console.log('SUCCESS:', data.successTitle);
-}
-```
-
-#### `Extract<Type, Union>`
-Constructs a type by extracting from `Type` all union members that are assignable to `Union`.
-
-**Use Case**: Get just one specific state's type from our main `StatusIndicatorProps` union. This is the key to working with discriminated unions.
-
-```typescript
-import { StatusIndicatorProps } from './components/StatusIndicator';
-
-// Extracts the member of the union where status is 'error'
-type ErrorStateOnly = Extract<StatusIndicatorProps, { status: 'error' }>;
-
-// This is equivalent to:
-// type ErrorStateOnly = {
-//   status: 'error';
-//   errorTitle?: string;
-//   errorMessage: string;
-// };
-
-const errorDetails: ErrorStateOnly = {
-  status: 'error',
-  errorMessage: 'Connection timed out.'
-};
-```
-
-#### `Exclude<Type, ExcludedUnion>`
-Constructs a type by excluding from `Type` all union members that are assignable to `ExcludedUnion`.
-
-**Use Case**: Create a type that represents any "settled" state (i.e., not loading).
-
-```typescript
-import { StatusIndicatorProps } from './components/StatusIndicator';
-
-// Remove the loading state from the union
-type SettledStates = Exclude<StatusIndicatorProps, { status: 'loading' }>;
-
-// This is equivalent to:
-// type SettledStates = SuccessState | ErrorState;
-
-function handleSettledState(state: SettledStates) {
-  if (state.status === 'success') {
-    // state is SuccessState here
-    console.log(state.successTitle);
-  } else {
-    // state is ErrorState here
-    console.error(state.errorMessage);
-  }
-}
-```
-
-#### `Partial<Type>`
-Constructs a type with all properties of `Type` set to optional.
-
-**Use Case**: Building a form where a user can update parts of an error state.
-
-```typescript
-type ErrorState = Extract<StatusIndicatorProps, { status: 'error' }>;
-
-// All properties of ErrorState are now optional
-type ErrorStateUpdate = Partial<ErrorState>;
-
-function updateErrorState(update: ErrorStateUpdate) {
-  // update could be { errorMessage: 'New message' }
-  // or { errorTitle: 'New Title' }
-  // or { status: 'error', errorMessage: '...' }
-  // ...
-}
-```
-
-### Verification
-
-By using utility types, we've established a single source of truth. When we update our core `StatusIndicatorProps` discriminated union, all the derived types (`SuccessLog`, `SettledStates`, `ErrorStateUpdate`, etc.) update automatically. Our maintenance burden plummets, and our type system remains consistent and robust.
-
-**Limitation preview**: Our component types are solid. But how do we manage and share state that uses these types across our entire application? A common solution is React Context, which comes with its own set of TypeScript challenges.
-
-## Typing Context and Custom Hooks
-
-## The `null` Context Problem
-
-**Current state recap**: We have robust, maintainable types for our `StatusIndicator` component, and we know how to transform them using utility types.
-
-**Current limitation**: Component state is local. To share our application's status (loading, success, error) across many components, we need a global state management solution. React Context is a natural choice. However, the most common way of initializing a context leads to a TypeScript nightmare: constant `null` checks.
-
-### Iteration 3: The Nullable Context Failure
-
-Let's build a `StatusProvider` to share our status state throughout the app. We'll start with the common, but flawed, pattern of initializing `createContext` with `null`.
+Let's introduce our reference implementation for this chapter: a **Notification System** that displays different types of alerts to users. This will be our anchor example, and we'll refine it through multiple iterations as we discover the limitations of naive approaches.
 
 **Project Structure**:
 ```
 src/
 ├── components/
-│   └── StatusIndicator.tsx
-└── contexts/
-    └── StatusContext.tsx   ← Our new context and hook
+│   ├── Notification.tsx      ← Our reference implementation
+│   ├── NotificationList.tsx
+│   └── Dashboard.tsx
+├── types/
+│   └── notifications.ts
+└── app/
+    └── page.tsx
 ```
 
+### Phase 1: The Naive Approach - Boolean Flags Everywhere
+
+Let's start with how most developers initially approach component variants: using boolean flags.
+
 ```tsx
-// src/contexts/StatusContext.tsx
+// src/components/Notification.tsx - Version 1 (Naive)
+interface NotificationProps {
+  message: string;
+  isSuccess?: boolean;
+  isError?: boolean;
+  isWarning?: boolean;
+  isInfo?: boolean;
+  showIcon?: boolean;
+  isDismissible?: boolean;
+  onDismiss?: () => void;
+  actionLabel?: string;
+  onAction?: () => void;
+}
 
-import React, { createContext, useContext, useState } from 'react';
-import { StatusIndicatorProps } from '../components/StatusIndicator';
+export function Notification({
+  message,
+  isSuccess,
+  isError,
+  isWarning,
+  isInfo,
+  showIcon,
+  isDismissible,
+  onDismiss,
+  actionLabel,
+  onAction,
+}: NotificationProps) {
+  const getBackgroundColor = () => {
+    if (isSuccess) return 'bg-green-100';
+    if (isError) return 'bg-red-100';
+    if (isWarning) return 'bg-yellow-100';
+    if (isInfo) return 'bg-blue-100';
+    return 'bg-gray-100';
+  };
 
-// 1. Define the shape of our context data
-type StatusContextType = {
-  status: StatusIndicatorProps;
-  setStatus: React.Dispatch<React.SetStateAction<StatusIndicatorProps>>;
-};
-
-// 2. Create the context with a default value of `null`
-// This is the source of our problem!
-const StatusContext = createContext<StatusContextType | null>(null);
-
-// 3. Create the Provider component
-export const StatusProvider = ({ children }: { children: React.ReactNode }) => {
-  const [status, setStatus] = useState<StatusIndicatorProps>({ status: 'loading' });
+  const getIcon = () => {
+    if (!showIcon) return null;
+    if (isSuccess) return '✓';
+    if (isError) return '✗';
+    if (isWarning) return '⚠';
+    if (isInfo) return 'ℹ';
+    return null;
+  };
 
   return (
-    <StatusContext.Provider value={{ status, setStatus }}>
-      {children}
-    </StatusContext.Provider>
+    <div className={`p-4 rounded ${getBackgroundColor()}`}>
+      <div className="flex items-start gap-3">
+        {getIcon() && <span className="text-xl">{getIcon()}</span>}
+        <div className="flex-1">
+          <p>{message}</p>
+          {actionLabel && onAction && (
+            <button
+              onClick={onAction}
+              className="mt-2 text-sm underline"
+            >
+              {actionLabel}
+            </button>
+          )}
+        </div>
+        {isDismissible && onDismiss && (
+          <button onClick={onDismiss} className="text-gray-500">
+            ×
+          </button>
+        )}
+      </div>
+    </div>
   );
-};
-
-// 4. Create the custom hook to consume the context
-export const useStatus = () => {
-  return useContext(StatusContext);
-};
+}
 ```
 
-Now, let's try to use this `useStatus` hook in a component.
+```tsx
+// src/app/page.tsx - Using the naive component
+'use client';
 
-**Failure Demonstration**:
+import { useState } from 'react';
+import { Notification } from '@/components/Notification';
+
+export default function DashboardPage() {
+  const [notifications, setNotifications] = useState([
+    { id: 1, message: 'Profile updated successfully', isSuccess: true },
+    { id: 2, message: 'Failed to load user data', isError: true },
+    { id: 3, message: 'Your session expires in 5 minutes', isWarning: true },
+  ]);
+
+  return (
+    <div className="p-8 space-y-4">
+      <h1 className="text-2xl font-bold">Dashboard</h1>
+      
+      {notifications.map((notif) => (
+        <Notification
+          key={notif.id}
+          message={notif.message}
+          isSuccess={notif.isSuccess}
+          isError={notif.isError}
+          isWarning={notif.isWarning}
+          showIcon
+          isDismissible
+          onDismiss={() => {
+            setNotifications(notifications.filter(n => n.id !== notif.id));
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+```
+
+This works, but let's see what happens when we try to use it in more complex scenarios.
 
 ```tsx
-// src/components/SomeOtherComponent.tsx
-
-import { useStatus } from '../contexts/StatusContext';
-import { StatusIndicator } from './StatusIndicator';
-
-export const SomeOtherComponent = () => {
-  const statusContext = useStatus();
-
-  // Try to access a property on the context value
-  const currentStatus = statusContext.status; // <-- ERROR!
-
-  return <StatusIndicator {...currentStatus} />;
-};
+// src/app/page.tsx - Attempting to add an action button
+export default function DashboardPage() {
+  return (
+    <div className="p-8 space-y-4">
+      {/* This compiles but creates an invalid state */}
+      <Notification
+        message="Payment failed"
+        isError={true}
+        isSuccess={true}  // ← Both error AND success?
+        showIcon
+        actionLabel="Retry"
+        // ← Forgot onAction handler, but TypeScript doesn't complain
+      />
+      
+      {/* This also compiles but makes no sense */}
+      <Notification
+        message="Click to continue"
+        // ← No type specified, but has an action
+        actionLabel="Continue"
+        onAction={() => console.log('clicked')}
+      />
+    </div>
+  );
+}
 ```
 
 ### Diagnostic Analysis: Reading the Failure
 
 **Browser Behavior**:
-The application fails to compile. No runtime behavior can be observed.
+The component renders, but the behavior is unpredictable. The first notification shows a success background (green) because `isSuccess` is checked first in the conditional logic, even though `isError` is also true. The second notification has an action button but no visual indication of what type of notification it is.
 
-**Terminal Output**:
+**Browser Console Output**:
+```
+(No errors - this is the problem!)
+```
+
+**TypeScript Compiler Output**:
 ```bash
-src/components/SomeOtherComponent.tsx:8:35 - error TS2531:
-Object is possibly 'null'.
-
-8   const currentStatus = statusContext.status;
-                                      ~~~~~~
-
-Found 1 error.
+# TypeScript compiles successfully
+# No type errors detected
 ```
 
 **Let's parse this evidence**:
 
-1.  **What the developer experiences**: Every time they use the `useStatus` hook, they are forced to handle the possibility of it being `null`.
-    -   Expected: When I use `useStatus` inside the `StatusProvider`, I expect to get the context value, not `null`.
-    -   Actual: TypeScript correctly points out that `statusContext` could be `null` because we defined it that way in `createContext<StatusContextType | null>(null)`.
+1. **What the developer experiences**: Code compiles and runs without errors, but the component behaves inconsistently. Multiple boolean flags can be true simultaneously, creating impossible states.
 
-2.  **What the console reveals**: A clear TypeScript error: `Object is possibly 'null'`.
+2. **What TypeScript reveals**: Nothing. The type system accepts any combination of boolean flags because they're all optional and independent.
 
-3.  **Root cause identified**: The type signature of our context explicitly includes `null`. We told TypeScript that `null` is a valid value, so it forces us to check for it everywhere.
+3. **Root cause identified**: Boolean flags create **2^n possible states** where n is the number of flags. With 4 type flags (`isSuccess`, `isError`, `isWarning`, `isInfo`), we have 16 possible combinations, but only 4 are valid.
 
-4.  **Why the current approach can't solve this**: The "fix" is to add checks or non-null assertions (`!`) in every single component that consumes the hook:
-    ```tsx
-    // Annoying fix 1: if check
-    if (!statusContext) return null; // or throw error
-    const currentStatus = statusContext.status;
+4. **Why the current approach can't solve this**: Optional boolean props are independent. TypeScript has no way to express "exactly one of these must be true" or "if actionLabel is provided, onAction must also be provided."
 
-    // Annoying fix 2: non-null assertion (unsafe)
-    const currentStatus = statusContext!.status;
-    ```
-    This is repetitive, clutters our components, and the non-null assertion is unsafe—it lies to the compiler. If a developer forgets to wrap a component in `StatusProvider`, the app will crash at runtime.
+5. **What we need**: A type system that makes **invalid states unrepresentable**. We need TypeScript to enforce that only valid combinations of props can exist.
 
-5.  **What we need**: A pattern that guarantees the context value is *never* `null` or `undefined` when accessed from within the provider tree, and provides a single, clear error message if used incorrectly.
+### Iteration 1: Introducing Discriminated Unions
 
-### Technique Introduced: The Provider Guard Pattern
+A **discriminated union** (also called a tagged union) is a TypeScript pattern where a single property (the "discriminant" or "tag") determines which other properties are valid.
 
-The solution is to move the `null`/`undefined` check *inside* the custom hook itself. This centralizes the logic in one place. If the context value is missing, we throw a descriptive runtime error. This allows us to remove `null` from the hook's return type, satisfying the type checker and simplifying all consumer components.
+Let's refactor our notification component to use this pattern.
 
-### Solution Implementation: Refactoring the Context and Hook
-
-**Before** (Iteration 2):
-
-```tsx
-// src/contexts/StatusContext.tsx - Before
-
-// ...
-const StatusContext = createContext<StatusContextType | null>(null);
-
-export const useStatus = () => {
-  return useContext(StatusContext); // Returns `StatusContextType | null`
+```typescript
+// src/types/notifications.ts - Version 2
+// Define each notification variant as a separate type
+type SuccessNotification = {
+  variant: 'success';  // ← The discriminant
+  message: string;
+  dismissible?: boolean;
 };
+
+type ErrorNotification = {
+  variant: 'error';
+  message: string;
+  dismissible?: boolean;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+};
+
+type WarningNotification = {
+  variant: 'warning';
+  message: string;
+  dismissible?: boolean;
+};
+
+type InfoNotification = {
+  variant: 'info';
+  message: string;
+  dismissible?: boolean;
+};
+
+// Union type: a notification is ONE of these types
+export type NotificationProps = 
+  | SuccessNotification 
+  | ErrorNotification 
+  | WarningNotification 
+  | InfoNotification;
 ```
 
-**After** (Iteration 3):
+Now let's update our component to use this discriminated union:
 
 ```tsx
-// src/contexts/StatusContext.tsx - After
+// src/components/Notification.tsx - Version 2
+import type { NotificationProps } from '@/types/notifications';
 
-import React, { createContext, useContext, useState } from 'react';
-import { StatusIndicatorProps } from '../components/StatusIndicator';
+export function Notification(props: NotificationProps) {
+  // TypeScript knows which properties exist based on the variant
+  const getBackgroundColor = () => {
+    switch (props.variant) {
+      case 'success': return 'bg-green-100';
+      case 'error': return 'bg-red-100';
+      case 'warning': return 'bg-yellow-100';
+      case 'info': return 'bg-blue-100';
+    }
+  };
 
-type StatusContextType = {
-  status: StatusIndicatorProps;
-  setStatus: React.Dispatch<React.SetStateAction<StatusIndicatorProps>>;
-};
+  const getIcon = () => {
+    switch (props.variant) {
+      case 'success': return '✓';
+      case 'error': return '✗';
+      case 'warning': return '⚠';
+      case 'info': return 'ℹ';
+    }
+  };
 
-// 1. Initialize with `undefined` and do NOT provide a default value.
-const StatusContext = createContext<StatusContextType | undefined>(undefined);
-
-// Provider remains the same...
-export const StatusProvider = ({ children }: { children: React.ReactNode }) => {
-  const [status, setStatus] = useState<StatusIndicatorProps>({ status: 'loading' });
   return (
-    <StatusContext.Provider value={{ status, setStatus }}>
-      {children}
-    </StatusContext.Provider>
+    <div className={`p-4 rounded ${getBackgroundColor()}`}>
+      <div className="flex items-start gap-3">
+        <span className="text-xl">{getIcon()}</span>
+        <div className="flex-1">
+          <p>{props.message}</p>
+          
+          {/* TypeScript knows 'action' only exists on error variant */}
+          {props.variant === 'error' && props.action && (
+            <button
+              onClick={props.action.onClick}
+              className="mt-2 text-sm underline"
+            >
+              {props.action.label}
+            </button>
+          )}
+        </div>
+        
+        {props.dismissible && (
+          <button 
+            onClick={() => {/* dismiss logic */}} 
+            className="text-gray-500"
+          >
+            ×
+          </button>
+        )}
+      </div>
+    </div>
   );
+}
+```
+
+Now let's try to create those invalid states again:
+
+```tsx
+// src/app/page.tsx - Attempting invalid states with discriminated unions
+export default function DashboardPage() {
+  return (
+    <div className="p-8 space-y-4">
+      {/* ✗ TypeScript error: Cannot have both 'success' and 'error' */}
+      <Notification
+        variant="success"
+        variant="error"  // ← Error: Duplicate identifier 'variant'
+        message="This won't compile"
+      />
+      
+      {/* ✗ TypeScript error: 'action' doesn't exist on success variant */}
+      <Notification
+        variant="success"
+        message="Payment successful"
+        action={{  // ← Error: Object literal may only specify known properties
+          label: "View Receipt",
+          onClick: () => {}
+        }}
+      />
+      
+      {/* ✓ This is valid - error variant can have an action */}
+      <Notification
+        variant="error"
+        message="Payment failed"
+        action={{
+          label: "Retry",
+          onClick: () => console.log('retrying')
+        }}
+      />
+    </div>
+  );
+}
+```
+
+**TypeScript Compiler Output**:
+```bash
+src/app/page.tsx:6:9 - error TS1117: 
+An object literal cannot have multiple properties with the same name.
+
+6         variant="error"
+          ~~~~~~~
+
+src/app/page.tsx:14:9 - error TS2353:
+Object literal may only specify known properties, and 'action' 
+does not exist in type 'SuccessNotification'.
+
+14        action={{
+          ~~~~~~
+
+Found 2 errors in src/app/page.tsx
+```
+
+**Expected vs. Actual improvement**: 
+- **Before**: Invalid states compiled successfully, causing runtime bugs
+- **After**: Invalid states are caught at compile time, preventing bugs before they reach the browser
+- **Concrete evidence**: TypeScript now prevents us from creating notifications that are both success and error, or adding action buttons to notification types that don't support them
+
+### The Power of Exhaustiveness Checking
+
+One of the most powerful features of discriminated unions is **exhaustiveness checking**. TypeScript can verify that you've handled all possible variants.
+
+```tsx
+// src/components/Notification.tsx - Demonstrating exhaustiveness checking
+export function Notification(props: NotificationProps) {
+  const getBackgroundColor = (): string => {
+    switch (props.variant) {
+      case 'success': return 'bg-green-100';
+      case 'error': return 'bg-red-100';
+      case 'warning': return 'bg-yellow-100';
+      // ← Forgot 'info' case
+    }
+    // TypeScript error: Function lacks ending return statement 
+    // and return type does not include 'undefined'
+  };
+
+  // Better: Use a helper to enforce exhaustiveness
+  const assertNever = (value: never): never => {
+    throw new Error(`Unhandled variant: ${value}`);
+  };
+
+  const getBackgroundColorSafe = (): string => {
+    switch (props.variant) {
+      case 'success': return 'bg-green-100';
+      case 'error': return 'bg-red-100';
+      case 'warning': return 'bg-yellow-100';
+      case 'info': return 'bg-blue-100';
+      default:
+        // If we add a new variant and forget to handle it,
+        // TypeScript will error here
+        return assertNever(props.variant);
+    }
+  };
+
+  return (
+    <div className={`p-4 rounded ${getBackgroundColorSafe()}`}>
+      {/* ... */}
+    </div>
+  );
+}
+```
+
+Now let's add a new notification variant and see exhaustiveness checking in action:
+
+```typescript
+// src/types/notifications.ts - Adding a new variant
+type SuccessNotification = {
+  variant: 'success';
+  message: string;
+  dismissible?: boolean;
 };
 
-// 2. The custom hook becomes a "guard".
-export const useStatus = () => {
-  const context = useContext(StatusContext);
+type ErrorNotification = {
+  variant: 'error';
+  message: string;
+  dismissible?: boolean;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+};
 
-  // 3. The check lives here, and only here.
-  if (context === undefined) {
-    throw new Error('useStatus must be used within a StatusProvider');
+type WarningNotification = {
+  variant: 'warning';
+  message: string;
+  dismissible?: boolean;
+};
+
+type InfoNotification = {
+  variant: 'info';
+  message: string;
+  dismissible?: boolean;
+};
+
+// New variant added
+type LoadingNotification = {
+  variant: 'loading';
+  message: string;
+};
+
+export type NotificationProps = 
+  | SuccessNotification 
+  | ErrorNotification 
+  | WarningNotification 
+  | InfoNotification
+  | LoadingNotification;  // ← Added to union
+```
+
+**TypeScript Compiler Output**:
+```bash
+src/components/Notification.tsx:28:16 - error TS2345:
+Argument of type 'LoadingNotification' is not assignable to parameter of type 'never'.
+
+28        return assertNever(props.variant);
+                  ~~~~~~~~~~~
+
+Found 1 error in src/components/Notification.tsx
+```
+
+TypeScript immediately tells us we forgot to handle the new `loading` variant. This is **exhaustiveness checking** in action—the compiler ensures we handle all cases.
+
+Let's fix it:
+
+```tsx
+// src/components/Notification.tsx - Version 3 (handling all variants)
+export function Notification(props: NotificationProps) {
+  const assertNever = (value: never): never => {
+    throw new Error(`Unhandled variant: ${value}`);
+  };
+
+  const getBackgroundColor = (): string => {
+    switch (props.variant) {
+      case 'success': return 'bg-green-100';
+      case 'error': return 'bg-red-100';
+      case 'warning': return 'bg-yellow-100';
+      case 'info': return 'bg-blue-100';
+      case 'loading': return 'bg-gray-100';  // ← Added
+      default:
+        return assertNever(props.variant);
+    }
+  };
+
+  const getIcon = () => {
+    switch (props.variant) {
+      case 'success': return '✓';
+      case 'error': return '✗';
+      case 'warning': return '⚠';
+      case 'info': return 'ℹ';
+      case 'loading': return '⟳';  // ← Added
+      default:
+        return assertNever(props.variant);
+    }
+  };
+
+  return (
+    <div className={`p-4 rounded ${getBackgroundColor()}`}>
+      <div className="flex items-start gap-3">
+        <span className="text-xl">{getIcon()}</span>
+        <div className="flex-1">
+          <p>{props.message}</p>
+          
+          {props.variant === 'error' && props.action && (
+            <button
+              onClick={props.action.onClick}
+              className="mt-2 text-sm underline"
+            >
+              {props.action.label}
+            </button>
+          )}
+        </div>
+        
+        {props.dismissible && (
+          <button className="text-gray-500">×</button>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+### Iteration 2: Narrowing with Type Guards
+
+TypeScript's **type narrowing** automatically understands which properties are available after checking the discriminant. This is called **control flow analysis**.
+
+```tsx
+// src/components/NotificationList.tsx - Demonstrating type narrowing
+import type { NotificationProps } from '@/types/notifications';
+import { Notification } from './Notification';
+
+type NotificationWithId = NotificationProps & { id: string };
+
+export function NotificationList({ 
+  notifications 
+}: { 
+  notifications: NotificationWithId[] 
+}) {
+  // Filter to only error notifications with actions
+  const actionableErrors = notifications.filter((notif) => {
+    // After this check, TypeScript knows notif is ErrorNotification
+    if (notif.variant === 'error') {
+      // TypeScript knows 'action' exists on ErrorNotification
+      return notif.action !== undefined;
+    }
+    return false;
+  });
+
+  // TypeScript infers the type as ErrorNotification[]
+  // because we filtered by variant === 'error'
+  const errorCount = actionableErrors.length;
+
+  return (
+    <div className="space-y-4">
+      {errorCount > 0 && (
+        <div className="p-4 bg-red-50 rounded">
+          <p className="font-semibold">
+            {errorCount} error{errorCount > 1 ? 's' : ''} require attention
+          </p>
+        </div>
+      )}
+      
+      {notifications.map((notif) => (
+        <Notification key={notif.id} {...notif} />
+      ))}
+    </div>
+  );
+}
+```
+
+### Iteration 3: Complex Discriminated Unions
+
+Let's extend our notification system to handle more complex scenarios. We'll add a notification type that requires user confirmation before dismissing.
+
+```typescript
+// src/types/notifications.ts - Version 3 (complex variants)
+type SuccessNotification = {
+  variant: 'success';
+  message: string;
+  dismissible?: boolean;
+};
+
+type ErrorNotification = {
+  variant: 'error';
+  message: string;
+  dismissible?: boolean;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+};
+
+type WarningNotification = {
+  variant: 'warning';
+  message: string;
+  dismissible?: boolean;
+};
+
+type InfoNotification = {
+  variant: 'info';
+  message: string;
+  dismissible?: boolean;
+};
+
+type LoadingNotification = {
+  variant: 'loading';
+  message: string;
+};
+
+// New: Confirmation required before dismissing
+type ConfirmationNotification = {
+  variant: 'confirmation';
+  message: string;
+  confirmText: string;
+  cancelText: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  severity: 'warning' | 'danger';  // ← Nested discriminated union
+};
+
+export type NotificationProps = 
+  | SuccessNotification 
+  | ErrorNotification 
+  | WarningNotification 
+  | InfoNotification
+  | LoadingNotification
+  | ConfirmationNotification;
+```
+
+```tsx
+// src/components/Notification.tsx - Version 4 (handling confirmation)
+import type { NotificationProps } from '@/types/notifications';
+
+export function Notification(props: NotificationProps) {
+  const assertNever = (value: never): never => {
+    throw new Error(`Unhandled variant: ${value}`);
+  };
+
+  const getBackgroundColor = (): string => {
+    switch (props.variant) {
+      case 'success': return 'bg-green-100';
+      case 'error': return 'bg-red-100';
+      case 'warning': return 'bg-yellow-100';
+      case 'info': return 'bg-blue-100';
+      case 'loading': return 'bg-gray-100';
+      case 'confirmation':
+        // Nested discriminated union
+        return props.severity === 'danger' 
+          ? 'bg-red-100' 
+          : 'bg-yellow-100';
+      default:
+        return assertNever(props.variant);
+    }
+  };
+
+  const getIcon = () => {
+    switch (props.variant) {
+      case 'success': return '✓';
+      case 'error': return '✗';
+      case 'warning': return '⚠';
+      case 'info': return 'ℹ';
+      case 'loading': return '⟳';
+      case 'confirmation': return '?';
+      default:
+        return assertNever(props.variant);
+    }
+  };
+
+  return (
+    <div className={`p-4 rounded ${getBackgroundColor()}`}>
+      <div className="flex items-start gap-3">
+        <span className="text-xl">{getIcon()}</span>
+        <div className="flex-1">
+          <p>{props.message}</p>
+          
+          {/* Error action button */}
+          {props.variant === 'error' && props.action && (
+            <button
+              onClick={props.action.onClick}
+              className="mt-2 text-sm underline"
+            >
+              {props.action.label}
+            </button>
+          )}
+          
+          {/* Confirmation buttons */}
+          {props.variant === 'confirmation' && (
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={props.onConfirm}
+                className={`px-4 py-2 rounded text-white ${
+                  props.severity === 'danger' 
+                    ? 'bg-red-600 hover:bg-red-700' 
+                    : 'bg-yellow-600 hover:bg-yellow-700'
+                }`}
+              >
+                {props.confirmText}
+              </button>
+              <button
+                onClick={props.onCancel}
+                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+              >
+                {props.cancelText}
+              </button>
+            </div>
+          )}
+        </div>
+        
+        {/* Only show dismiss button for dismissible variants */}
+        {props.variant !== 'confirmation' && 
+         props.variant !== 'loading' && 
+         props.dismissible && (
+          <button className="text-gray-500">×</button>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+Now let's use the confirmation notification:
+
+```tsx
+// src/app/page.tsx - Using confirmation notifications
+'use client';
+
+import { useState } from 'react';
+import { Notification } from '@/components/Notification';
+import type { NotificationProps } from '@/types/notifications';
+
+type NotificationWithId = NotificationProps & { id: string };
+
+export default function DashboardPage() {
+  const [notifications, setNotifications] = useState<NotificationWithId[]>([
+    {
+      id: '1',
+      variant: 'success',
+      message: 'Profile updated successfully',
+      dismissible: true,
+    },
+    {
+      id: '2',
+      variant: 'confirmation',
+      message: 'Are you sure you want to delete your account? This action cannot be undone.',
+      confirmText: 'Delete Account',
+      cancelText: 'Cancel',
+      severity: 'danger',
+      onConfirm: () => {
+        console.log('Account deleted');
+        setNotifications(notifications.filter(n => n.id !== '2'));
+      },
+      onCancel: () => {
+        console.log('Deletion cancelled');
+        setNotifications(notifications.filter(n => n.id !== '2'));
+      },
+    },
+  ]);
+
+  return (
+    <div className="p-8 space-y-4">
+      <h1 className="text-2xl font-bold">Dashboard</h1>
+      
+      {notifications.map((notif) => (
+        <Notification key={notif.id} {...notif} />
+      ))}
+    </div>
+  );
+}
+```
+
+**Expected vs. Actual improvement**:
+- **Before**: Confirmation logic mixed with dismissible logic, easy to create invalid states
+- **After**: Confirmation notifications are a distinct type with required callbacks, impossible to create a confirmation without both confirm and cancel handlers
+- **Concrete evidence**: TypeScript enforces that confirmation notifications must have `onConfirm`, `onCancel`, `confirmText`, `cancelText`, and `severity` properties
+
+### When to Apply This Solution
+
+**What it optimizes for**:
+- Type safety: Invalid states become unrepresentable
+- Maintainability: Adding new variants forces you to handle them everywhere
+- Clarity: The type system documents valid combinations
+
+**What it sacrifices**:
+- Initial setup complexity: More types to define upfront
+- Verbosity: More code than simple boolean flags
+
+**When to choose this approach**:
+- Components with multiple distinct behaviors (buttons, alerts, modals)
+- Data that can be in one of several mutually exclusive states
+- When you need exhaustiveness checking (handling all cases)
+- When invalid combinations would cause bugs
+
+**When to avoid this approach**:
+- Simple components with independent boolean flags (e.g., `disabled`, `loading`)
+- When variants share 90%+ of the same properties
+- Prototyping phase where requirements are still changing rapidly
+
+**Code characteristics**:
+- Setup: Medium complexity (define union types upfront)
+- Maintenance: Low burden (TypeScript guides you through changes)
+- Performance: Zero runtime cost (types are erased at compile time)
+
+### Limitation preview
+
+Our notification system now has strong type safety, but we're still manually handling the discriminant checks in every function. In the next section, we'll explore **utility types** that can help us extract and manipulate these discriminated unions more elegantly.
+
+## Utility types that actually matter
+
+## Utility types that actually matter
+
+TypeScript includes dozens of built-in utility types, but most developers only need to know a handful. In this section, we'll focus on the utility types that solve real problems in React applications, using our notification system as the reference implementation.
+
+### The Problem: Extracting Specific Variants
+
+Our notification system works well, but what if we need to work with only error notifications? Or only notifications that can be dismissed?
+
+```tsx
+// src/components/ErrorSummary.tsx - Naive approach
+import type { NotificationProps } from '@/types/notifications';
+
+type NotificationWithId = NotificationProps & { id: string };
+
+export function ErrorSummary({ 
+  notifications 
+}: { 
+  notifications: NotificationWithId[] 
+}) {
+  // We want only error notifications, but TypeScript doesn't know that
+  const errors = notifications.filter(n => n.variant === 'error');
+  
+  // TypeScript error: Property 'action' does not exist on type 'NotificationWithId'
+  const actionableErrors = errors.filter(e => e.action !== undefined);
+  
+  return (
+    <div>
+      {actionableErrors.map(error => (
+        <div key={error.id}>
+          {error.message}
+          {/* TypeScript still doesn't know 'action' exists */}
+          <button onClick={error.action.onClick}>
+            {error.action.label}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+**TypeScript Compiler Output**:
+```bash
+src/components/ErrorSummary.tsx:14:38 - error TS2339:
+Property 'action' does not exist on type 'NotificationWithId'.
+
+14   const actionableErrors = errors.filter(e => e.action !== undefined);
+                                        ~~~~~~~~
+
+src/components/ErrorSummary.tsx:20:28 - error TS2339:
+Property 'action' does not exist on type 'NotificationWithId'.
+
+20           <button onClick={error.action.onClick}>
+                              ~~~~~~~~~~~~
+
+Found 2 errors in src/components/ErrorSummary.tsx
+```
+
+**Root cause**: TypeScript's `filter` method doesn't narrow the type. Even though we filtered by `variant === 'error'`, TypeScript still thinks `errors` is an array of all notification types.
+
+### Iteration 1: Extract - Pulling Out Specific Union Members
+
+The `Extract` utility type lets us pull out specific members of a union based on a condition.
+
+```typescript
+// src/types/notifications.ts - Adding helper types
+type SuccessNotification = {
+  variant: 'success';
+  message: string;
+  dismissible?: boolean;
+};
+
+type ErrorNotification = {
+  variant: 'error';
+  message: string;
+  dismissible?: boolean;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+};
+
+type WarningNotification = {
+  variant: 'warning';
+  message: string;
+  dismissible?: boolean;
+};
+
+type InfoNotification = {
+  variant: 'info';
+  message: string;
+  dismissible?: boolean;
+};
+
+type LoadingNotification = {
+  variant: 'loading';
+  message: string;
+};
+
+type ConfirmationNotification = {
+  variant: 'confirmation';
+  message: string;
+  confirmText: string;
+  cancelText: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  severity: 'warning' | 'danger';
+};
+
+export type NotificationProps = 
+  | SuccessNotification 
+  | ErrorNotification 
+  | WarningNotification 
+  | InfoNotification
+  | LoadingNotification
+  | ConfirmationNotification;
+
+// Extract specific variants
+export type ErrorNotificationOnly = Extract<
+  NotificationProps, 
+  { variant: 'error' }
+>;
+// Result: ErrorNotification
+
+export type DismissibleNotifications = Extract<
+  NotificationProps,
+  { dismissible?: boolean }
+>;
+// Result: SuccessNotification | ErrorNotification | WarningNotification | InfoNotification
+
+export type NotificationsWithActions = Extract<
+  NotificationProps,
+  { action?: any }
+>;
+// Result: ErrorNotification
+```
+
+Now let's use `Extract` to fix our error summary component:
+
+```tsx
+// src/components/ErrorSummary.tsx - Version 2 (using Extract)
+import type { NotificationProps, ErrorNotificationOnly } from '@/types/notifications';
+
+type NotificationWithId = NotificationProps & { id: string };
+type ErrorWithId = ErrorNotificationOnly & { id: string };
+
+export function ErrorSummary({ 
+  notifications 
+}: { 
+  notifications: NotificationWithId[] 
+}) {
+  // Type assertion after filtering
+  const errors = notifications.filter(
+    (n): n is ErrorWithId => n.variant === 'error'
+  );
+  
+  // Now TypeScript knows errors is ErrorWithId[]
+  const actionableErrors = errors.filter(e => e.action !== undefined);
+  
+  return (
+    <div className="space-y-2">
+      <h2 className="text-lg font-semibold text-red-600">
+        Errors ({errors.length})
+      </h2>
+      {actionableErrors.map(error => (
+        <div key={error.id} className="p-3 bg-red-50 rounded">
+          <p>{error.message}</p>
+          {error.action && (
+            <button 
+              onClick={error.action.onClick}
+              className="mt-2 text-sm underline"
+            >
+              {error.action.label}
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+**Expected vs. Actual improvement**:
+- **Before**: TypeScript couldn't understand that filtered array contained only error notifications
+- **After**: Using type predicate `(n): n is ErrorWithId` tells TypeScript exactly what type the filtered array contains
+- **Concrete evidence**: No more type errors when accessing `error.action`
+
+### Iteration 2: Exclude - Removing Specific Union Members
+
+The opposite of `Extract` is `Exclude`, which removes specific members from a union.
+
+```typescript
+// src/types/notifications.ts - Using Exclude
+// Get all notifications except loading
+export type InteractiveNotifications = Exclude<
+  NotificationProps,
+  { variant: 'loading' }
+>;
+// Result: All notification types except LoadingNotification
+
+// Get all notifications except confirmation and loading
+export type SimpleNotifications = Exclude<
+  NotificationProps,
+  { variant: 'loading' | 'confirmation' }
+>;
+// Result: SuccessNotification | ErrorNotification | WarningNotification | InfoNotification
+```
+
+```tsx
+// src/components/NotificationList.tsx - Using Exclude
+import type { NotificationProps, InteractiveNotifications } from '@/types/notifications';
+
+type NotificationWithId = NotificationProps & { id: string };
+type InteractiveWithId = InteractiveNotifications & { id: string };
+
+export function NotificationList({ 
+  notifications 
+}: { 
+  notifications: NotificationWithId[] 
+}) {
+  // Filter out loading notifications
+  const interactive = notifications.filter(
+    (n): n is InteractiveWithId => n.variant !== 'loading'
+  );
+
+  return (
+    <div className="space-y-4">
+      {interactive.map((notif) => (
+        <div key={notif.id}>
+          {/* We know these notifications can be interacted with */}
+          <Notification {...notif} />
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Iteration 3: Pick and Omit - Selecting or Removing Properties
+
+`Pick` and `Omit` work on object properties rather than union members.
+
+```typescript
+// src/types/notifications.ts - Using Pick and Omit
+// Pick only specific properties
+export type NotificationPreview = Pick<
+  ErrorNotification,
+  'variant' | 'message'
+>;
+// Result: { variant: 'error'; message: string; }
+
+// Omit specific properties
+export type NotificationWithoutActions = Omit<
+  ErrorNotification,
+  'action'
+>;
+// Result: { variant: 'error'; message: string; dismissible?: boolean; }
+```
+
+Let's use these to create a notification preview component that shows only essential information:
+
+```tsx
+// src/components/NotificationPreview.tsx
+import type { NotificationProps } from '@/types/notifications';
+
+// Create a preview type that only includes variant and message
+type NotificationPreview = Pick<NotificationProps, 'variant' | 'message'>;
+
+export function NotificationPreview({ 
+  variant, 
+  message 
+}: NotificationPreview) {
+  const getIcon = () => {
+    switch (variant) {
+      case 'success': return '✓';
+      case 'error': return '✗';
+      case 'warning': return '⚠';
+      case 'info': return 'ℹ';
+      case 'loading': return '⟳';
+      case 'confirmation': return '?';
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <span>{getIcon()}</span>
+      <span className="truncate">{message}</span>
+    </div>
+  );
+}
+```
+
+### Iteration 4: Partial and Required - Making Properties Optional or Required
+
+`Partial` makes all properties optional. `Required` makes all properties required.
+
+```typescript
+// src/types/notifications.ts - Using Partial and Required
+// Make all properties optional (useful for updates)
+export type NotificationUpdate = Partial<ErrorNotification>;
+// Result: All properties are optional
+
+// Make all properties required (useful for validation)
+export type CompleteErrorNotification = Required<ErrorNotification>;
+// Result: { 
+//   variant: 'error'; 
+//   message: string; 
+//   dismissible: boolean;  // ← No longer optional
+//   action: {              // ← No longer optional
+//     label: string; 
+//     onClick: () => void; 
+//   }; 
+// }
+```
+
+```tsx
+// src/hooks/useNotifications.ts - Using Partial for updates
+import { useState } from 'react';
+import type { NotificationProps } from '@/types/notifications';
+
+type NotificationWithId = NotificationProps & { id: string };
+type NotificationUpdate = Partial<NotificationProps> & { id: string };
+
+export function useNotifications() {
+  const [notifications, setNotifications] = useState<NotificationWithId[]>([]);
+
+  const addNotification = (notification: NotificationProps) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setNotifications([...notifications, { ...notification, id }]);
+  };
+
+  // Update only specific properties of a notification
+  const updateNotification = (update: NotificationUpdate) => {
+    setNotifications(notifications.map(notif => 
+      notif.id === update.id 
+        ? { ...notif, ...update }  // Merge update into existing notification
+        : notif
+    ));
+  };
+
+  const removeNotification = (id: string) => {
+    setNotifications(notifications.filter(n => n.id !== id));
+  };
+
+  return {
+    notifications,
+    addNotification,
+    updateNotification,
+    removeNotification,
+  };
+}
+```
+
+```tsx
+// src/app/page.tsx - Using the hook with partial updates
+'use client';
+
+import { useNotifications } from '@/hooks/useNotifications';
+import { Notification } from '@/components/Notification';
+
+export default function DashboardPage() {
+  const { notifications, addNotification, updateNotification } = useNotifications();
+
+  const handleAddError = () => {
+    addNotification({
+      variant: 'error',
+      message: 'Failed to save changes',
+      dismissible: true,
+      action: {
+        label: 'Retry',
+        onClick: () => console.log('Retrying...'),
+      },
+    });
+  };
+
+  const handleUpdateMessage = (id: string) => {
+    // Only update the message, keep everything else the same
+    updateNotification({
+      id,
+      message: 'Updated message',
+    });
+  };
+
+  return (
+    <div className="p-8 space-y-4">
+      <button 
+        onClick={handleAddError}
+        className="px-4 py-2 bg-blue-600 text-white rounded"
+      >
+        Add Error Notification
+      </button>
+      
+      {notifications.map((notif) => (
+        <div key={notif.id}>
+          <Notification {...notif} />
+          <button
+            onClick={() => handleUpdateMessage(notif.id)}
+            className="mt-2 text-sm text-blue-600"
+          >
+            Update Message
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Iteration 5: Record - Creating Object Types with Specific Keys
+
+`Record<Keys, Type>` creates an object type where all keys are of type `Keys` and all values are of type `Type`.
+
+```typescript
+// src/types/notifications.ts - Using Record
+// Map each variant to its configuration
+export type NotificationConfig = Record<
+  NotificationProps['variant'],
+  {
+    icon: string;
+    backgroundColor: string;
+    textColor: string;
   }
+>;
 
-  // 4. The hook's return type is now guaranteed to be `StatusContextType`.
-  return context;
+export const notificationConfig: NotificationConfig = {
+  success: {
+    icon: '✓',
+    backgroundColor: 'bg-green-100',
+    textColor: 'text-green-800',
+  },
+  error: {
+    icon: '✗',
+    backgroundColor: 'bg-red-100',
+    textColor: 'text-red-800',
+  },
+  warning: {
+    icon: '⚠',
+    backgroundColor: 'bg-yellow-100',
+    textColor: 'text-yellow-800',
+  },
+  info: {
+    icon: 'ℹ',
+    backgroundColor: 'bg-blue-100',
+    textColor: 'text-blue-800',
+  },
+  loading: {
+    icon: '⟳',
+    backgroundColor: 'bg-gray-100',
+    textColor: 'text-gray-800',
+  },
+  confirmation: {
+    icon: '?',
+    backgroundColor: 'bg-purple-100',
+    textColor: 'text-purple-800',
+  },
 };
 ```
 
-### Verification
-
-Now, let's revisit our consumer component.
-
-**The component code now compiles without errors!**
+Now let's refactor our Notification component to use this configuration:
 
 ```tsx
-// src/components/SomeOtherComponent.tsx
+// src/components/Notification.tsx - Version 5 (using Record config)
+import type { NotificationProps } from '@/types/notifications';
+import { notificationConfig } from '@/types/notifications';
 
-import { useStatus } from '../contexts/StatusContext';
-import { StatusIndicator } from './StatusIndicator';
+export function Notification(props: NotificationProps) {
+  // Get configuration based on variant
+  const config = notificationConfig[props.variant];
 
-export const SomeOtherComponent = () => {
-  // `statusContext` is now guaranteed to be `StatusContextType`.
-  // No more `| null` or `| undefined`.
-  const statusContext = useStatus();
-
-  const currentStatus = statusContext.status; // <-- Compiles perfectly!
-
-  return <StatusIndicator {...currentStatus} />;
-};
+  return (
+    <div className={`p-4 rounded ${config.backgroundColor}`}>
+      <div className="flex items-start gap-3">
+        <span className={`text-xl ${config.textColor}`}>
+          {config.icon}
+        </span>
+        <div className="flex-1">
+          <p className={config.textColor}>{props.message}</p>
+          
+          {props.variant === 'error' && props.action && (
+            <button
+              onClick={props.action.onClick}
+              className="mt-2 text-sm underline"
+            >
+              {props.action.label}
+            </button>
+          )}
+          
+          {props.variant === 'confirmation' && (
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={props.onConfirm}
+                className={`px-4 py-2 rounded text-white ${
+                  props.severity === 'danger' 
+                    ? 'bg-red-600 hover:bg-red-700' 
+                    : 'bg-yellow-600 hover:bg-yellow-700'
+                }`}
+              >
+                {props.confirmText}
+              </button>
+              <button
+                onClick={props.onCancel}
+                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+              >
+                {props.cancelText}
+              </button>
+            </div>
+          )}
+        </div>
+        
+        {props.variant !== 'confirmation' && 
+         props.variant !== 'loading' && 
+         props.dismissible && (
+          <button className="text-gray-500">×</button>
+        )}
+      </div>
+    </div>
+  );
+}
 ```
 
-And what happens if a developer forgets the provider?
+**Expected vs. Actual improvement**:
+- **Before**: Configuration logic scattered across multiple switch statements
+- **After**: Single source of truth for variant configuration, easier to maintain and extend
+- **Concrete evidence**: Adding a new variant now requires updating only the `NotificationConfig` type and the `notificationConfig` object
+
+### Iteration 6: ReturnType and Parameters - Extracting Function Types
+
+`ReturnType` extracts the return type of a function. `Parameters` extracts the parameter types.
+
+```typescript
+// src/types/notifications.ts - Using ReturnType and Parameters
+// Extract the return type of a function
+type NotificationHookReturn = ReturnType<typeof useNotifications>;
+// Result: {
+//   notifications: NotificationWithId[];
+//   addNotification: (notification: NotificationProps) => void;
+//   updateNotification: (update: NotificationUpdate) => void;
+//   removeNotification: (id: string) => void;
+// }
+
+// Extract parameter types
+type AddNotificationParams = Parameters<NotificationHookReturn['addNotification']>;
+// Result: [notification: NotificationProps]
+
+type UpdateNotificationParams = Parameters<NotificationHookReturn['updateNotification']>;
+// Result: [update: NotificationUpdate]
+```
 
 ```tsx
-// App.tsx - Forgetting the provider
-function App() {
-  // Whoops, we forgot to wrap with <StatusProvider>
-  return <SomeOtherComponent />;
+// src/components/NotificationManager.tsx - Using extracted types
+import type { ReturnType } from 'react';
+import { useNotifications } from '@/hooks/useNotifications';
+
+// Extract the hook's return type
+type NotificationHookReturn = ReturnType<typeof useNotifications>;
+
+// Create a component that accepts the hook's return value
+export function NotificationManager({ 
+  notificationSystem 
+}: { 
+  notificationSystem: NotificationHookReturn 
+}) {
+  const { notifications, addNotification, removeNotification } = notificationSystem;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <button
+          onClick={() => addNotification({
+            variant: 'success',
+            message: 'Operation completed',
+            dismissible: true,
+          })}
+          className="px-4 py-2 bg-green-600 text-white rounded"
+        >
+          Add Success
+        </button>
+        <button
+          onClick={() => addNotification({
+            variant: 'error',
+            message: 'Operation failed',
+            dismissible: true,
+          })}
+          className="px-4 py-2 bg-red-600 text-white rounded"
+        >
+          Add Error
+        </button>
+      </div>
+      
+      {notifications.map((notif) => (
+        <div key={notif.id} className="flex items-center gap-2">
+          <Notification {...notif} />
+          <button
+            onClick={() => removeNotification(notif.id)}
+            className="text-red-600"
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### When to Apply These Utility Types
+
+**Extract**:
+- **Use when**: You need to work with specific members of a discriminated union
+- **Example**: Filtering notifications by variant and maintaining type safety
+
+**Exclude**:
+- **Use when**: You need to remove specific members from a union
+- **Example**: Getting all notifications except loading states
+
+**Pick**:
+- **Use when**: You need only a subset of an object's properties
+- **Example**: Creating preview components that show limited information
+
+**Omit**:
+- **Use when**: You need most properties except a few
+- **Example**: Creating types for API responses that exclude client-only properties
+
+**Partial**:
+- **Use when**: You need to make all properties optional
+- **Example**: Update operations where only changed fields are provided
+
+**Required**:
+- **Use when**: You need to ensure all properties are present
+- **Example**: Validation functions that require complete data
+
+**Record**:
+- **Use when**: You need an object with specific keys and consistent value types
+- **Example**: Configuration objects, lookup tables, mappings
+
+**ReturnType**:
+- **Use when**: You need to reference a function's return type without duplicating it
+- **Example**: Passing hook return values between components
+
+**Parameters**:
+- **Use when**: You need to reference a function's parameter types
+- **Example**: Creating wrapper functions that accept the same parameters
+
+### Limitation preview
+
+We've now mastered discriminated unions and utility types for our notification system. But what happens when we need to share this notification state across multiple components? In the next section, we'll explore how to type React Context and custom hooks properly.
+
+## Typing context and custom hooks
+
+## Typing context and custom hooks
+
+Our notification system works well within a single component, but real applications need to share notification state across multiple components. This is where React Context comes in—but Context introduces new TypeScript challenges.
+
+### The Problem: Context with Undefined Initial Value
+
+Let's try to create a notification context using the naive approach:
+
+```tsx
+// src/contexts/NotificationContext.tsx - Naive approach
+'use client';
+
+import { createContext, useContext, useState, ReactNode } from 'react';
+import type { NotificationProps } from '@/types/notifications';
+
+type NotificationWithId = NotificationProps & { id: string };
+
+type NotificationContextType = {
+  notifications: NotificationWithId[];
+  addNotification: (notification: NotificationProps) => void;
+  removeNotification: (id: string) => void;
+};
+
+// ❌ Problem: We have to provide an initial value, but we don't have one yet
+const NotificationContext = createContext<NotificationContextType>({
+  notifications: [],
+  addNotification: () => {},  // ← Dummy function
+  removeNotification: () => {}, // ← Dummy function
+});
+
+export function NotificationProvider({ children }: { children: ReactNode }) {
+  const [notifications, setNotifications] = useState<NotificationWithId[]>([]);
+
+  const addNotification = (notification: NotificationProps) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setNotifications([...notifications, { ...notification, id }]);
+  };
+
+  const removeNotification = (id: string) => {
+    setNotifications(notifications.filter(n => n.id !== id));
+  };
+
+  return (
+    <NotificationContext.Provider 
+      value={{ notifications, addNotification, removeNotification }}
+    >
+      {children}
+    </NotificationContext.Provider>
+  );
+}
+
+export function useNotifications() {
+  return useContext(NotificationContext);
+}
+```
+
+This compiles, but there's a subtle problem. Let's try to use it:
+
+```tsx
+// src/components/SomeComponent.tsx - Using the context
+'use client';
+
+import { useNotifications } from '@/contexts/NotificationContext';
+
+export function SomeComponent() {
+  const { addNotification } = useNotifications();
+
+  // This works, but what if we use the context outside the provider?
+  const handleClick = () => {
+    addNotification({
+      variant: 'success',
+      message: 'Button clicked',
+    });
+  };
+
+  return <button onClick={handleClick}>Click me</button>;
+}
+```
+
+```tsx
+// src/app/page.tsx - Forgetting to wrap with provider
+import { SomeComponent } from '@/components/SomeComponent';
+
+export default function Page() {
+  // ❌ Forgot to wrap with NotificationProvider
+  return (
+    <div>
+      <SomeComponent />
+    </div>
+  );
 }
 ```
 
 **Browser Behavior**:
-The app crashes on render.
+When you click the button, nothing happens. The notification is not added.
 
 **Browser Console Output**:
 ```
-Uncaught Error: useStatus must be used within a StatusProvider
-    at useStatus (StatusContext.tsx:25)
-    at SomeOtherComponent (SomeOtherComponent.tsx:8)
-    ...
+(No errors - the dummy function silently does nothing)
 ```
 
-**Expected vs. Actual Improvement**:
-- **Expected**: We wanted to eliminate the need for constant `null` checks in every component.
-- **Actual**: We succeeded. The `useStatus` hook now has a clean, non-nullable return type. We've traded a silent, repetitive compile-time error for a loud, clear, and immediate runtime error that tells the developer *exactly* how to fix the problem. This is a massive improvement in developer experience and application stability.
+**Root cause**: The dummy functions in the initial context value are called instead of the real functions from the provider. TypeScript doesn't warn us because the types match.
 
-## When to use `any` (yes, really)
+### Diagnostic Analysis: Reading the Failure
 
-## The Escape Hatch: Using `any` Responsibly
+**Let's parse this evidence**:
 
-In the TypeScript world, `any` is often seen as the ultimate evil. It's a sledgehammer that disables the type checker, undoing all the safety TypeScript provides. The common advice is "never use `any`."
+1. **What the developer experiences**: Code compiles and runs, but context functions don't work when used outside the provider. No error message, just silent failure.
 
-While this is excellent advice 99% of the time, a true expert knows that `any` is a tool. A dangerous tool, but one with specific, legitimate uses. Using `any` should always be a conscious, deliberate decision to opt out of type safety for a justifiable reason, not a shortcut for laziness.
+2. **What TypeScript reveals**: Nothing. The dummy functions have the correct type signature, so TypeScript is satisfied.
 
-Let's explore the few scenarios where `any` is a pragmatic choice.
+3. **Root cause identified**: We provided dummy implementations to satisfy TypeScript's requirement for an initial value, but those dummy implementations can actually be called if the context is used outside the provider.
 
-### Scenario 1: Gradual Migration from JavaScript
+4. **Why the current approach can't solve this**: TypeScript can't distinguish between "dummy function that should never be called" and "real function from provider."
 
-**The Problem**: You're tasked with converting a large, legacy JavaScript codebase to TypeScript. The project is active, and you can't pause development to refactor everything at once. You try to import an old, complex JavaScript utility, and TypeScript greets you with a wall of errors.
+5. **What we need**: A way to make the context value `undefined` initially, and force consumers to check for `undefined` before using it. Or better yet, throw a helpful error if the context is used outside the provider.
 
-**The Responsible Solution**: Use `any` as a temporary bridge to get the two worlds to communicate. You type the *boundaries* of the legacy code as `any`, allowing you to work on one file at a time.
+### Iteration 1: Context with Undefined and Runtime Check
 
-```javascript
-// src/legacy/chart-library.js (A complex, untyped JS file)
-
-function createComplexChart(config) {
-  // ... 200 lines of chaotic DOM manipulation
-  return {
-    destroy: () => { /* ... */ },
-    update: (newData) => { /* ... */ }
-  };
-}
-
-module.exports = { createComplexChart };
-```
+The solution is to make the context value potentially `undefined`, and add a runtime check in the hook.
 
 ```tsx
-// src/components/Dashboard.tsx (Our new TypeScript component)
+// src/contexts/NotificationContext.tsx - Version 2 (with undefined)
+'use client';
 
-import React, { useEffect, useRef } from 'react';
-// TypeScript will complain about this import without a type definition.
-const chartLibrary = require('../legacy/chart-library');
+import { createContext, useContext, useState, ReactNode } from 'react';
+import type { NotificationProps } from '@/types/notifications';
 
-// Let's define a temporary type alias to signal tech debt.
-type TODO_TypeThisLater = any;
+type NotificationWithId = NotificationProps & { id: string };
 
-const chart: TODO_TypeThisLater = chartLibrary;
-
-export const Dashboard = () => {
-  const chartRef = useRef(null);
-
-  useEffect(() => {
-    // We are taking responsibility for calling this correctly.
-    // TypeScript will not help us here.
-    const myChart = chart.createComplexChart({
-      element: chartRef.current,
-      data: [1, 2, 3],
-    });
-
-    return () => myChart.destroy();
-  }, []);
-
-  return <div ref={chartRef} />;
+type NotificationContextType = {
+  notifications: NotificationWithId[];
+  addNotification: (notification: NotificationProps) => void;
+  removeNotification: (id: string) => void;
 };
-```
 
-In this case, `any` (disguised as `TODO_TypeThisLater`) is a pragmatic tool. It allows us to integrate the old code without getting blocked, and the type alias serves as a clear `// TODO` comment for future refactoring. The goal is to eventually replace `any` with a proper type definition.
+// ✓ Context value can be undefined
+const NotificationContext = createContext<NotificationContextType | undefined>(
+  undefined
+);
 
-### Scenario 2: Working with Truly Dynamic, Unknown Data
+export function NotificationProvider({ children }: { children: ReactNode }) {
+  const [notifications, setNotifications] = useState<NotificationWithId[]>([]);
 
-**The Problem**: You are fetching data from an external source whose shape is not known at compile time. This could be a response from a third-party API, data from a CMS, or a JSON configuration file uploaded by a user.
+  const addNotification = (notification: NotificationProps) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setNotifications([...notifications, { ...notification, id }]);
+  };
 
-**The Responsible Solution**: Use `unknown` (a safer alternative to `any`) or `any` at the point of entry, but immediately validate and parse that data into a known, strong type. The "blast radius" of `any` should be as small as possible.
+  const removeNotification = (id: string) => {
+    setNotifications(notifications.filter(n => n.id !== id));
+  };
 
-`unknown` is preferred over `any` because it forces you to perform type checks before you can use the variable. `any` lets you do anything, which is less safe.
-
-```tsx
-// A type guard to check if an object is a valid user
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
-
-function isUser(data: unknown): data is User {
   return (
-    typeof data === 'object' &&
-    data !== null &&
-    'id' in data &&
-    'name' in data &&
-    'email' in data &&
-    typeof (data as User).id === 'number' &&
-    typeof (data as User).name === 'string' &&
-    typeof (data as User).email === 'string'
+    <NotificationContext.Provider 
+      value={{ notifications, addNotification, removeNotification }}
+    >
+      {children}
+    </NotificationContext.Provider>
   );
 }
 
-function UserProfile() {
-  const [user, setUser] = React.useState<User | null>(null);
-
-  React.useEffect(() => {
-    // The response from fetch is of type `any` after .json()
-    fetch('/api/user-untyped')
-      .then(res => res.json())
-      .then((data: unknown) => { // 1. Receive data as `unknown`
-        // 2. Validate and narrow the type
-        if (isUser(data)) {
-          // 3. Once validated, we can safely use it as `User`
-          setUser(data);
-        } else {
-          console.error("Received invalid user data:", data);
-        }
-      });
-  }, []);
-
-  // The rest of the component works with the safe `User` type
-  if (!user) return <div>Loading...</div>;
-  return <h1>Welcome, {user.name}</h1>;
+export function useNotifications() {
+  const context = useContext(NotificationContext);
+  
+  // Runtime check with helpful error message
+  if (context === undefined) {
+    throw new Error(
+      'useNotifications must be used within a NotificationProvider'
+    );
+  }
+  
+  return context;
 }
 ```
 
-Here, `unknown` acts as a quarantine. We don't let the untyped data "infect" the rest of our application. We inspect it at the boundary, and only if it passes our checks do we allow it into our typed world.
+Now let's try to use it outside the provider:
 
-### Scenario 3: The Last Resort Escape Hatch
+```tsx
+// src/app/page.tsx - Using context outside provider
+import { SomeComponent } from '@/components/SomeComponent';
 
-**The Problem**: You are working with a third-party library with complex, generic types. You are using it in a way you know is correct, but TypeScript's inference engine gets confused and produces a massive, unhelpful error message. You've spent an hour trying to satisfy the type checker to no avail.
+export default function Page() {
+  // Still forgot to wrap with NotificationProvider
+  return (
+    <div>
+      <SomeComponent />
+    </div>
+  );
+}
+```
 
-**The Responsible Solution**: As a final escape hatch, you can use `as any` to tell the compiler, "Trust me, I know what I'm doing." This should be used sparingly and always accompanied by a comment explaining why it was necessary.
+**Browser Behavior**:
+The page crashes immediately when `SomeComponent` tries to use the context.
+
+**Browser Console Output**:
+```
+Error: useNotifications must be used within a NotificationProvider
+    at useNotifications (NotificationContext.tsx:38)
+    at SomeComponent (SomeComponent.tsx:6)
+```
+
+**React Error Overlay**:
+```
+Unhandled Runtime Error
+Error: useNotifications must be used within a NotificationProvider
+
+Source
+src/contexts/NotificationContext.tsx (38:10) @ useNotifications
+
+  36 |   const context = useContext(NotificationContext);
+  37 |   if (context === undefined) {
+> 38 |     throw new Error(
+     |          ^
+  39 |       'useNotifications must be used within a NotificationProvider'
+  40 |     );
+  41 |   }
+```
+
+**Expected vs. Actual improvement**:
+- **Before**: Silent failure, no indication of what went wrong
+- **After**: Clear error message immediately points to the problem
+- **Concrete evidence**: Developer knows exactly what to fix—wrap the component tree with `NotificationProvider`
+
+Let's fix it properly:
+
+```tsx
+// src/app/layout.tsx - Wrapping with provider
+import { NotificationProvider } from '@/contexts/NotificationContext';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <NotificationProvider>
+          {children}
+        </NotificationProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+### Iteration 2: Typing Custom Hooks with Generics
+
+Now let's create a more sophisticated custom hook that can work with different types of notifications. We'll use generics to make it reusable.
 
 ```typescript
-import { someComplexLibraryFunction } from 'some-library';
+// src/hooks/useFilteredNotifications.ts
+import { useMemo } from 'react';
+import type { NotificationProps } from '@/types/notifications';
 
-interface MyType { /* ... */ }
-interface ExpectedResultType { /* ... */ }
+type NotificationWithId = NotificationProps & { id: string };
 
-function myWrapperFunction(data: MyType) {
-  // Let's assume this function has a very complex generic signature
-  // that is causing a misleading TypeScript error.
-  const result = someComplexLibraryFunction(data);
-
-  // After verifying manually that `result` does match `ExpectedResultType`,
-  // we can use `as any` to bypass the compiler error.
-  // This is a "code smell" and should be a last resort.
-  
-  // HACK: Bypassing complex generic error from `someComplexLibraryFunction`.
-  // The library's types don't correctly infer the return shape for our use case.
-  // Manually verified that the runtime output is correct.
-  // See JIRA-TICKET-123 for details.
-  return result as any as ExpectedResultType;
+// Generic hook that filters notifications by variant
+export function useFilteredNotifications<T extends NotificationProps['variant']>(
+  notifications: NotificationWithId[],
+  variant: T
+): Extract<NotificationWithId, { variant: T }>[] {
+  return useMemo(() => {
+    return notifications.filter(
+      (n): n is Extract<NotificationWithId, { variant: T }> => 
+        n.variant === variant
+    );
+  }, [notifications, variant]);
 }
 ```
 
-This is the most dangerous use of `any`. It's a signal that you are overriding the compiler. It should be treated as technical debt and revisited later. Maybe the library types can be improved, or your own types can be simplified.
+Let's use this generic hook:
 
-### Decision Framework: When to Consider `any`
+```tsx
+// src/components/ErrorList.tsx - Using generic hook
+'use client';
 
-| Scenario                               | Use `any` or `unknown`?                                                              | Why it's acceptable                                                                                             | Key Principle                                                              |
-| -------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| **I'm feeling lazy**                   | **NO**                                                                               | It's not. This leads to tech debt and bugs. Spend the time to find the correct type.                            | Discipline over convenience.                                               |
-| **Migrating a JS file**                | Yes, `any` is pragmatic.                                                             | Allows for incremental adoption of TypeScript without blocking development.                                     | Use as a temporary bridge. Track as tech debt.                             |
-| **Data from an external API/CMS**      | Yes, `unknown` is best.                                                              | The data shape is genuinely not known at compile time.                                                          | Quarantine and validate at the boundary. Keep the "blast radius" small.    |
-| **A library has incorrect/bad types**  | Yes, `as any` is a last resort.                                                      | The type system is providing negative value (incorrect errors).                                                 | Use as a targeted escape hatch. Document it thoroughly.                    |
-| **I can't figure out a complex type**  | **NO**. This is a learning opportunity.                                              | Using `any` here robs you of the chance to understand the type system better. Ask for help or simplify the code. | Treat type errors as a guide, not an obstacle.                             |
+import { useNotifications } from '@/contexts/NotificationContext';
+import { useFilteredNotifications } from '@/hooks/useFilteredNotifications';
 
-`any` is a powerful feature for exceptional circumstances. By understanding its legitimate uses, you can wield it responsibly without sacrificing the overall safety and maintainability of your TypeScript codebase.
+export function ErrorList() {
+  const { notifications } = useNotifications();
+  
+  // TypeScript infers the return type as ErrorNotification[]
+  const errors = useFilteredNotifications(notifications, 'error');
+
+  return (
+    <div className="space-y-2">
+      <h2 className="text-lg font-semibold text-red-600">
+        Errors ({errors.length})
+      </h2>
+      {errors.map((error) => (
+        <div key={error.id} className="p-3 bg-red-50 rounded">
+          <p>{error.message}</p>
+          {/* TypeScript knows 'action' exists on error variant */}
+          {error.action && (
+            <button 
+              onClick={error.action.onClick}
+              className="mt-2 text-sm underline"
+            >
+              {error.action.label}
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+```tsx
+// src/components/SuccessList.tsx - Same hook, different type
+'use client';
+
+import { useNotifications } from '@/contexts/NotificationContext';
+import { useFilteredNotifications } from '@/hooks/useFilteredNotifications';
+
+export function SuccessList() {
+  const { notifications } = useNotifications();
+  
+  // TypeScript infers the return type as SuccessNotification[]
+  const successes = useFilteredNotifications(notifications, 'success');
+
+  return (
+    <div className="space-y-2">
+      <h2 className="text-lg font-semibold text-green-600">
+        Success ({successes.length})
+      </h2>
+      {successes.map((success) => (
+        <div key={success.id} className="p-3 bg-green-50 rounded">
+          <p>{success.message}</p>
+          {/* TypeScript knows 'action' does NOT exist on success variant */}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Iteration 3: Complex Hook with Multiple Return Types
+
+Let's create a more complex hook that returns different types based on its configuration.
+
+```typescript
+// src/hooks/useNotificationManager.ts
+import { useState, useCallback } from 'react';
+import type { NotificationProps } from '@/types/notifications';
+
+type NotificationWithId = NotificationProps & { id: string };
+
+type UseNotificationManagerOptions = {
+  maxNotifications?: number;
+  autoRemoveDelay?: number;
+};
+
+type NotificationManager = {
+  notifications: NotificationWithId[];
+  addNotification: (notification: NotificationProps) => string;
+  removeNotification: (id: string) => void;
+  clearAll: () => void;
+  getNotificationById: (id: string) => NotificationWithId | undefined;
+};
+
+export function useNotificationManager(
+  options: UseNotificationManagerOptions = {}
+): NotificationManager {
+  const { maxNotifications = 5, autoRemoveDelay } = options;
+  const [notifications, setNotifications] = useState<NotificationWithId[]>([]);
+
+  const addNotification = useCallback((notification: NotificationProps): string => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const newNotification = { ...notification, id };
+
+    setNotifications((prev) => {
+      const updated = [...prev, newNotification];
+      // Enforce max notifications
+      if (updated.length > maxNotifications) {
+        return updated.slice(-maxNotifications);
+      }
+      return updated;
+    });
+
+    // Auto-remove after delay if specified
+    if (autoRemoveDelay) {
+      setTimeout(() => {
+        removeNotification(id);
+      }, autoRemoveDelay);
+    }
+
+    return id;
+  }, [maxNotifications, autoRemoveDelay]);
+
+  const removeNotification = useCallback((id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  }, []);
+
+  const clearAll = useCallback(() => {
+    setNotifications([]);
+  }, []);
+
+  const getNotificationById = useCallback((id: string) => {
+    return notifications.find((n) => n.id === id);
+  }, [notifications]);
+
+  return {
+    notifications,
+    addNotification,
+    removeNotification,
+    clearAll,
+    getNotificationById,
+  };
+}
+```
+
+Now let's use this hook in a component:
+
+```tsx
+// src/components/NotificationDemo.tsx
+'use client';
+
+import { useNotificationManager } from '@/hooks/useNotificationManager';
+import { Notification } from './Notification';
+
+export function NotificationDemo() {
+  const manager = useNotificationManager({
+    maxNotifications: 3,
+    autoRemoveDelay: 5000, // Auto-remove after 5 seconds
+  });
+
+  const handleAddSuccess = () => {
+    const id = manager.addNotification({
+      variant: 'success',
+      message: 'Operation completed successfully',
+      dismissible: true,
+    });
+    console.log('Added notification with id:', id);
+  };
+
+  const handleAddError = () => {
+    manager.addNotification({
+      variant: 'error',
+      message: 'Operation failed',
+      dismissible: true,
+      action: {
+        label: 'Retry',
+        onClick: () => console.log('Retrying...'),
+      },
+    });
+  };
+
+  return (
+    <div className="p-8 space-y-4">
+      <div className="flex gap-2">
+        <button
+          onClick={handleAddSuccess}
+          className="px-4 py-2 bg-green-600 text-white rounded"
+        >
+          Add Success
+        </button>
+        <button
+          onClick={handleAddError}
+          className="px-4 py-2 bg-red-600 text-white rounded"
+        >
+          Add Error
+        </button>
+        <button
+          onClick={manager.clearAll}
+          className="px-4 py-2 bg-gray-600 text-white rounded"
+        >
+          Clear All
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        {manager.notifications.map((notif) => (
+          <Notification key={notif.id} {...notif} />
+        ))}
+      </div>
+
+      <p className="text-sm text-gray-600">
+        Showing {manager.notifications.length} of max 3 notifications
+      </p>
+    </div>
+  );
+}
+```
+
+### Iteration 4: Typing Hooks with Overloads
+
+Sometimes a hook needs to return different types based on its parameters. We can use function overloads for this.
+
+```typescript
+// src/hooks/useNotification.ts - Hook with overloads
+import { useState, useEffect } from 'react';
+import type { NotificationProps } from '@/types/notifications';
+
+type NotificationWithId = NotificationProps & { id: string };
+
+// Overload signatures
+export function useNotification(id: string): NotificationWithId | null;
+export function useNotification(id: string, required: true): NotificationWithId;
+export function useNotification(id: string, required: false): NotificationWithId | null;
+
+// Implementation
+export function useNotification(
+  id: string,
+  required?: boolean
+): NotificationWithId | null {
+  const [notification, setNotification] = useState<NotificationWithId | null>(null);
+
+  useEffect(() => {
+    // Simulate fetching notification by id
+    const fetchNotification = async () => {
+      // In real app, this would be an API call
+      const mockNotification: NotificationWithId = {
+        id,
+        variant: 'info',
+        message: `Notification ${id}`,
+        dismissible: true,
+      };
+      setNotification(mockNotification);
+    };
+
+    fetchNotification();
+  }, [id]);
+
+  if (required && notification === null) {
+    throw new Error(`Notification with id ${id} is required but not found`);
+  }
+
+  return notification;
+}
+```
+
+```tsx
+// src/components/NotificationDetail.tsx - Using overloaded hook
+'use client';
+
+import { useNotification } from '@/hooks/useNotification';
+
+export function NotificationDetail({ id }: { id: string }) {
+  // TypeScript knows this can be null
+  const notification = useNotification(id);
+
+  if (!notification) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className="p-4 border rounded">
+      <p>{notification.message}</p>
+    </div>
+  );
+}
+
+export function RequiredNotificationDetail({ id }: { id: string }) {
+  // TypeScript knows this is never null (will throw if not found)
+  const notification = useNotification(id, true);
+
+  // No null check needed
+  return (
+    <div className="p-4 border rounded">
+      <p>{notification.message}</p>
+    </div>
+  );
+}
+```
+
+### When to Apply These Patterns
+
+**Context with undefined + runtime check**:
+- **Use when**: Creating context that should only be used within a provider
+- **What it optimizes for**: Clear error messages when context is misused
+- **What it sacrifices**: Extra runtime check on every hook call
+- **When to choose**: Always, for any context that requires a provider
+
+**Generic hooks**:
+- **Use when**: Hook logic is the same but types vary based on parameters
+- **What it optimizes for**: Code reuse without sacrificing type safety
+- **What it sacrifices**: Slightly more complex type signatures
+- **When to choose**: When you find yourself duplicating hook logic for different types
+
+**Hooks with overloads**:
+- **Use when**: Hook behavior changes significantly based on parameters
+- **What it optimizes for**: Type safety for different usage patterns
+- **What it sacrifices**: More complex type definitions
+- **When to choose**: When a hook has distinct modes of operation (e.g., required vs. optional)
+
+**Code characteristics**:
+- Setup: Medium complexity (requires understanding of generics and overloads)
+- Maintenance: Low burden (TypeScript guides you through changes)
+- Performance: Zero runtime cost (types are erased at compile time)
+
+### Limitation preview
+
+We've now mastered typing context and custom hooks, making our notification system fully type-safe across component boundaries. But there's one more TypeScript topic we need to address: when is it actually okay to use `any`? In the next section, we'll explore the pragmatic use of `any` and its safer alternatives.
+
+## When to use `any` (yes, really)
+
+## When to use `any` (yes, really)
+
+TypeScript purists will tell you to never use `any`. They're wrong. There are legitimate cases where `any` is the pragmatic choice. The key is knowing when to use it, and more importantly, how to contain its impact.
+
+### The Problem: Third-Party Libraries Without Types
+
+Let's extend our notification system to integrate with a third-party analytics library that doesn't have TypeScript definitions.
+
+```typescript
+// Imagine this is from 'legacy-analytics' package
+// No @types/legacy-analytics exists
+declare module 'legacy-analytics' {
+  export function track(event: string, properties: any): void;
+  export function identify(userId: string, traits: any): void;
+}
+```
+
+```tsx
+// src/hooks/useNotificationAnalytics.ts - Naive approach
+import { useEffect } from 'react';
+import { track } from 'legacy-analytics';
+import type { NotificationProps } from '@/types/notifications';
+
+type NotificationWithId = NotificationProps & { id: string };
+
+export function useNotificationAnalytics(notification: NotificationWithId) {
+  useEffect(() => {
+    // ❌ TypeScript error: 'notification' is not assignable to parameter of type 'any'
+    // Actually, it IS assignable, but we're trying to be too strict
+    track('notification_shown', {
+      variant: notification.variant,
+      message: notification.message,
+      hasAction: 'action' in notification,
+    });
+  }, [notification]);
+}
+```
+
+**TypeScript Compiler Output**:
+```bash
+src/hooks/useNotificationAnalytics.ts:12:5 - error TS2345:
+Argument of type '{ variant: "success" | "error" | "warning" | "info" | "loading" | "confirmation"; message: string; hasAction: boolean; }' 
+is not assignable to parameter of type 'any'.
+
+12     track('notification_shown', {
+       ~~~~~
+
+Found 1 error in src/hooks/useNotificationAnalytics.ts
+```
+
+Wait, that error message doesn't make sense. The library accepts `any`, so why is TypeScript complaining?
+
+### Diagnostic Analysis: Reading the Failure
+
+**Let's parse this evidence**:
+
+1. **What the developer experiences**: TypeScript rejects perfectly valid code because the third-party library uses `any` in its type definitions.
+
+2. **What TypeScript reveals**: The error message is confusing—it says our object "is not assignable to parameter of type 'any'", which seems impossible since `any` accepts anything.
+
+3. **Root cause identified**: This is actually a different issue—TypeScript is being overly strict about object literal types. The real problem is that we're trying to avoid `any` when the library explicitly uses it.
+
+4. **Why fighting `any` here is wrong**: The library doesn't have types. We could spend hours creating type definitions for it, or we could accept that this boundary is untyped and move on.
+
+5. **What we need**: A pragmatic approach to using `any` at library boundaries while keeping the rest of our code type-safe.
+
+### Iteration 1: Strategic Use of `any` at Boundaries
+
+The solution is to use `any` at the boundary with the untyped library, but keep everything else type-safe.
+
+```tsx
+// src/hooks/useNotificationAnalytics.ts - Version 2 (pragmatic)
+import { useEffect } from 'react';
+import { track } from 'legacy-analytics';
+import type { NotificationProps } from '@/types/notifications';
+
+type NotificationWithId = NotificationProps & { id: string };
+
+// Helper function that explicitly accepts any for the properties
+function trackNotification(event: string, properties: any): void {
+  track(event, properties);
+}
+
+export function useNotificationAnalytics(notification: NotificationWithId) {
+  useEffect(() => {
+    // ✓ Our code is type-safe, we just pass it to the untyped boundary
+    trackNotification('notification_shown', {
+      variant: notification.variant,
+      message: notification.message,
+      hasAction: 'action' in notification,
+    });
+  }, [notification]);
+}
+```
+
+**Expected vs. Actual improvement**:
+- **Before**: Fighting TypeScript to avoid `any`, creating friction
+- **After**: Accept `any` at the library boundary, keep our code type-safe
+- **Concrete evidence**: Code compiles, analytics work, and we didn't waste time creating type definitions for a library we don't control
+
+### Iteration 2: `unknown` - The Safer Alternative
+
+When you receive data from an external source (API, localStorage, third-party library), use `unknown` instead of `any`. `unknown` forces you to validate the data before using it.
+
+```typescript
+// src/utils/storage.ts - Using unknown for external data
+export function getStoredNotifications(): unknown {
+  const stored = localStorage.getItem('notifications');
+  if (!stored) return null;
+  
+  // ✓ Return unknown, not any
+  return JSON.parse(stored);
+}
+
+// Type guard to validate the data
+function isNotificationArray(value: unknown): value is NotificationWithId[] {
+  if (!Array.isArray(value)) return false;
+  
+  return value.every((item) => {
+    return (
+      typeof item === 'object' &&
+      item !== null &&
+      'id' in item &&
+      'variant' in item &&
+      'message' in item &&
+      typeof item.id === 'string' &&
+      typeof item.message === 'string'
+    );
+  });
+}
+
+export function loadNotifications(): NotificationWithId[] {
+  const stored = getStoredNotifications();
+  
+  // ✓ Must validate before using
+  if (isNotificationArray(stored)) {
+    return stored;
+  }
+  
+  return [];
+}
+```
+
+Let's see what happens if we try to use `unknown` without validation:
+
+```typescript
+// src/utils/storage.ts - Attempting to use unknown without validation
+export function loadNotificationsBad(): NotificationWithId[] {
+  const stored = getStoredNotifications();
+  
+  // ❌ TypeScript error: Type 'unknown' is not assignable to type 'NotificationWithId[]'
+  return stored;
+}
+```
+
+**TypeScript Compiler Output**:
+```bash
+src/utils/storage.ts:45:10 - error TS2322:
+Type 'unknown' is not assignable to type 'NotificationWithId[]'.
+
+45   return stored;
+            ~~~~~~
+
+Found 1 error in src/utils/storage.ts
+```
+
+This is exactly what we want—TypeScript forces us to validate the data.
+
+### Iteration 3: `as any` - The Escape Hatch
+
+Sometimes you need to tell TypeScript "trust me, I know what I'm doing." Use `as any` sparingly, and always leave a comment explaining why.
+
+```tsx
+// src/components/NotificationPortal.tsx - Using as any for DOM manipulation
+'use client';
+
+import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import type { ReactNode } from 'react';
+
+export function NotificationPortal({ children }: { children: ReactNode }) {
+  const portalRoot = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    // Create portal root if it doesn't exist
+    let root = document.getElementById('notification-portal');
+    
+    if (!root) {
+      root = document.createElement('div');
+      root.id = 'notification-portal';
+      document.body.appendChild(root);
+    }
+    
+    portalRoot.current = root;
+
+    return () => {
+      // Cleanup: remove portal root if it's empty
+      if (root && root.childNodes.length === 0) {
+        // TypeScript doesn't know that root.parentNode exists
+        // because it could be null if the element was removed
+        // We know it exists because we just checked root
+        (root.parentNode as any)?.removeChild(root);
+        // Alternative: Use type assertion with explanation
+        // root.parentNode?.removeChild(root); // TypeScript error
+        // (root.parentNode as HTMLElement).removeChild(root); // Better
+      }
+    };
+  }, []);
+
+  if (!portalRoot.current) return null;
+
+  return createPortal(children, portalRoot.current);
+}
+```
+
+Actually, let's refactor that to avoid `as any`:
+
+```tsx
+// src/components/NotificationPortal.tsx - Version 2 (better)
+'use client';
+
+import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import type { ReactNode } from 'react';
+
+export function NotificationPortal({ children }: { children: ReactNode }) {
+  const portalRoot = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    let root = document.getElementById('notification-portal');
+    
+    if (!root) {
+      root = document.createElement('div');
+      root.id = 'notification-portal';
+      document.body.appendChild(root);
+    }
+    
+    portalRoot.current = root;
+
+    return () => {
+      // Better: Check if parentNode exists before using it
+      if (root && root.childNodes.length === 0 && root.parentNode) {
+        root.parentNode.removeChild(root);
+      }
+    };
+  }, []);
+
+  if (!portalRoot.current) return null;
+
+  return createPortal(children, portalRoot.current);
+}
+```
+
+### Iteration 4: When `any` Is Actually the Right Choice
+
+Here are legitimate cases where `any` is the pragmatic choice:
+
+**1. Prototyping**: When you're exploring an idea and types would slow you down
+
+```typescript
+// src/experiments/notification-ai.ts - Prototyping
+// TODO: Add proper types once we decide on the API
+export function generateNotificationMessage(context: any): string {
+  // Experimenting with AI-generated messages
+  // Will add proper types once we finalize the context structure
+  return `Generated message based on ${context}`;
+}
+```
+
+**2. Gradual migration**: When converting JavaScript to TypeScript
+
+```typescript
+// src/legacy/old-notification-system.ts - Gradual migration
+// This file is being migrated from JavaScript
+// Using any temporarily to get it compiling, will add types incrementally
+
+export function legacyNotificationHandler(data: any): void {
+  // TODO: Type this properly
+  console.log('Legacy handler:', data);
+}
+```
+
+**3. Truly dynamic data**: When the shape of data is genuinely unknowable
+
+```typescript
+// src/utils/debug.ts - Truly dynamic data
+export function debugLog(label: string, data: any): void {
+  // This is a debug utility that accepts literally anything
+  // Using any is appropriate here
+  console.log(`[${label}]`, data);
+}
+```
+
+**4. Working around TypeScript limitations**: When TypeScript's type system can't express what you need
+
+```typescript
+// src/utils/deep-merge.ts - TypeScript limitation
+export function deepMerge<T>(target: T, source: any): T {
+  // Deep merge is genuinely hard to type correctly
+  // The proper type would be incredibly complex
+  // Using any here is pragmatic
+  
+  if (typeof target !== 'object' || typeof source !== 'object') {
+    return source;
+  }
+
+  const result = { ...target };
+  
+  for (const key in source) {
+    if (source.hasOwnProperty(key)) {
+      if (typeof source[key] === 'object' && !Array.isArray(source[key])) {
+        (result as any)[key] = deepMerge((target as any)[key] || {}, source[key]);
+      } else {
+        (result as any)[key] = source[key];
+      }
+    }
+  }
+
+  return result;
+}
+```
+
+### The Rules of `any`
+
+**Rule 1: Contain the blast radius**
+
+When you use `any`, limit its scope. Don't let it leak into the rest of your codebase.
+
+```typescript
+// ❌ Bad: any leaks everywhere
+export function processNotification(data: any) {
+  return data;  // Returns any
+}
+
+// ✓ Good: any is contained
+export function processNotification(data: any): NotificationProps {
+  // Validate and transform to proper type
+  return {
+    variant: data.variant || 'info',
+    message: data.message || 'No message',
+    dismissible: Boolean(data.dismissible),
+  };
+}
+```
+
+**Rule 2: Document why you used `any`**
+
+Always leave a comment explaining why `any` was necessary.
+
+```typescript
+// ✓ Good: Documented
+export function trackEvent(event: string, properties: any): void {
+  // Using any because the analytics library doesn't have types
+  // and the property shape varies by event type
+  analytics.track(event, properties);
+}
+```
+
+**Rule 3: Prefer `unknown` when receiving external data**
+
+Use `unknown` instead of `any` when you don't know the type yet but will validate it.
+
+```typescript
+// ❌ Bad: Using any for external data
+function parseApiResponse(response: any): NotificationProps {
+  return response;  // No validation
+}
+
+// ✓ Good: Using unknown with validation
+function parseApiResponse(response: unknown): NotificationProps {
+  if (!isValidNotification(response)) {
+    throw new Error('Invalid notification data');
+  }
+  return response;
+}
+
+function isValidNotification(value: unknown): value is NotificationProps {
+  // Validation logic
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'variant' in value &&
+    'message' in value
+  );
+}
+```
+
+**Rule 4: Use type assertions instead of `any` when possible**
+
+If you know the type but TypeScript doesn't, use a type assertion instead of `any`.
+
+```typescript
+// ❌ Bad: Using any
+const element = document.getElementById('root') as any;
+element.style.color = 'red';
+
+// ✓ Good: Using type assertion
+const element = document.getElementById('root') as HTMLElement;
+element.style.color = 'red';
+
+// ✓ Better: Using type guard
+const element = document.getElementById('root');
+if (element instanceof HTMLElement) {
+  element.style.color = 'red';
+}
+```
+
+### When to Apply `any` vs. Alternatives
+
+| Situation | Use | Why |
+|-----------|-----|-----|
+| External library without types | `any` at boundary | Pragmatic, contained |
+| Receiving external data | `unknown` | Forces validation |
+| Prototyping | `any` with TODO | Speed over safety |
+| Gradual migration | `any` with TODO | Incremental improvement |
+| Debug utilities | `any` | Genuinely accepts anything |
+| TypeScript limitation | `any` with comment | Workaround documented |
+| You know the type | Type assertion | More specific than `any` |
+| DOM manipulation | Type guard or assertion | Safer than `any` |
+
+### The Complete Journey: From Naive to Professional
+
+Let's look at how our notification system evolved through this chapter:
+
+| Iteration | Problem | Solution | Type Safety Impact |
+|-----------|---------|----------|-------------------|
+| 0 | Boolean flags everywhere | Naive approach | Invalid states compile |
+| 1 | Invalid combinations possible | Discriminated unions | Invalid states unrepresentable |
+| 2 | Adding new variants breaks code | Exhaustiveness checking | Compiler forces handling all cases |
+| 3 | Need to extract specific variants | Extract/Exclude utilities | Type-safe filtering |
+| 4 | Context used outside provider | undefined + runtime check | Clear error messages |
+| 5 | Generic filtering logic | Generic hooks | Reusable, type-safe |
+| 6 | Third-party library without types | Strategic `any` at boundary | Pragmatic compromise |
+| 7 | External data validation | `unknown` + type guards | Safe external data handling |
+
+### Final Implementation: Production-Ready Notification System
+
+Here's our complete, production-ready notification system with all the TypeScript patterns we've learned:
+
+```typescript
+// src/types/notifications.ts - Final version
+export type SuccessNotification = {
+  variant: 'success';
+  message: string;
+  dismissible?: boolean;
+};
+
+export type ErrorNotification = {
+  variant: 'error';
+  message: string;
+  dismissible?: boolean;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+};
+
+export type WarningNotification = {
+  variant: 'warning';
+  message: string;
+  dismissible?: boolean;
+};
+
+export type InfoNotification = {
+  variant: 'info';
+  message: string;
+  dismissible?: boolean;
+};
+
+export type LoadingNotification = {
+  variant: 'loading';
+  message: string;
+};
+
+export type ConfirmationNotification = {
+  variant: 'confirmation';
+  message: string;
+  confirmText: string;
+  cancelText: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  severity: 'warning' | 'danger';
+};
+
+export type NotificationProps = 
+  | SuccessNotification 
+  | ErrorNotification 
+  | WarningNotification 
+  | InfoNotification
+  | LoadingNotification
+  | ConfirmationNotification;
+
+export type NotificationWithId = NotificationProps & { id: string };
+
+// Utility types
+export type ErrorNotificationOnly = Extract<NotificationProps, { variant: 'error' }>;
+export type DismissibleNotifications = Extract<NotificationProps, { dismissible?: boolean }>;
+export type InteractiveNotifications = Exclude<NotificationProps, { variant: 'loading' }>;
+
+// Configuration
+export type NotificationConfig = Record<
+  NotificationProps['variant'],
+  {
+    icon: string;
+    backgroundColor: string;
+    textColor: string;
+  }
+>;
+
+export const notificationConfig: NotificationConfig = {
+  success: { icon: '✓', backgroundColor: 'bg-green-100', textColor: 'text-green-800' },
+  error: { icon: '✗', backgroundColor: 'bg-red-100', textColor: 'text-red-800' },
+  warning: { icon: '⚠', backgroundColor: 'bg-yellow-100', textColor: 'text-yellow-800' },
+  info: { icon: 'ℹ', backgroundColor: 'bg-blue-100', textColor: 'text-blue-800' },
+  loading: { icon: '⟳', backgroundColor: 'bg-gray-100', textColor: 'text-gray-800' },
+  confirmation: { icon: '?', backgroundColor: 'bg-purple-100', textColor: 'text-purple-800' },
+};
+```
+
+```tsx
+// src/contexts/NotificationContext.tsx - Final version
+'use client';
+
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import type { NotificationProps, NotificationWithId } from '@/types/notifications';
+
+type NotificationContextType = {
+  notifications: NotificationWithId[];
+  addNotification: (notification: NotificationProps) => string;
+  removeNotification: (id: string) => void;
+  clearAll: () => void;
+};
+
+const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+
+export function NotificationProvider({ children }: { children: ReactNode }) {
+  const [notifications, setNotifications] = useState<NotificationWithId[]>([]);
+
+  const addNotification = useCallback((notification: NotificationProps): string => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setNotifications((prev) => [...prev, { ...notification, id }]);
+    return id;
+  }, []);
+
+  const removeNotification = useCallback((id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  }, []);
+
+  const clearAll = useCallback(() => {
+    setNotifications([]);
+  }, []);
+
+  return (
+    <NotificationContext.Provider 
+      value={{ notifications, addNotification, removeNotification, clearAll }}
+    >
+      {children}
+    </NotificationContext.Provider>
+  );
+}
+
+export function useNotifications() {
+  const context = useContext(NotificationContext);
+  if (context === undefined) {
+    throw new Error('useNotifications must be used within a NotificationProvider');
+  }
+  return context;
+}
+```
+
+```tsx
+// src/components/Notification.tsx - Final version
+import type { NotificationProps } from '@/types/notifications';
+import { notificationConfig } from '@/types/notifications';
+
+export function Notification(props: NotificationProps) {
+  const config = notificationConfig[props.variant];
+
+  const assertNever = (value: never): never => {
+    throw new Error(`Unhandled variant: ${value}`);
+  };
+
+  return (
+    <div className={`p-4 rounded ${config.backgroundColor}`}>
+      <div className="flex items-start gap-3">
+        <span className={`text-xl ${config.textColor}`}>{config.icon}</span>
+        <div className="flex-1">
+          <p className={config.textColor}>{props.message}</p>
+          
+          {props.variant === 'error' && props.action && (
+            <button
+              onClick={props.action.onClick}
+              className="mt-2 text-sm underline"
+            >
+              {props.action.label}
+            </button>
+          )}
+          
+          {props.variant === 'confirmation' && (
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={props.onConfirm}
+                className={`px-4 py-2 rounded text-white ${
+                  props.severity === 'danger' 
+                    ? 'bg-red-600 hover:bg-red-700' 
+                    : 'bg-yellow-600 hover:bg-yellow-700'
+                }`}
+              >
+                {props.confirmText}
+              </button>
+              <button
+                onClick={props.onCancel}
+                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+              >
+                {props.cancelText}
+              </button>
+            </div>
+          )}
+        </div>
+        
+        {props.variant !== 'confirmation' && 
+         props.variant !== 'loading' && 
+         props.dismissible && (
+          <button className="text-gray-500">×</button>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+### Lessons Learned
+
+**1. Make invalid states unrepresentable**
+Use discriminated unions to ensure only valid combinations of properties can exist. TypeScript becomes your design validator.
+
+**2. Utility types are your friends**
+`Extract`, `Exclude`, `Pick`, `Omit`, `Partial`, `Required`, and `Record` solve 90% of type manipulation needs. Learn them well.
+
+**3. Context needs runtime checks**
+Always make context values potentially `undefined` and add runtime checks in the hook. Clear error messages save debugging time.
+
+**4. Generics enable reusable, type-safe code**
+Generic hooks and functions let you write code once and use it with multiple types, without sacrificing type safety.
+
+**5. `any` is a tool, not a failure**
+Use `any` strategically at boundaries with untyped code. Document why, contain the scope, and prefer `unknown` for external data.
+
+**6. TypeScript is a design tool**
+The type system isn't just for catching bugs—it's for designing better APIs. If your types are hard to use, your API probably is too.
+
+**7. Exhaustiveness checking prevents bugs**
+Use the `assertNever` pattern to ensure you handle all cases of a discriminated union. When you add a new variant, TypeScript will tell you everywhere you need to update.
+
+This notification system demonstrates professional TypeScript patterns that scale to real-world applications. The types guide you toward correct usage, catch mistakes at compile time, and document the API for other developers.

@@ -2,282 +2,696 @@
 
 ## NextAuth.js (Auth.js) setup
 
-## The Unprotected Application: A Security Failure by Default
+## The Failure: Insecure Client-Only Auth Checks
 
-Authentication isn't a feature you add at the end; it's a foundational concern. To understand its importance, we'll start with a common scenario: a simple blog application that is completely unprotected. This application will be our **anchor example** for the entire chapter.
+Let's start with what most developers build first—and why it's fundamentally broken.
 
-Our goal is to build a blog where only authenticated administrators can create new posts.
+### Reference Implementation: E-commerce Admin Dashboard
 
-### Phase 1: Establish the Reference Implementation
+We're building an admin dashboard for our e-commerce product catalog. Admins need to:
 
-First, let's set up the initial, insecure version of our application.
+- View all products (including unpublished ones)
+- Edit product details
+- Manage inventory
+- View customer orders
 
-**Project Structure**:
-```
-src/
-├── app/
-│   ├── layout.tsx
-│   ├── page.tsx                  # Public homepage
-│   └── admin/
-│       └── create-post/
-│           └── page.tsx          # The page that SHOULD be private
-└── components/
-    └── Header.tsx                # A simple site header
-```
-
-Here is the code for our key files.
-
-**The "Create Post" Page (Problematic Version)**:
-This page is currently accessible to anyone who knows the URL.
+Here's the naive approach that seems to work:
 
 ```tsx
-// src/app/admin/create-post/page.tsx
+// app/admin/page.tsx
+'use client';
 
-export default function CreatePostPage() {
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+export default function AdminDashboard() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [products, setProducts] = useState([]);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('authToken');
+    
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    setIsAuthenticated(true);
+
+    // Fetch admin data
+    fetch('/api/admin/products', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+      .then(res => res.json())
+      .then(data => setProducts(data));
+  }, [router]);
+
+  if (!isAuthenticated) {
+    return <div>Checking authentication...</div>;
+  }
+
   return (
-    <main className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Create New Post</h1>
-      <form className="flex flex-col gap-4">
-        <div>
-          <label htmlFor="title" className="block mb-1">Title</label>
-          <input type="text" id="title" name="title" className="w-full p-2 border rounded" />
-        </div>
-        <div>
-          <label htmlFor="content" className="block mb-1">Content</label>
-          <textarea id="content" name="content" rows={10} className="w-full p-2 border rounded"></textarea>
-        </div>
-        <button type="submit" className="bg-blue-500 text-white p-2 rounded self-start">
-          Submit Post
-        </button>
-      </form>
-    </main>
+    <div>
+      <h1>Admin Dashboard</h1>
+      <div>
+        {products.map(product => (
+          <div key={product.id}>
+            <h2>{product.name}</h2>
+            <p>Price: ${product.price}</p>
+            <p>Stock: {product.inventory}</p>
+            <button>Edit</button>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 ```
 
-**The Homepage**:
-This page links to the supposedly "admin" area.
+This code runs. It redirects unauthenticated users. It fetches admin data. Ship it, right?
 
-```tsx
-// src/app/page.tsx
-import Link from 'next/link';
-
-export default function HomePage() {
-  return (
-    <main className="p-8">
-      <h1 className="text-2xl font-bold">Welcome to the Blog</h1>
-      <p>This is the public homepage. Everyone can see this.</p>
-    </main>
-  );
-}
-```
-
-**The Header**:
-A shared header component.
-
-```tsx
-// src/components/Header.tsx
-import Link from 'next/link';
-
-export default function Header() {
-  return (
-    <header className="bg-gray-100 p-4 border-b">
-      <nav className="flex justify-between">
-        <Link href="/" className="font-bold">My Blog</Link>
-        {/* We will add auth controls here later */}
-        <Link href="/admin/create-post" className="text-blue-600 hover:underline">
-          Create Post (Admin)
-        </Link>
-      </nav>
-    </header>
-  );
-}
-```
-
-**The Root Layout**:
-We'll add our header to the main layout.
-
-```tsx
-// src/app/layout.tsx
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import Header from "@/components/Header";
-
-const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "Auth.js Demo",
-  description: "A demo of Next.js authentication",
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en">
-      <body className={inter.className}>
-        <Header />
-        {children}
-      </body>
-    </html>
-  );
-}
-```
+**Wrong. This is security theater, not security.**
 
 ### Diagnostic Analysis: Reading the Failure
 
-Let's run this application and diagnose its fundamental flaw.
+Let's see what an attacker sees when they open DevTools:
 
 **Browser Behavior**:
-A user clicks the "Create Post (Admin)" link. They are immediately taken to the `/admin/create-post` page and can see the form to create a new post. There is no login prompt, no access check, nothing.
+1. Page loads and shows "Checking authentication..." for a split second
+2. Then redirects to `/login`
+3. But if you're fast enough (or disable JavaScript), you can see the admin UI
+
+**Browser Console Output**:
+```
+GET /api/admin/products 401 Unauthorized
+```
+
+**React DevTools Evidence**:
+- Component tree shows: `AdminDashboard` → rendered
+- State: `isAuthenticated: false`, `products: []`
+- The component fully mounts before the redirect happens
 
 **Network Tab Analysis**:
-- Request pattern: A simple GET request to `/admin/create-post`.
-- Response codes: 200 OK.
-- Cookies: No session or authentication-related cookies are sent or received.
+- Request to `/api/admin/products` fires immediately
+- Response: 401 Unauthorized
+- But the request was made—the API endpoint was discovered
 
 **Let's parse this evidence**:
 
-1.  **What the user experiences**: The application has no concept of "admin" vs. "public" areas. All routes are public.
-    -   **Expected**: Accessing `/admin/create-post` should require a login.
-    -   **Actual**: Anyone can access `/admin/create-post`.
+1. **What the user experiences**: Brief flash of admin UI, then redirect
 
-2.  **What the network reveals**: The server happily serves the page to any browser that asks for it. There is no authentication mechanism in place.
+2. **What the console reveals**: The API endpoint `/api/admin/products` is exposed in the client-side code
 
-3.  **Root cause identified**: The application lacks an authentication system to identify users and a mechanism to protect routes based on that identity.
+3. **What DevTools shows**: 
+   - The entire admin component renders before auth check completes
+   - All product data structure is visible in the component code
+   - localStorage token is visible in Application tab
 
-4.  **Why the current approach can't solve this**: Standard Next.js routing is based on the file system and is public by default. It has no built-in knowledge of user sessions or permissions.
+4. **Root cause identified**: Authentication happens in the browser, after the page loads
 
-5.  **What we need**: A robust, centralized authentication library that integrates with Next.js to manage user sessions and provide tools for protecting pages. This is the problem that Auth.js (formerly NextAuth.js) is designed to solve.
+5. **Why the current approach can't solve this**: Client-side code is public code. Any "protection" that happens in the browser can be bypassed by:
+   - Disabling JavaScript
+   - Modifying localStorage
+   - Editing the component code in DevTools
+   - Directly calling API endpoints with tools like curl
 
-### Iteration 1: Installing and Configuring Auth.js
+6. **What we need**: Authentication that happens on the server, before any protected content is sent to the browser
 
-Let's introduce Auth.js to our project to add a basic authentication layer. We'll use the GitHub provider for a simple OAuth login.
+### The Fundamental Problem: Client-Side Auth is Not Auth
 
-First, install the necessary package.
+Here's what an attacker can do with 30 seconds and DevTools:
+
+**Attack 1: Disable JavaScript**
+```bash
+# In Chrome DevTools: Settings → Debugger → Disable JavaScript
+# Now visit /admin
+# Result: Full admin UI renders (no redirect happens)
+```
+
+**Attack 2: Modify localStorage**
+```javascript
+// In browser console:
+localStorage.setItem('authToken', 'fake-token-12345');
+// Refresh page
+// Result: Passes client-side check, makes API request
+```
+
+**Attack 3: Direct API Access**
+```bash
+# The API endpoint is visible in the source code
+curl https://yoursite.com/api/admin/products \
+  -H "Authorization: Bearer fake-token"
+
+# If the API doesn't validate properly, you get data
+```
+
+**Attack 4: View Source**
+```html
+<!-- View page source -->
+<!-- All component code is visible, including: -->
+<!-- - API endpoints -->
+<!-- - Data structures -->
+<!-- - Business logic -->
+```
+
+### What We Actually Need
+
+Authentication must happen in three places, in this order:
+
+1. **Server-side route protection**: Check auth before rendering the page
+2. **API route protection**: Validate tokens on every API request
+3. **Client-side UX**: Show appropriate UI based on auth state (but never rely on it for security)
+
+Client-side checks are for user experience, not security. They prevent confusion, not attacks.
+
+## NextAuth.js: Server-Side Auth for Next.js
+
+NextAuth.js (now called Auth.js) solves this by:
+
+1. Managing sessions on the server
+2. Providing middleware to protect routes before they render
+3. Handling OAuth providers (Google, GitHub, etc.)
+4. Encrypting session tokens
+5. Giving you hooks to check auth state in components
+
+### Installation and Setup
+
+First, install the dependencies:
 
 ```bash
 npm install next-auth@beta
 ```
 
-> **Note**: We are using `next-auth@beta` which is the latest version, commonly referred to as Auth.js v5, designed for the Next.js App Router.
+**Note**: We're using `next-auth@beta` because it's the version compatible with Next.js 13+ App Router. The stable version only works with Pages Router.
 
-Next, we need to set up environment variables for our authentication provider and a secret key for signing session cookies.
+### Project Structure
 
-**Create a `.env.local` file** in the root of your project.
+Here's how we'll organize our auth setup:
 
-```text
-# .env.local
-
-# Generate a secret with: openssl rand -base64 32
-AUTH_SECRET="your-super-secret-value-here"
-
-# GitHub OAuth App credentials
-AUTH_GITHUB_ID="your-github-client-id"
-AUTH_GITHUB_SECRET="your-github-client-secret"
-```
-
-You can get your GitHub credentials by creating a new OAuth App in your GitHub developer settings. The "Authorization callback URL" should be `http://localhost:3000/api/auth/callback/github`.
-
-Now, we create the core of our authentication logic: the Auth.js configuration and API route handler.
-
-**Project Structure Change**:
-```
+```plaintext
 src/
 ├── app/
 │   ├── api/
 │   │   └── auth/
 │   │       └── [...nextauth]/
-│   │           └── route.ts      # ← New Auth.js API route
-...
-├── auth.ts                       # ← New Auth.js config file
-...
+│   │           └── route.ts          ← Auth API routes
+│   ├── admin/
+│   │   ├── page.tsx                  ← Protected admin page
+│   │   └── products/
+│   │       └── [id]/
+│   │           └── page.tsx          ← Protected product editor
+│   ├── login/
+│   │   └── page.tsx                  ← Login page
+│   └── layout.tsx
+├── lib/
+│   └── auth.ts                       ← Auth configuration
+└── middleware.ts                     ← Route protection
 ```
 
-**The Auth.js Configuration**:
-This file defines our authentication strategies (providers).
+### Core Auth Configuration
+
+Create the auth configuration file:
 
 ```typescript
-// src/auth.ts
-import NextAuth from "next-auth"
-import GitHub from "next-auth/providers/github"
+// lib/auth.ts
+import NextAuth from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { compare } from 'bcryptjs';
+
+// This would come from your database
+// For now, we'll use a mock
+async function getUserFromDatabase(email: string) {
+  // In production, this queries your database
+  // Example: await db.user.findUnique({ where: { email } })
+  
+  // Mock user for demonstration
+  if (email === 'admin@example.com') {
+    return {
+      id: '1',
+      email: 'admin@example.com',
+      name: 'Admin User',
+      role: 'admin',
+      // This is bcrypt hash of 'password123'
+      passwordHash: '$2a$10$rXQvvXvXvXvXvXvXvXvXvXvXvXvXvXvXvXvXvXvXvXvXvXvXvXvXv'
+    };
+  }
+  
+  return null;
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [GitHub],
-})
+  providers: [
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        const user = await getUserFromDatabase(credentials.email as string);
+        
+        if (!user) {
+          return null;
+        }
+
+        const isValidPassword = await compare(
+          credentials.password as string,
+          user.passwordHash
+        );
+
+        if (!isValidPassword) {
+          return null;
+        }
+
+        // Return user object (without password)
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role
+        };
+      }
+    })
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      // Add user info to JWT token
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      // Add user info to session
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+      }
+      return session;
+    }
+  },
+  pages: {
+    signIn: '/login',
+  },
+  session: {
+    strategy: 'jwt',
+  },
+});
 ```
 
-**The Auth.js API Route**:
-This file exposes the `GET` and `POST` handlers from our configuration as a catch-all API route. This single route handles sign-in, sign-out, callbacks, and session management.
+### Understanding the Configuration
+
+Let's break down what each part does:
+
+**Providers**: Define how users authenticate
+- `CredentialsProvider`: Username/password login
+- Could also use `GoogleProvider`, `GitHubProvider`, etc.
+
+**authorize function**: Validates credentials
+- Queries database for user
+- Compares password hash
+- Returns user object if valid, null if not
+
+**Callbacks**: Customize JWT and session data
+- `jwt`: Runs when JWT is created/updated—add custom data here
+- `session`: Runs when session is accessed—shape the session object
+
+**pages**: Custom auth pages
+- `signIn`: Where to redirect for login
+
+**session.strategy**: How sessions are stored
+- `jwt`: Stateless, encrypted token in cookie (recommended)
+- `database`: Store sessions in database (more control, more complexity)
+
+### API Route Handler
+
+Create the catch-all route for NextAuth:
 
 ```typescript
-// src/app/api/auth/[...nextauth]/route.ts
-export { handlers as GET, handlers as POST } from "@/auth"
+// app/api/auth/[...nextauth]/route.ts
+import { handlers } from '@/lib/auth';
+
+export const { GET, POST } = handlers;
 ```
 
-With these two files, we now have a fully functional set of authentication API endpoints. However, our application's UI doesn't know about them yet. We need to provide a way for users to sign in and out.
+This single file handles all auth endpoints:
+- `GET /api/auth/signin` - Sign in page
+- `POST /api/auth/signin` - Sign in submission
+- `GET /api/auth/signout` - Sign out
+- `GET /api/auth/session` - Get current session
+- And more...
 
-Let's create a component to handle this.
+### TypeScript Types
+
+Extend NextAuth types to include our custom fields:
+
+```typescript
+// types/next-auth.d.ts
+import 'next-auth';
+
+declare module 'next-auth' {
+  interface User {
+    role?: string;
+  }
+  
+  interface Session {
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      role: string;
+    };
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id?: string;
+    role?: string;
+  }
+}
+```
+
+### Login Page
+
+Create a login form that uses NextAuth:
 
 ```tsx
-// src/components/AuthButtons.tsx
-"use client";
+// app/login/page.tsx
+'use client';
 
-import { signIn, signOut, useSession } from "next-auth/react";
+import { signIn } from 'next-auth/react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-export default function AuthButtons() {
-  const { data: session } = useSession();
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  if (session) {
-    return (
-      <div className="flex items-center gap-4">
-        <p>
-          Signed in as {session.user?.email}
-        </p>
-        <button onClick={() => signOut()} className="bg-red-500 text-white px-3 py-1 rounded">
-          Sign Out
-        </button>
-      </div>
-    );
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError('Invalid email or password');
+        setIsLoading(false);
+        return;
+      }
+
+      // Success - redirect to admin
+      router.push('/admin');
+      router.refresh(); // Refresh to update server components
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+      setIsLoading(false);
+    }
   }
 
   return (
-    <button onClick={() => signIn("github")} className="bg-blue-500 text-white px-3 py-1 rounded">
-      Sign In with GitHub
-    </button>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
+        <div>
+          <h2 className="text-3xl font-bold text-center">Admin Login</h2>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="bg-red-50 text-red-600 p-3 rounded">
+              {error}
+            </div>
+          )}
+          
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+          
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isLoading ? 'Signing in...' : 'Sign In'}
+          </button>
+        </form>
+        
+        <div className="text-sm text-gray-600 text-center">
+          Demo credentials: admin@example.com / password123
+        </div>
+      </div>
+    </div>
   );
 }
 ```
 
-This component uses the `useSession` hook, which requires a client-side context provider. We must wrap our application in `SessionProvider`.
+### Testing the Setup
 
-**Updating the Root Layout**:
+Start your dev server and test:
+
+```bash
+npm run dev
+```
+
+**Browser Console Output** (successful login):
+```
+POST /api/auth/callback/credentials 200 OK
+GET /api/auth/session 200 OK
+```
+
+**Network Tab Analysis**:
+- `POST /api/auth/callback/credentials`: Login request
+  - Request body: `{ email, password }` (encrypted in transit via HTTPS)
+  - Response: Sets `next-auth.session-token` cookie
+- `GET /api/auth/session`: Fetch session data
+  - Response: `{ user: { id, email, name, role } }`
+
+**Application Tab** (Chrome DevTools):
+- Cookies: `next-auth.session-token` is set
+  - Value: Encrypted JWT (not readable in DevTools)
+  - HttpOnly: Yes (JavaScript cannot access it)
+  - Secure: Yes (only sent over HTTPS)
+  - SameSite: Lax (CSRF protection)
+
+This is already more secure than our localStorage approach:
+- Token is HttpOnly (can't be stolen via XSS)
+- Token is encrypted (can't be tampered with)
+- Token is validated on the server
+
+But we still haven't protected our admin routes. Let's fix that next.
+
+## Session management
+
+## Accessing Session Data
+
+Now that users can log in, we need to access their session data in our components and API routes.
+
+### In Server Components
+
+Server Components can directly access the session:
 
 ```tsx
-// src/app/layout.tsx
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import Header from "@/components/Header";
-import { SessionProvider } from "next-auth/react"; // ← Import
+// app/admin/page.tsx
+import { auth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 
-const inter = Inter({ subsets: ["latin"] });
+export default async function AdminDashboard() {
+  const session = await auth();
 
-export const metadata = { /* ... */ };
+  if (!session) {
+    redirect('/login');
+  }
+
+  // Fetch admin data server-side
+  const products = await fetch('http://localhost:3000/api/admin/products', {
+    headers: {
+      // Pass session info to API
+      'Cookie': `next-auth.session-token=${session.user.id}`
+    }
+  }).then(res => res.json());
+
+  return (
+    <div>
+      <h1>Admin Dashboard</h1>
+      <p>Welcome, {session.user.name}</p>
+      <p>Role: {session.user.role}</p>
+      
+      <div className="grid gap-4 mt-8">
+        {products.map((product: any) => (
+          <div key={product.id} className="border p-4 rounded">
+            <h2 className="text-xl font-bold">{product.name}</h2>
+            <p>Price: ${product.price}</p>
+            <p>Stock: {product.inventory}</p>
+            <a 
+              href={`/admin/products/${product.id}`}
+              className="text-blue-600 hover:underline"
+            >
+              Edit
+            </a>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+**What changed from our broken version**:
+
+1. **Server Component**: No `'use client'` directive—this runs on the server
+2. **Direct session access**: `await auth()` gets session server-side
+3. **Redirect before render**: If no session, redirect happens on the server
+4. **No flash of content**: User never sees the admin UI if not authenticated
+
+**Browser Behavior**:
+- Unauthenticated user visits `/admin`
+- Server checks session, finds none
+- Server responds with 307 redirect to `/login`
+- Browser never receives admin HTML
+
+**View Source**:
+```html
+<!-- Unauthenticated user sees: -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="refresh" content="0;url=/login">
+</head>
+</html>
+```
+
+No admin code. No API endpoints. No data structures. Just a redirect.
+
+### In Client Components
+
+For interactive components, use the `useSession` hook:
+
+```tsx
+// app/admin/products/[id]/page.tsx
+'use client';
+
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+export default function ProductEditor({ params }: { params: { id: string } }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [product, setProduct] = useState<any>(null);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetch(`/api/admin/products/${params.id}`)
+        .then(res => res.json())
+        .then(data => setProduct(data));
+    }
+  }, [status, params.id]);
+
+  if (status === 'loading') {
+    return <div>Loading...</div>;
+  }
+
+  if (!session) {
+    return null;
+  }
+
+  if (!product) {
+    return <div>Loading product...</div>;
+  }
+
+  return (
+    <div>
+      <h1>Edit Product</h1>
+      <form>
+        <div>
+          <label>Name</label>
+          <input 
+            type="text" 
+            value={product.name}
+            onChange={(e) => setProduct({ ...product, name: e.target.value })}
+          />
+        </div>
+        {/* More form fields */}
+      </form>
+    </div>
+  );
+}
+```
+
+**Session status values**:
+- `loading`: Session is being fetched
+- `authenticated`: User is logged in
+- `unauthenticated`: User is not logged in
+
+**Important**: This client-side check is still for UX only. The real protection comes from:
+1. Middleware (which we'll add next)
+2. API route validation (which we'll implement)
+
+### Session Provider
+
+To use `useSession`, wrap your app in a session provider:
+
+```tsx
+// app/layout.tsx
+import { SessionProvider } from 'next-auth/react';
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <SessionProvider> {/* ← Wrap children */}
-          <Header />
+      <body>
+        <SessionProvider>
           {children}
         </SessionProvider>
       </body>
@@ -286,623 +700,1498 @@ export default function RootLayout({
 }
 ```
 
-Finally, let's replace the hardcoded link in our `Header` with the new `AuthButtons` component.
+### In API Routes
 
-**Updating the Header**:
+Protect API endpoints by checking the session:
 
-```tsx
-// src/components/Header.tsx
-import Link from 'next/link';
-import AuthButtons from './AuthButtons'; // ← Import
+```typescript
+// app/api/admin/products/route.ts
+import { auth } from '@/lib/auth';
+import { NextResponse } from 'next/server';
 
-export default function Header() {
-  return (
-    <header className="bg-gray-100 p-4 border-b">
-      <nav className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="font-bold">My Blog</Link>
-          <Link href="/admin/create-post" className="text-blue-600 hover:underline">
-            Create Post
-          </Link>
-        </div>
-        <AuthButtons /> {/* ← Use the component */}
-      </nav>
-    </header>
-  );
-}
-```
+export async function GET() {
+  const session = await auth();
 
-### Verification
-
-Let's run the app now.
-- The header now shows a "Sign In with GitHub" button.
-- Clicking it redirects you to GitHub to authorize the application.
-- After authorizing, you are redirected back to the homepage.
-- The header now displays "Signed in as your.email@example.com" and a "Sign Out" button.
-
-**Expected vs. Actual Improvement**:
-- **Expected**: A way for users to establish an identity within the application.
-- **Actual**: We have a complete login/logout flow. The application can now distinguish between authenticated and anonymous users.
-
-**Limitation Preview**:
-This is a huge step forward, but we've only solved half the problem. We can *identify* users, but we aren't *using* that identity to control access. Anyone, logged in or not, can still navigate directly to `/admin/create-post` and see the form. Our next step is to use the session data to protect content.
-
-## Session management
-
-## Accessing the User Session
-
-Our application now has a concept of a "logged-in user," but this information is currently confined to the `AuthButtons` component. To make our application truly auth-aware, we need to access the user's session data in different contexts:
-1.  **Client Components**: To conditionally render UI elements (like we did with `AuthButtons`).
-2.  **Server Components**: To fetch user-specific data or render content on the server based on the user's identity.
-3.  **API Routes / Route Handlers**: To authorize API requests.
-
-Auth.js provides different methods for each context.
-
-### Iteration 2: Making the Application Session-Aware
-
-**Current State Recap**: Users can log in and out, but the rest of the application is oblivious to their authentication status. The `/admin/create-post` page is still wide open.
-
-**Current Limitation**: We can't personalize content or protect pages because we aren't checking for a valid session outside of our `Header`.
-
-**New Scenario Introduction**: What if we want to greet the user by name on the homepage? And what if the "Create Post" page should only be visible to logged-in users?
-
-### Accessing the Session in Server Components
-
-Let's start by personalizing the homepage, which is a Server Component. We can use the `auth()` function exported from our `src/auth.ts` file.
-
-**Before**: The homepage is static.
-```tsx
-// src/app/page.tsx (Old version)
-import Link from 'next/link';
-
-export default function HomePage() {
-  return (
-    <main className="p-8">
-      <h1 className="text-2xl font-bold">Welcome to the Blog</h1>
-      <p>This is the public homepage. Everyone can see this.</p>
-    </main>
-  );
-}
-```
-
-**After**: The homepage greets the logged-in user.
-
-```tsx
-// src/app/page.tsx (New version)
-import { auth } from "@/auth"; // ← Import auth
-
-export default async function HomePage() {
-  const session = await auth(); // ← Get session on the server
-
-  return (
-    <main className="p-8">
-      <h1 className="text-2xl font-bold">Welcome to the Blog</h1>
-      {session?.user ? (
-        <p>Hello, {session.user.name}! You are signed in.</p>
-      ) : (
-        <p>This is the public homepage. Please sign in to create a post.</p>
-      )}
-    </main>
-  );
-}
-```
-
-Now, when a logged-in user visits the homepage, they see a personalized greeting. An anonymous user sees the original message. This happens entirely on the server, resulting in a fast, non-interactive initial page load.
-
-### Accessing the Session in Client Components
-
-We've already seen this in action with our `AuthButtons` component. The `useSession` hook is the primary way to access session data in Client Components. It's provided by the `SessionProvider` we added in `layout.tsx`.
-
-Let's try to "protect" our `create-post` page using this client-side technique. This approach is flawed, but it's a crucial step in understanding *why* we need server-side protection.
-
-**Attempting Client-Side Protection**:
-We'll convert the `CreatePostPage` to a Client Component and use `useSession` to check for a user.
-
-```tsx
-// src/app/admin/create-post/page.tsx (Client-side protection attempt)
-"use client";
-
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-
-export default function CreatePostPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-
-  useEffect(() => {
-    // If the session is loading, do nothing yet.
-    if (status === 'loading') return;
-
-    // If there is no session, redirect to the homepage.
-    if (!session) {
-      router.push('/');
-    }
-  }, [session, status, router]);
-
-  // While loading, show a message.
-  if (status === 'loading') {
-    return <p className="p-8">Loading session...</p>;
-  }
-
-  // If there's no session after loading, the redirect is in progress.
-  // Render null or a message to avoid flashing the protected content.
   if (!session) {
-    return <p className="p-8">Redirecting...</p>;
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
   }
 
-  // If we have a session, render the protected content.
+  // Check role
+  if (session.user.role !== 'admin') {
+    return NextResponse.json(
+      { error: 'Forbidden' },
+      { status: 403 }
+    );
+  }
+
+  // Fetch products from database
+  const products = [
+    { id: 1, name: 'Product 1', price: 29.99, inventory: 100 },
+    { id: 2, name: 'Product 2', price: 49.99, inventory: 50 },
+  ];
+
+  return NextResponse.json(products);
+}
+
+export async function POST(request: Request) {
+  const session = await auth();
+
+  if (!session || session.user.role !== 'admin') {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  const body = await request.json();
+
+  // Validate and create product
+  // In production: await db.product.create({ data: body })
+
+  return NextResponse.json({ success: true });
+}
+```
+
+**Testing API Protection**:
+
+Try calling the API without authentication:
+
+```bash
+curl http://localhost:3000/api/admin/products
+```
+
+**Response**:
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
+**Status code**: 401
+
+Now try with a valid session (after logging in through the browser):
+
+```bash
+curl http://localhost:3000/api/admin/products \
+  -H "Cookie: next-auth.session-token=YOUR_TOKEN_HERE"
+```
+
+**Response**:
+```json
+[
+  { "id": 1, "name": "Product 1", "price": 29.99, "inventory": 100 },
+  { "id": 2, "name": "Product 2", "price": 49.99, "inventory": 50 }
+]
+```
+
+**Status code**: 200
+
+### Session Refresh and Expiration
+
+By default, NextAuth sessions expire after 30 days. Configure this:
+
+```typescript
+// lib/auth.ts
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  // ... other config
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
+  },
+});
+```
+
+**maxAge**: How long until session expires
+**updateAge**: How often to refresh the session token
+
+When a session is about to expire, NextAuth automatically refreshes it on the next request.
+
+### Sign Out
+
+Implement sign out functionality:
+
+```tsx
+// components/SignOutButton.tsx
+'use client';
+
+import { signOut } from 'next-auth/react';
+
+export function SignOutButton() {
   return (
-    <main className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Create New Post</h1>
-      <p className="mb-4">Welcome, {session.user?.name}!</p>
-      <form className="flex flex-col gap-4">
-        {/* Form fields... */}
-      </form>
-    </main>
+    <button
+      onClick={() => signOut({ callbackUrl: '/login' })}
+      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+    >
+      Sign Out
+    </button>
   );
 }
 ```
 
-### Diagnostic Analysis: The Failure of Client-Side Protection
+Add it to your admin layout:
 
-Let's analyze what happens when a logged-out user tries to access `/admin/create-post`.
+```tsx
+// app/admin/layout.tsx
+import { auth } from '@/lib/auth';
+import { SignOutButton } from '@/components/SignOutButton';
+import { redirect } from 'next/navigation';
 
-**Browser Behavior**:
-The user sees a "Loading session..." message for a brief moment, which is then replaced by "Redirecting...". The page content might flash on the screen for a split second before the JavaScript kicks in and redirects them to the homepage. This is known as a "flash of unprotected content."
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await auth();
+
+  if (!session) {
+    redirect('/login');
+  }
+
+  return (
+    <div>
+      <header className="bg-gray-800 text-white p-4">
+        <div className="container mx-auto flex justify-between items-center">
+          <h1 className="text-xl font-bold">Admin Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <span>{session.user.name}</span>
+            <SignOutButton />
+          </div>
+        </div>
+      </header>
+      <main className="container mx-auto p-4">
+        {children}
+      </main>
+    </div>
+  );
+}
+```
+
+**Browser Console Output** (sign out):
+```
+POST /api/auth/signout 200 OK
+```
 
 **Network Tab Analysis**:
-1.  The browser sends a GET request for the `/admin/create-post` page.
-2.  The server, which doesn't know about the user's session for this page, sends back the full HTML and JavaScript for the `CreatePostPage` component (including the form!).
-3.  The browser renders this page.
-4.  The client-side JavaScript runs. The `useSession` hook makes a request to `/api/auth/session` to get the session data.
-5.  The session API returns that there is no active session.
-6.  The `useEffect` hook runs, sees there is no session, and triggers `router.push('/')`.
-7.  The browser navigates to the homepage.
+- `POST /api/auth/signout`: Sign out request
+  - Response: Clears `next-auth.session-token` cookie
+  - Redirect: 307 to `/login`
 
-**Let's parse this evidence**:
+**Application Tab**:
+- Cookies: `next-auth.session-token` is deleted
 
-1.  **What the user experiences**: A flicker of the protected page before being redirected. It feels slow and insecure.
+### The Failure: Session Hijacking
 
-2.  **What the network reveals**: The key failure is that the protected content (the HTML for the form) is sent to the browser *before* the authentication check is complete.
+Even with HttpOnly cookies, sessions can still be stolen if:
 
-3.  **Root cause identified**: The protection logic runs on the client, but the content is delivered from the server. The server has already sent the sensitive data before the client has a chance to stop it.
+1. **No HTTPS**: Cookies sent over HTTP can be intercepted
+2. **XSS vulnerability**: Malicious script can make authenticated requests
+3. **CSRF attack**: Attacker tricks user into making requests
 
-4.  **Why this approach can't solve this**: Client-side rendering and redirection for security is fundamentally flawed. It's a UX problem (the flicker) and a security risk (sensitive data is sent to the browser, even if briefly).
+**Diagnostic Analysis**:
 
-5.  **What we need**: A way to perform the authentication check on the server *before* any of the page's HTML is rendered or sent to the client. This is the job of Next.js Middleware.
+**Attack scenario**: User visits malicious site while logged in
+
+**Malicious site code**:
+```html
+<img src="https://yoursite.com/api/admin/products/delete?id=1" />
+```
+
+**Browser behavior**:
+- Browser automatically includes cookies with the request
+- API endpoint receives authenticated request
+- Product gets deleted
+
+**Network Tab**:
+- `GET /api/admin/products/delete?id=1` with valid session cookie
+- Status: 200 OK
+- Result: Product deleted
+
+**Root cause**: Browser automatically sends cookies with every request to the domain, even from other sites.
+
+**What we need**: CSRF protection to verify requests originate from our site.
+
+NextAuth includes CSRF protection by default:
+- Every form submission includes a CSRF token
+- API routes validate the token
+- Cross-origin requests are rejected
+
+But we still need one more layer: middleware to protect routes before they even render.
 
 ## Protected routes and middleware
 
-## Server-Side Protection with Middleware
+## The Failure: Protecting Every Route Manually
 
-We've seen that client-side redirects are insufficient for protecting routes. The check must happen on the server before the request is handed over to the page component. In Next.js, the perfect place for this is Middleware.
-
-Middleware is a function that runs before a request is completed. Based on the incoming request, you can rewrite, redirect, or modify headers before passing the request along to be rendered.
-
-### Iteration 3: Implementing Middleware for Route Protection
-
-**Current State Recap**: We can access session data, but our attempt to protect the `/admin/create-post` page on the client-side resulted in a "flash of unprotected content."
-
-**Current Limitation**: Our security check happens too late in the request lifecycle.
-
-**New Scenario Introduction**: How can we ensure that a request from a logged-out user to `/admin/create-post` is *never* allowed to reach the page component, and is instead redirected to a login page instantly?
-
-First, let's simplify our `CreatePostPage` back to a Server Component. It no longer needs to worry about redirecting; it can assume that if it renders, the user is authenticated.
+Right now, every protected page needs this code:
 
 ```tsx
-// src/app/admin/create-post/page.tsx (Simplified Server Component)
-import { auth } from "@/auth";
+const session = await auth();
+if (!session) {
+  redirect('/login');
+}
+```
 
-export default async function CreatePostPage() {
-  const session = await auth();
+**Problems with this approach**:
 
-  // We can be reasonably sure session exists because of middleware,
-  // but it's good practice to handle the edge case.
-  if (!session?.user) {
-    return <p className="p-8">Access Denied</p>;
+1. **Easy to forget**: One missed check = security hole
+2. **Repetitive**: Same code in every file
+3. **Runs too late**: Page component starts executing before check
+4. **Not DRY**: Violates "Don't Repeat Yourself"
+
+**What we need**: A single place to protect all admin routes.
+
+## Next.js Middleware: The Gatekeeper
+
+Middleware runs before any page renders. It's the perfect place for auth checks.
+
+Create a middleware file at the root of your project:
+
+```typescript
+// middleware.ts
+import { auth } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+
+export default auth((req) => {
+  const isLoggedIn = !!req.auth;
+  const isOnAdminPage = req.nextUrl.pathname.startsWith('/admin');
+
+  if (isOnAdminPage && !isLoggedIn) {
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
+  return NextResponse.next();
+});
+
+export const config = {
+  matcher: ['/admin/:path*'],
+};
+```
+
+### Understanding Middleware
+
+**How it works**:
+
+1. User requests `/admin/products`
+2. Middleware runs before the page component
+3. Checks if user is authenticated
+4. If not, redirects to `/login`
+5. If yes, allows request to continue
+
+**matcher**: Defines which routes the middleware applies to
+- `/admin/:path*`: All routes under `/admin`
+- Can use arrays: `['/admin/:path*', '/dashboard/:path*']`
+- Can use regex: `/admin/(.*)`
+
+**req.auth**: The session object (provided by NextAuth)
+- `null` if not authenticated
+- User object if authenticated
+
+**NextResponse.redirect**: Server-side redirect
+- Happens before page renders
+- User never sees protected content
+
+### Testing Middleware Protection
+
+**Test 1: Unauthenticated access**
+
+Visit `/admin` without logging in:
+
+**Browser Behavior**:
+- Immediately redirects to `/login`
+- No flash of admin content
+- URL changes to `/login`
+
+**Network Tab**:
+```
+GET /admin 307 Temporary Redirect
+Location: /login
+```
+
+**View Source**:
+```html
+<!-- No admin HTML sent to browser -->
+```
+
+**Test 2: Authenticated access**
+
+Log in, then visit `/admin`:
+
+**Browser Behavior**:
+- Page loads normally
+- Admin content displays
+
+**Network Tab**:
+```
+GET /admin 200 OK
+```
+
+**Test 3: Direct API access**
+
+Try to bypass middleware by calling API directly:
+
+```bash
+curl http://localhost:3000/api/admin/products
+```
+
+**Response**:
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
+**Why**: API routes still check session independently. Middleware protects pages, API routes protect themselves.
+
+### Advanced Middleware Patterns
+
+#### Pattern 1: Role-Based Route Protection
+
+Protect different routes for different roles:
+
+```typescript
+// middleware.ts
+import { auth } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+
+export default auth((req) => {
+  const session = req.auth;
+  const path = req.nextUrl.pathname;
+
+  // Public routes - allow everyone
+  if (path.startsWith('/login') || path === '/') {
+    return NextResponse.next();
+  }
+
+  // Protected routes - require authentication
+  if (!session) {
+    return NextResponse.redirect(new URL('/login', req.url));
+  }
+
+  // Admin routes - require admin role
+  if (path.startsWith('/admin')) {
+    if (session.user.role !== 'admin') {
+      return NextResponse.redirect(new URL('/unauthorized', req.url));
+    }
+  }
+
+  // Manager routes - require manager or admin role
+  if (path.startsWith('/manager')) {
+    if (!['admin', 'manager'].includes(session.user.role)) {
+      return NextResponse.redirect(new URL('/unauthorized', req.url));
+    }
+  }
+
+  return NextResponse.next();
+});
+
+export const config = {
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
+};
+```
+
+**matcher explanation**:
+- `(?!api|_next/static|_next/image|favicon.ico)`: Negative lookahead—exclude these paths
+- `.*`: Match everything else
+- Result: Middleware runs on all pages except API routes and static files
+
+#### Pattern 2: Redirect After Login
+
+Remember where user was trying to go:
+
+```typescript
+// middleware.ts
+import { auth } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+
+export default auth((req) => {
+  const session = req.auth;
+  const path = req.nextUrl.pathname;
+
+  if (path.startsWith('/admin') && !session) {
+    // Save the original URL
+    const loginUrl = new URL('/login', req.url);
+    loginUrl.searchParams.set('callbackUrl', path);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
+});
+```
+
+Update login page to use callback URL:
+
+```tsx
+// app/login/page.tsx
+'use client';
+
+import { signIn } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
+
+export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/admin';
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    
+    const result = await signIn('credentials', {
+      email,
+      password,
+      callbackUrl, // Redirect here after login
+    });
+  }
+
+  // ... rest of component
+}
+```
+
+**User experience**:
+
+1. User visits `/admin/products/123` (not logged in)
+2. Middleware redirects to `/login?callbackUrl=/admin/products/123`
+3. User logs in
+4. Redirected to `/admin/products/123` (original destination)
+
+#### Pattern 3: API Route Protection in Middleware
+
+Protect API routes too:
+
+```typescript
+// middleware.ts
+import { auth } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+
+export default auth((req) => {
+  const session = req.auth;
+  const path = req.nextUrl.pathname;
+
+  // Protect admin API routes
+  if (path.startsWith('/api/admin')) {
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    if (session.user.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
+  }
+
+  // Protect admin pages
+  if (path.startsWith('/admin')) {
+    if (!session) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
+
+    if (session.user.role !== 'admin') {
+      return NextResponse.redirect(new URL('/unauthorized', req.url));
+    }
+  }
+
+  return NextResponse.next();
+});
+
+export const config = {
+  matcher: ['/admin/:path*', '/api/admin/:path*'],
+};
+```
+
+**Now both pages and APIs are protected at the middleware level.**
+
+### The Failure: Middleware Doesn't Run Everywhere
+
+**Problem**: Middleware doesn't run on:
+- Static files (`/images/logo.png`)
+- API routes in some configurations
+- Server Actions
+
+**Diagnostic Analysis**:
+
+Try to access a protected Server Action without middleware:
+
+```typescript
+// app/actions.ts
+'use server';
+
+export async function deleteProduct(id: string) {
+  // No auth check!
+  await db.product.delete({ where: { id } });
+  return { success: true };
+}
+```
+
+**Attack**:
+
+```typescript
+// Attacker's code
+fetch('/api/actions', {
+  method: 'POST',
+  body: JSON.stringify({
+    action: 'deleteProduct',
+    args: ['product-123']
+  })
+});
+```
+
+**Result**: Product deleted without authentication.
+
+**Solution**: Always check auth in Server Actions:
+
+```typescript
+// app/actions.ts
+'use server';
+
+import { auth } from '@/lib/auth';
+
+export async function deleteProduct(id: string) {
+  const session = await auth();
+
+  if (!session || session.user.role !== 'admin') {
+    throw new Error('Unauthorized');
+  }
+
+  await db.product.delete({ where: { id } });
+  return { success: true };
+}
+```
+
+**Rule**: Middleware is the first line of defense, but every protected operation must validate auth independently.
+
+### Unauthorized Page
+
+Create a page for unauthorized access:
+
+```tsx
+// app/unauthorized/page.tsx
+import Link from 'next/link';
+
+export default function UnauthorizedPage() {
   return (
-    <main className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Create New Post</h1>
-      <p className="mb-4">Welcome, {session.user.name}!</p>
-      <form className="flex flex-col gap-4">
-        <div>
-          <label htmlFor="title" className="block mb-1">Title</label>
-          <input type="text" id="title" name="title" className="w-full p-2 border rounded" />
-        </div>
-        <div>
-          <label htmlFor="content" className="block mb-1">Content</label>
-          <textarea id="content" name="content" rows={10} className="w-full p-2 border rounded"></textarea>
-        </div>
-        <button type="submit" className="bg-blue-500 text-white p-2 rounded self-start">
-          Submit Post
-        </button>
-      </form>
-    </main>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          403 - Forbidden
+        </h1>
+        <p className="text-gray-600 mb-8">
+          You don't have permission to access this page.
+        </p>
+        <Link 
+          href="/"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Go Home
+        </Link>
+      </div>
+    </div>
   );
 }
 ```
 
-Now, let's create the middleware file. This file must be placed at the root of your project (or inside `src/`).
+### Middleware Performance Considerations
 
-**Project Structure Change**:
-```
-src/
-├── middleware.ts                 # ← New middleware file
-...
-```
+Middleware runs on every request. Keep it fast:
 
-Auth.js v5 provides a convenient way to integrate with Next.js middleware. We can simply export the `auth` function from our `auth.ts` file as the default export in `middleware.ts`.
+**Good**:
+- Check session (already in memory)
+- Simple role checks
+- Path-based routing decisions
 
-**The Middleware Implementation**:
+**Bad**:
+- Database queries
+- External API calls
+- Complex computations
 
-```typescript
-// src/middleware.ts
-export { auth as default } from "@/auth"
-```
-
-This is a great start, but by default, this protects *all* routes in your application, which is not what we want. We need to tell the middleware which routes to protect and which to leave public. We do this by adding a `matcher` configuration to our `auth.ts` file.
-
-Let's update our Auth.js config to include authorization logic.
+**Example of what NOT to do**:
 
 ```typescript
-// src/auth.ts (Updated with authorization logic)
-import NextAuth from "next-auth"
-import GitHub from "next-auth/providers/github"
-import type { NextAuthConfig } from "next-auth"
-
-export const config = {
-  theme: {
-    logo: "https://next-auth.js.org/img/logo/logo-sm.png",
-  },
-  providers: [GitHub],
-  callbacks: {
-    authorized({ request, auth }) {
-      const { pathname } = request.nextUrl
-      // Protect any route under /admin
-      if (pathname.startsWith("/admin")) {
-        // Returns true if the user is logged in, false otherwise.
-        return !!auth
-      }
-      // All other routes are public
-      return true
-    },
-  },
-} satisfies NextAuthConfig
-
-export const { handlers, auth, signIn, signOut } = NextAuth(config)
+// ❌ BAD - Don't do this
+export default auth(async (req) => {
+  // This runs on EVERY request
+  const user = await db.user.findUnique({
+    where: { id: req.auth?.user.id }
+  });
+  
+  const permissions = await db.permission.findMany({
+    where: { userId: user.id }
+  });
+  
+  // ... complex permission logic
+});
 ```
 
-The `authorized` callback is the heart of our middleware's logic.
-1.  It receives the `request` and the `auth` object (the session).
-2.  We check if the request's `pathname` starts with `/admin`.
-3.  If it does, we return `!!auth`. This expression converts the `auth` object (which is either the session object or `null`) into a boolean. If the user is logged in, it returns `true` (access granted). If not, it returns `false` (access denied).
-4.  If the route is not under `/admin`, we return `true`, making it public.
+**Why it's bad**: Database queries on every request kill performance.
 
-When `authorized` returns `false`, Auth.js will automatically redirect the user to the sign-in page.
+**Better approach**: Store role in session, check permissions in the actual route:
 
-### Verification
+```typescript
+// ✅ GOOD - Middleware stays fast
+export default auth((req) => {
+  // Quick check using session data
+  if (req.nextUrl.pathname.startsWith('/admin')) {
+    if (req.auth?.user.role !== 'admin') {
+      return NextResponse.redirect(new URL('/unauthorized', req.url));
+    }
+  }
+  return NextResponse.next();
+});
 
-Let's test the new behavior as a logged-out user:
-1.  Navigate to the homepage (`/`). It loads normally.
-2.  Click the "Create Post" link, or manually type `http://localhost:3000/admin/create-post` into the address bar.
-
-**Browser Behavior**:
-You are instantly redirected to the Auth.js default sign-in page, which prompts you to "Sign in with GitHub". There is no flicker, no flash of unprotected content.
-
-**Network Tab Analysis**:
-1.  The browser sends a GET request for `/admin/create-post`.
-2.  The Next.js server runs the middleware *before* looking for the page component.
-3.  The `authorized` callback runs, finds no session (`auth` is `null`), and returns `false`.
-4.  The middleware intercepts the request and returns a `307 Temporary Redirect` response, with the `Location` header pointing to `/api/auth/signin?callbackUrl=%2Fadmin%2Fcreate-post`.
-5.  The browser follows the redirect to the sign-in page.
-
-**Expected vs. Actual Improvement**:
-- **Expected**: A secure way to prevent unauthorized access to a route.
-- **Actual**: We have implemented robust, server-side route protection. The protected page's code is never even executed, let alone sent to an unauthorized user's browser.
-
-**Limitation Preview**:
-Our application can now distinguish between anonymous users and logged-in users. But what if we have different *types* of logged-in users? For example, "subscribers" who can read content and "admins" who can write content. Currently, *any* user who logs in via GitHub can access the `/admin` area. We need a more granular level of control: Role-Based Access Control (RBAC).
+// ✅ GOOD - Detailed checks in the route
+// app/admin/products/[id]/page.tsx
+export default async function ProductPage({ params }: { params: { id: string } }) {
+  const session = await auth();
+  
+  // Now we can do expensive checks
+  const hasPermission = await checkProductPermission(
+    session.user.id,
+    params.id
+  );
+  
+  if (!hasPermission) {
+    redirect('/unauthorized');
+  }
+  
+  // ... render page
+}
+```
 
 ## Role-based access control
 
-## Implementing Role-Based Access Control (RBAC)
+## Iteration 4: Protected Product Management
 
-Authentication answers the question, "Who are you?". Authorization answers the question, "What are you allowed to do?". So far, we've only implemented authentication. Now, we'll add authorization by assigning roles to users.
+Let's build a complete role-based access control system for our e-commerce admin.
 
-For our blog, we'll define two roles:
--   `reader`: A standard logged-in user.
--   `admin`: A user who can create posts.
+### Requirements
 
-### Iteration 4: Adding Roles to the Session
+We need three user roles:
 
-**Current State Recap**: Any user who successfully logs in can access the `/admin` routes.
+1. **Admin**: Full access—can create, edit, delete products
+2. **Manager**: Can edit products, view orders, but cannot delete
+3. **Viewer**: Read-only access to products and orders
 
-**Current Limitation**: Our authorization logic is binary: you're either logged in or you're not. It doesn't account for different permission levels among authenticated users.
+### Database Schema
 
-**New Scenario Introduction**: How can we ensure that only a specific user (e.g., the one whose email matches a predefined admin email) can access `/admin/create-post`, while all other logged-in users are denied access?
-
-To implement this, we need to inject custom data—our `role` field—into the Auth.js session token. We can do this using the `jwt` and `session` callbacks in our `auth.ts` configuration.
-
-1.  **`jwt` callback**: This is called whenever a JSON Web Token is created or updated. We can use it to add the user's role to the token itself.
-2.  **`session` callback**: This is called whenever a session is accessed. We use it to take the data from the token (like our custom role) and make it available on the session object that our application code uses.
-
-Let's update `auth.ts` to include these callbacks. For this example, we'll hardcode a single email address as the admin. In a real application, this would come from a database.
+First, let's define our user and permission structure:
 
 ```typescript
-// src/auth.ts (Updated with RBAC)
-import NextAuth from "next-auth"
-import GitHub from "next-auth/providers/github"
-import type { NextAuthConfig } from "next-auth"
+// prisma/schema.prisma
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  passwordHash  String
+  role          Role      @default(VIEWER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
 
-// Define the admin email in an environment variable for security
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+enum Role {
+  ADMIN
+  MANAGER
+  VIEWER
+}
 
-export const config = {
-  theme: { /* ... */ },
-  providers: [GitHub],
-  callbacks: {
-    // This callback is used to customize the JWT.
-    async jwt({ token, user }) {
-      // On initial sign-in, the `user` object is available.
-      if (user) {
-        // Check if the signed-in user is the admin.
-        token.role = user.email === ADMIN_EMAIL ? "admin" : "reader";
-      }
-      return token;
-    },
-
-    // This callback is used to customize the session object.
-    async session({ session, token }) {
-      // Add the role from the token to the session object.
-      if (session?.user) {
-        session.user.role = token.role as string;
-      }
-      return session;
-    },
-    
-    authorized({ request, auth }) {
-      const { pathname } = request.nextUrl
-      if (pathname.startsWith("/admin")) {
-        // Check for both a session AND the admin role.
-        return auth?.user?.role === "admin";
-      }
-      return true
-    },
-  },
-} satisfies NextAuthConfig
-
-export const { handlers, auth, signIn, signOut } = NextAuth(config)
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Float
+  inventory   Int
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
 ```
 
-And add the admin email to your `.env.local` file:
+### Permission Matrix
 
-```text
-# .env.local
-...
-ADMIN_EMAIL="your-admin-email@example.com"
-```
+Define what each role can do:
 
-> **Type Safety Note**: The default `session.user` object doesn't have a `role` property. To make TypeScript aware of our custom property, you can extend the `next-auth` types using module augmentation. Create a file `types/next-auth.d.ts`:
+| Action         | Admin | Manager | Viewer |
+| -------------- | ----- | ------- | ------ |
+| View products  | ✅    | ✅      | ✅     |
+| Create product | ✅    | ❌      | ❌     |
+| Edit product   | ✅    | ✅      | ❌     |
+| Delete product | ✅    | ❌      | ❌     |
+| Publish        | ✅    | ✅      | ❌     |
+| View orders    | ✅    | ✅      | ✅     |
+| Manage users   | ✅    | ❌      | ❌     |
+
+### Permission Helper Functions
+
+Create reusable permission checks:
 
 ```typescript
-// types/next-auth.d.ts
-import 'next-auth';
+// lib/permissions.ts
+import { Session } from 'next-auth';
 
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      role?: string;
-    } & DefaultSession['user'];
-  }
+export type Permission = 
+  | 'products:view'
+  | 'products:create'
+  | 'products:edit'
+  | 'products:delete'
+  | 'products:publish'
+  | 'orders:view'
+  | 'users:manage';
+
+const rolePermissions: Record<string, Permission[]> = {
+  ADMIN: [
+    'products:view',
+    'products:create',
+    'products:edit',
+    'products:delete',
+    'products:publish',
+    'orders:view',
+    'users:manage',
+  ],
+  MANAGER: [
+    'products:view',
+    'products:edit',
+    'products:publish',
+    'orders:view',
+  ],
+  VIEWER: [
+    'products:view',
+    'orders:view',
+  ],
+};
+
+export function hasPermission(
+  session: Session | null,
+  permission: Permission
+): boolean {
+  if (!session) return false;
   
-  interface User {
-    role?: string;
+  const userRole = session.user.role;
+  const permissions = rolePermissions[userRole] || [];
+  
+  return permissions.includes(permission);
+}
+
+export function requirePermission(
+  session: Session | null,
+  permission: Permission
+): void {
+  if (!hasPermission(session, permission)) {
+    throw new Error(`Missing permission: ${permission}`);
   }
 }
 
-declare module 'next-auth/jwt' {
-  interface JWT {
-    role?: string;
-  }
+export function hasAnyPermission(
+  session: Session | null,
+  permissions: Permission[]
+): boolean {
+  return permissions.some(p => hasPermission(session, p));
+}
+
+export function hasAllPermissions(
+  session: Session | null,
+  permissions: Permission[]
+): boolean {
+  return permissions.every(p => hasPermission(session, p));
 }
 ```
 
-### Diagnostic Analysis: Testing the Role-Based Failure
+### Protected Product List Page
 
-Let's demonstrate the failure this new system prevents.
-1.  Log out of the application.
-2.  Log in with a GitHub account whose email is **not** the `ADMIN_EMAIL`. You are now a `reader`.
-3.  Try to navigate to `/admin/create-post`.
-
-**Browser Behavior**:
-You are logged in, but when you try to access the admin page, you are redirected back to the sign-in page with an "Access Denied" error message. The system correctly identifies that while you are authenticated, you are not authorized.
-
-**Let's parse this evidence**:
-1.  **What the user experiences**: A clear denial of access, even though they are logged in.
-    -   **Expected**: Only admins should see the create post page.
-    -   **Actual**: The middleware correctly blocks non-admin users.
-2.  **How it works**:
-    -   When you logged in, the `jwt` callback ran and assigned `token.role = "reader"`.
-    -   When you requested `/admin/create-post`, the middleware ran.
-    -   The `authorized` callback was executed. It found a session (`auth` was not null).
-    -   However, the check `auth?.user?.role === "admin"` failed because `auth.user.role` was `"reader"`.
-    -   The callback returned `false`, triggering the redirect to the sign-in page with an error.
-
-### Conditionally Rendering UI Based on Role
-
-We can also use this new `role` property to conditionally render UI elements. For example, we could hide the "Create Post" link from users who are not admins.
-
-**Updating the Header**:
-This requires converting `Header` to a Server Component to access the session.
+Show different UI based on permissions:
 
 ```tsx
-// src/components/Header.tsx (Updated for RBAC)
+// app/admin/products/page.tsx
+import { auth } from '@/lib/auth';
+import { hasPermission } from '@/lib/permissions';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import AuthButtons from './AuthButtons';
-import { auth } from '@/auth'; // ← Import auth
 
-export default async function Header() {
-  const session = await auth(); // ← Get session on the server
-  const isAdmin = session?.user?.role === 'admin';
+async function getProducts() {
+  // In production: fetch from database
+  return [
+    { id: '1', name: 'Product 1', price: 29.99, inventory: 100, published: true },
+    { id: '2', name: 'Product 2', price: 49.99, inventory: 50, published: false },
+    { id: '3', name: 'Product 3', price: 19.99, inventory: 200, published: true },
+  ];
+}
+
+export default async function ProductsPage() {
+  const session = await auth();
+
+  if (!session) {
+    redirect('/login');
+  }
+
+  // Check if user can view products
+  if (!hasPermission(session, 'products:view')) {
+    redirect('/unauthorized');
+  }
+
+  const products = await getProducts();
+  const canCreate = hasPermission(session, 'products:create');
+  const canEdit = hasPermission(session, 'products:edit');
+  const canDelete = hasPermission(session, 'products:delete');
 
   return (
-    <header className="bg-gray-100 p-4 border-b">
-      <nav className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="font-bold">My Blog</Link>
-          {isAdmin && ( // ← Conditionally render the link
-            <Link href="/admin/create-post" className="text-blue-600 hover:underline">
-              Create Post
-            </Link>
-          )}
-        </div>
-        <AuthButtons />
-      </nav>
-    </header>
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Products</h1>
+        {canCreate && (
+          <Link
+            href="/admin/products/new"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Create Product
+          </Link>
+        )}
+      </div>
+
+      <div className="grid gap-4">
+        {products.map((product) => (
+          <div key={product.id} className="border p-4 rounded flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-bold">{product.name}</h2>
+              <p className="text-gray-600">Price: ${product.price}</p>
+              <p className="text-gray-600">Stock: {product.inventory}</p>
+              <span className={`inline-block px-2 py-1 text-xs rounded ${
+                product.published 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-gray-100 text-gray-800'
+              }`}>
+                {product.published ? 'Published' : 'Draft'}
+              </span>
+            </div>
+
+            <div className="flex gap-2">
+              {canEdit && (
+                <Link
+                  href={`/admin/products/${product.id}/edit`}
+                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Edit
+                </Link>
+              )}
+              {canDelete && (
+                <button
+                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 ```
 
-Now, a user with the `reader` role won't even see the link to the admin section, providing a cleaner user experience on top of the robust server-side security.
+**What each role sees**:
+
+**Admin**:
+- "Create Product" button visible
+- "Edit" button on each product
+- "Delete" button on each product
+
+**Manager**:
+- No "Create Product" button
+- "Edit" button on each product
+- No "Delete" button
+
+**Viewer**:
+- No "Create Product" button
+- No "Edit" button
+- No "Delete" button
+- Read-only view
+
+### Protected Server Actions
+
+Implement role-based Server Actions:
+
+```typescript
+// app/admin/products/actions.ts
+'use server';
+
+import { auth } from '@/lib/auth';
+import { requirePermission } from '@/lib/permissions';
+import { revalidatePath } from 'next/cache';
+
+export async function createProduct(formData: FormData) {
+  const session = await auth();
+  requirePermission(session, 'products:create');
+
+  const name = formData.get('name') as string;
+  const price = parseFloat(formData.get('price') as string);
+  const inventory = parseInt(formData.get('inventory') as string);
+
+  // Validate
+  if (!name || !price || !inventory) {
+    throw new Error('Missing required fields');
+  }
+
+  // In production: await db.product.create({ data: { name, price, inventory } })
+  console.log('Creating product:', { name, price, inventory });
+
+  revalidatePath('/admin/products');
+  return { success: true };
+}
+
+export async function updateProduct(id: string, formData: FormData) {
+  const session = await auth();
+  requirePermission(session, 'products:edit');
+
+  const name = formData.get('name') as string;
+  const price = parseFloat(formData.get('price') as string);
+  const inventory = parseInt(formData.get('inventory') as string);
+
+  // In production: await db.product.update({ where: { id }, data: { name, price, inventory } })
+  console.log('Updating product:', id, { name, price, inventory });
+
+  revalidatePath('/admin/products');
+  revalidatePath(`/admin/products/${id}`);
+  return { success: true };
+}
+
+export async function deleteProduct(id: string) {
+  const session = await auth();
+  requirePermission(session, 'products:delete');
+
+  // In production: await db.product.delete({ where: { id } })
+  console.log('Deleting product:', id);
+
+  revalidatePath('/admin/products');
+  return { success: true };
+}
+
+export async function publishProduct(id: string) {
+  const session = await auth();
+  requirePermission(session, 'products:publish');
+
+  // In production: await db.product.update({ where: { id }, data: { published: true } })
+  console.log('Publishing product:', id);
+
+  revalidatePath('/admin/products');
+  revalidatePath(`/admin/products/${id}`);
+  return { success: true };
+}
+```
+
+### The Failure: Client-Side Permission Checks
+
+What if we only check permissions in the UI?
+
+```tsx
+// ❌ BAD - Only hiding the button
+export default async function ProductsPage() {
+  const session = await auth();
+  const canDelete = hasPermission(session, 'products:delete');
+
+  return (
+    <div>
+      {canDelete && (
+        <button onClick={() => deleteProduct(productId)}>
+          Delete
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+**Attack**: Manager opens DevTools and runs:
+
+```javascript
+// In browser console
+fetch('/api/actions', {
+  method: 'POST',
+  body: JSON.stringify({
+    action: 'deleteProduct',
+    args: ['product-123']
+  })
+});
+```
+
+**If Server Action doesn't check permissions**:
+```
+Product deleted successfully
+```
+
+**Diagnostic Analysis**:
+
+**Browser Console Output**:
+```
+POST /api/actions 200 OK
+Response: { success: true }
+```
+
+**Network Tab**:
+- Request to Server Action succeeds
+- No permission check on server
+
+**Root cause**: UI hides the button, but Server Action is still callable.
+
+**Solution**: Always check permissions in Server Actions (as shown above with `requirePermission`).
+
+### Protected API Routes
+
+Protect API endpoints with the same permission system:
+
+```typescript
+// app/api/admin/products/route.ts
+import { auth } from '@/lib/auth';
+import { hasPermission } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+
+export async function GET() {
+  const session = await auth();
+
+  if (!hasPermission(session, 'products:view')) {
+    return NextResponse.json(
+      { error: 'Forbidden' },
+      { status: 403 }
+    );
+  }
+
+  // Fetch products
+  const products = [
+    { id: '1', name: 'Product 1', price: 29.99 },
+  ];
+
+  return NextResponse.json(products);
+}
+
+export async function POST(request: Request) {
+  const session = await auth();
+
+  if (!hasPermission(session, 'products:create')) {
+    return NextResponse.json(
+      { error: 'Forbidden' },
+      { status: 403 }
+    );
+  }
+
+  const body = await request.json();
+
+  // Create product
+  // await db.product.create({ data: body })
+
+  return NextResponse.json({ success: true });
+}
+```
+
+```typescript
+// app/api/admin/products/[id]/route.ts
+import { auth } from '@/lib/auth';
+import { hasPermission } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await auth();
+
+  if (!hasPermission(session, 'products:edit')) {
+    return NextResponse.json(
+      { error: 'Forbidden' },
+      { status: 403 }
+    );
+  }
+
+  const body = await request.json();
+
+  // Update product
+  // await db.product.update({ where: { id: params.id }, data: body })
+
+  return NextResponse.json({ success: true });
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await auth();
+
+  if (!hasPermission(session, 'products:delete')) {
+    return NextResponse.json(
+      { error: 'Forbidden' },
+      { status: 403 }
+    );
+  }
+
+  // Delete product
+  // await db.product.delete({ where: { id: params.id } })
+
+  return NextResponse.json({ success: true });
+}
+```
+
+### Testing Role-Based Access
+
+Create test users with different roles:
+
+```typescript
+// lib/auth.ts - Update getUserFromDatabase
+async function getUserFromDatabase(email: string) {
+  const users = {
+    'admin@example.com': {
+      id: '1',
+      email: 'admin@example.com',
+      name: 'Admin User',
+      role: 'ADMIN',
+      passwordHash: '$2a$10$...' // bcrypt hash of 'password123'
+    },
+    'manager@example.com': {
+      id: '2',
+      email: 'manager@example.com',
+      name: 'Manager User',
+      role: 'MANAGER',
+      passwordHash: '$2a$10$...'
+    },
+    'viewer@example.com': {
+      id: '3',
+      email: 'viewer@example.com',
+      name: 'Viewer User',
+      role: 'VIEWER',
+      passwordHash: '$2a$10$...'
+    },
+  };
+
+  return users[email] || null;
+}
+```
+
+**Test scenarios**:
+
+**Test 1: Admin can delete**
+1. Log in as admin@example.com
+2. Visit `/admin/products`
+3. Click "Delete" on a product
+4. **Expected**: Product deleted, success message
+5. **Actual**: ✅ Works
+
+**Test 2: Manager cannot delete**
+1. Log in as manager@example.com
+2. Visit `/admin/products`
+3. "Delete" button not visible
+4. Try to call Server Action directly in console:
+
+```javascript
+deleteProduct('product-123');
+```
+
+5. **Expected**: Error "Missing permission: products:delete"
+6. **Actual**: ✅ Error thrown
+
+**Test 3: Viewer cannot edit**
+1. Log in as viewer@example.com
+2. Visit `/admin/products`
+3. No "Edit" or "Delete" buttons visible
+4. Try to visit `/admin/products/1/edit` directly
+5. **Expected**: Redirect to `/unauthorized`
+6. **Actual**: ✅ Redirected
+
+### Advanced Pattern: Resource-Level Permissions
+
+Sometimes permissions depend on the specific resource:
+
+```typescript
+// lib/permissions.ts
+export async function canEditProduct(
+  session: Session | null,
+  productId: string
+): Promise<boolean> {
+  if (!session) return false;
+
+  // Admins can edit any product
+  if (session.user.role === 'ADMIN') {
+    return true;
+  }
+
+  // Managers can only edit their own products
+  if (session.user.role === 'MANAGER') {
+    // In production: check if user created this product
+    // const product = await db.product.findUnique({
+    //   where: { id: productId },
+    //   select: { createdById: true }
+    // });
+    // return product?.createdById === session.user.id;
+    
+    return true; // Simplified for demo
+  }
+
+  return false;
+}
+```
+
+Use in Server Actions:
+
+```typescript
+// app/admin/products/actions.ts
+export async function updateProduct(id: string, formData: FormData) {
+  const session = await auth();
+
+  if (!await canEditProduct(session, id)) {
+    throw new Error('You cannot edit this product');
+  }
+
+  // Update product
+}
+```
 
 ### Common Failure Modes and Their Signatures
 
-#### Symptom: Custom session properties (like `role`) are `undefined`.
+#### Symptom: User can see UI elements they can't use
 
 **Browser behavior**:
-UI that depends on the role doesn't render, or server-side checks fail.
+- Edit button visible
+- Clicking it shows "Forbidden" error
 
 **Console pattern**:
 ```
-TypeError: Cannot read properties of undefined (reading 'role')
+POST /api/admin/products/123 403 Forbidden
+{ error: "Forbidden" }
 ```
 
-**DevTools clues**:
-- In React DevTools, inspecting the `useSession` hook shows a `session` object, but the `user` object is missing the custom field.
+**Root cause**: UI permission check missing or incorrect
 
-**Root cause**: The `jwt` and/or `session` callbacks in `auth.ts` are missing or incorrect. You must pass the custom data from the `token` to the `session` object in the `session` callback.
-**Solution**: Ensure both `jwt` and `session` callbacks are correctly implemented to persist the custom data.
+**Solution**: Check permissions before rendering UI elements:
 
-#### Symptom: Infinite redirect loop after logging in.
+```tsx
+{hasPermission(session, 'products:edit') && (
+  <button>Edit</button>
+)}
+```
+
+#### Symptom: Permission check passes but action fails
 
 **Browser behavior**:
-The page continuously reloads between the page you're trying to access and the login page.
+- Button visible and clickable
+- Action fails with "Unauthorized"
 
-**Network Tab clues**:
-- A rapid sequence of 307 redirects between, for example, `/admin` and `/api/auth/signin`.
-
-**Root cause**: The middleware logic is flawed. A common mistake is protecting a route that is part of the login flow itself, or a logic error in the `authorized` callback that denies access even to valid users.
-**Solution**: Carefully review the `authorized` callback logic. Use `console.log(pathname, auth)` inside the callback to trace what's happening on each request. Ensure you are not protecting public pages like the homepage if that's where you redirect after login.
-
-#### Symptom: `Error: NEXT_AUTH_SECRET is not set` or `AUTH_SECRET is not set`
-
-**Terminal Output**:
-```bash
-[next-auth][error][NO_SECRET]
-https://next-auth.js.org/errors#no_secret
+**Console pattern**:
+```
+Error: Missing permission: products:delete
 ```
 
-**Root cause**: The `AUTH_SECRET` (or `NEXTAUTH_SECRET` for older versions) environment variable is missing from `.env.local` or is not accessible by the server process. This is critical for production builds.
-**Solution**: Generate a strong secret (`openssl rand -base64 32`) and add it to your `.env.local` and your production environment variables.
+**Root cause**: UI checks different permission than Server Action
 
-## Synthesis - The Complete Journey
-
-## The Journey: From Unprotected to Role-Based Security
-
-We have progressively transformed our application from a completely open public site to a secure application with granular, role-based access control. Each step solved a critical flaw in the previous iteration.
-
-| Iteration | Failure Mode                               | Technique Applied                               | Result                                           | Security Posture |
-| :-------- | :----------------------------------------- | :---------------------------------------------- | :----------------------------------------------- | :--------------- |
-| 0         | All routes are public by default.          | None                                            | Anyone can access the admin page.                | Insecure         |
-| 1         | No user identity.                          | Install and configure Auth.js with a provider.  | Users can log in and out.                        | Authenticated    |
-| 2         | Protected content flashes on screen.       | Client-side `useSession` check and redirect.    | Content is hidden after a delay, but still sent. | Flawed           |
-| 3         | Client-side checks are insecure.           | Next.js Middleware with `authorized` callback.  | Unauthorized requests are blocked on the server. | Secure           |
-| 4         | All logged-in users have the same access.  | RBAC via `jwt` and `session` callbacks.         | Access is granted based on user role.            | Granular         |
-
-### Final Implementation
-
-Here is the complete, production-ready code for our authentication system, incorporating all the improvements.
-
-**Final `src/auth.ts`**:
+**Solution**: Use the same permission constants everywhere:
 
 ```typescript
-// src/auth.ts
-import NextAuth from "next-auth"
-import GitHub from "next-auth/providers/github"
-import type { NextAuthConfig } from "next-auth"
+// ✅ GOOD - Same permission constant
+const canDelete = hasPermission(session, 'products:delete');
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+// In Server Action
+requirePermission(session, 'products:delete');
+```
 
-if (!ADMIN_EMAIL) {
-  throw new Error("ADMIN_EMAIL environment variable is not set");
+#### Symptom: Middleware allows access but page denies it
+
+**Browser behavior**:
+- Page loads
+- Shows "Unauthorized" message
+
+**Console pattern**:
+```
+GET /admin/products 200 OK
+(Page renders with "Unauthorized" message)
+```
+
+**Root cause**: Middleware checks role, page checks specific permission
+
+**Solution**: Align middleware and page checks:
+
+```typescript
+// middleware.ts - Check role
+if (path.startsWith('/admin') && session.user.role !== 'ADMIN') {
+  return NextResponse.redirect(new URL('/unauthorized', req.url));
 }
 
-export const config = {
-  theme: {
-    logo: "https://next-auth.js.org/img/logo/logo-sm.png",
-  },
-  providers: [
-    GitHub({
-      clientId: process.env.AUTH_GITHUB_ID,
-      clientSecret: process.env.AUTH_GITHUB_SECRET,
-    }),
-  ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = user.email === ADMIN_EMAIL ? "admin" : "reader";
-      }
-      return token;
-    },
-
-    async session({ session, token }) {
-      if (session?.user) {
-        session.user.role = token.role as string;
-      }
-      return session;
-    },
-    
-    authorized({ request, auth }) {
-      const { pathname } = request.nextUrl;
-      if (pathname.startsWith("/admin")) {
-        return auth?.user?.role === "admin";
-      }
-      // All other routes are public and do not require authentication.
-      return true;
-    },
-  },
-} satisfies NextAuthConfig
-
-export const { handlers, auth, signIn, signOut } = NextAuth(config)
+// page.tsx - Check specific permission
+if (!hasPermission(session, 'products:view')) {
+  redirect('/unauthorized');
+}
 ```
 
-**Final `src/middleware.ts`**:
+### The Complete Journey: From Broken to Secure
+
+| Iteration | Approach                  | Vulnerability                    | Fix                          |
+| --------- | ------------------------- | -------------------------------- | ---------------------------- |
+| 0         | Client-only auth          | Everything exposed               | Move to server               |
+| 1         | Server Components         | API routes unprotected           | Add API validation           |
+| 2         | Middleware                | Server Actions unprotected       | Check in every action        |
+| 3         | Role-based UI             | Permissions not enforced         | Add permission system        |
+| 4         | Permission system         | UI and server checks misaligned  | Use same permission checks   |
+| 5         | Resource-level (current)  | All managers can edit everything | Check resource ownership too |
+
+### Final Implementation: Production-Ready Auth
+
+Here's the complete, secure implementation:
 
 ```typescript
-// src/middleware.ts
-export { auth as default } from "@/auth"
+// middleware.ts - First line of defense
+import { auth } from '@/lib/auth';
+import { NextResponse } from 'next/server';
 
-// Optionally, you can use a matcher to specify which routes the middleware should run on.
-// This is often more performant than running it on every request.
-// export const config = {
-//   matcher: ["/admin/:path*"],
-// };
+export default auth((req) => {
+  const session = req.auth;
+  const path = req.nextUrl.pathname;
+
+  // Public routes
+  if (path === '/' || path.startsWith('/login')) {
+    return NextResponse.next();
+  }
+
+  // Require authentication
+  if (!session) {
+    const loginUrl = new URL('/login', req.url);
+    loginUrl.searchParams.set('callbackUrl', path);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Admin routes require admin role
+  if (path.startsWith('/admin')) {
+    if (!['ADMIN', 'MANAGER', 'VIEWER'].includes(session.user.role)) {
+      return NextResponse.redirect(new URL('/unauthorized', req.url));
+    }
+  }
+
+  return NextResponse.next();
+});
+
+export const config = {
+  matcher: ['/admin/:path*', '/api/admin/:path*'],
+};
 ```
 
-### Decision Framework: Authorization Strategies
+```tsx
+// app/admin/products/page.tsx - Second line of defense
+import { auth } from '@/lib/auth';
+import { hasPermission } from '@/lib/permissions';
+import { redirect } from 'next/navigation';
 
-| Strategy                               | When to Use                                                                                             | Pros                                                              | Cons                                                               |
-| :------------------------------------- | :------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------- | :----------------------------------------------------------------- |
-| **Middleware (`authorized` callback)** | For protecting entire route segments (`/admin`, `/dashboard`). The primary line of defense.               | Runs first, highly secure, blocks requests on the server, central logic. | Less granular than per-component checks.                               |
-| **Server Component (`await auth()`)**  | To fetch user-specific data or make authorization decisions within a page that is already protected.      | Integrates seamlessly with server-side data fetching.             | Runs after middleware; should not be the *only* line of defense.   |
-| **Client Component (`useSession`)**    | For purely cosmetic UI changes (e.g., showing/hiding a "Profile" link). **Never for security.**           | Responsive, provides loading states.                              | Insecure for protecting content, causes layout shifts/flickering.  |
+export default async function ProductsPage() {
+  const session = await auth();
+
+  if (!session) {
+    redirect('/login');
+  }
+
+  if (!hasPermission(session, 'products:view')) {
+    redirect('/unauthorized');
+  }
+
+  const canCreate = hasPermission(session, 'products:create');
+  const canEdit = hasPermission(session, 'products:edit');
+  const canDelete = hasPermission(session, 'products:delete');
+
+  // Render UI based on permissions
+  return (
+    <div>
+      {canCreate && <CreateButton />}
+      {products.map(product => (
+        <ProductCard
+          key={product.id}
+          product={product}
+          canEdit={canEdit}
+          canDelete={canDelete}
+        />
+      ))}
+    </div>
+  );
+}
+```
+
+```typescript
+// app/admin/products/actions.ts - Third line of defense
+'use server';
+
+import { auth } from '@/lib/auth';
+import { requirePermission, canEditProduct } from '@/lib/permissions';
+
+export async function deleteProduct(id: string) {
+  const session = await auth();
+  requirePermission(session, 'products:delete');
+
+  // Additional resource-level check
+  if (!await canEditProduct(session, id)) {
+    throw new Error('Cannot delete this product');
+  }
+
+  // Delete product
+  await db.product.delete({ where: { id } });
+  revalidatePath('/admin/products');
+  return { success: true };
+}
+```
+
+```typescript
+// app/api/admin/products/[id]/route.ts - Fourth line of defense
+import { auth } from '@/lib/auth';
+import { hasPermission, canEditProduct } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await auth();
+
+  if (!hasPermission(session, 'products:delete')) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  if (!await canEditProduct(session, params.id)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  await db.product.delete({ where: { id: params.id } });
+  return NextResponse.json({ success: true });
+}
+```
+
+### Decision Framework: When to Use Which Auth Pattern
+
+| Scenario                          | Pattern                    | Why                                      |
+| --------------------------------- | -------------------------- | ---------------------------------------- |
+| Protect entire route tree         | Middleware                 | Runs before any code executes            |
+| Show/hide UI elements             | Client-side permission     | Better UX, but not security              |
+| Protect data mutations            | Server Action validation   | Mutations must always validate           |
+| Protect API endpoints             | API route validation       | External access requires validation      |
+| Resource-specific permissions     | Resource-level checks      | Permissions depend on specific data      |
+| Multi-tenant applications         | Tenant-scoped queries      | Isolate data by tenant ID                |
+| Temporary access (share links)    | Time-limited tokens        | Token expires after set duration         |
+| Third-party API access            | API keys + rate limiting   | Different auth mechanism for external    |
+| Audit trail requirements          | Log all permission checks  | Track who accessed what and when         |
 
 ### Lessons Learned
 
-1.  **Security is Server-First**: True security for web applications must be enforced on the server. Client-side checks are for user experience, not for protection.
-2.  **Middleware is the Gatekeeper**: Next.js Middleware is the ideal tool for protecting routes, as it runs at the edge before any page-specific logic is executed.
-3.  **Separate Authentication from Authorization**: Auth.js provides the tools for both. Use providers for authentication (`who you are`) and callbacks/middleware for authorization (`what you can do`).
-4.  **The Session is Your Source of Truth**: By enriching the session token with custom data like roles, you create a single, reliable source of truth for authorization decisions throughout your application.
+**1. Defense in depth**: Check permissions at every layer
+- Middleware: Protect routes
+- Page: Check before rendering
+- Server Action: Validate before mutation
+- API Route: Validate before data access
+
+**2. Client-side checks are UX, not security**: Always validate on the server
+
+**3. Use a permission system**: Don't hardcode role checks everywhere
+
+**4. Test with different roles**: Create test users for each role
+
+**5. Resource-level permissions matter**: Not all admins should access all resources
+
+**6. Audit and log**: Track permission checks for security analysis
+
+**7. Keep middleware fast**: No database queries or external API calls
+
+**8. Align UI and server checks**: Use the same permission constants
+
+The journey from broken client-side auth to production-ready role-based access control is about understanding that security is not a single check—it's a layered system where each layer validates independently, and the UI is merely a reflection of what the server allows.
